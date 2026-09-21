@@ -1,6 +1,16 @@
 # Dependencies
 node_modules/
 
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+
 # IDEs y code editors
 .idea/
 .vscode/*
