@@ -374,13 +374,16 @@ create policy tenant_isolation_select on shop
     and public.is_current_profile_enabled()
   ); -- read-only: no policy allows insert/update/delete, so those are denied by default for anon/authenticated
 
+-- profile is read-only for users: profiles are managed only from the Supabase
+-- dashboard (service_role). Prevents self-promotion to 'owner' or re-enabling
+-- a disabled profile.
 alter table profile enable row level security;
-drop policy if exists tenant_isolation on profile;
-create policy tenant_isolation on profile
-  for all using (
+drop policy if exists tenant_isolation_select on profile;
+create policy tenant_isolation_select on profile
+  for select using (
     shop_id = ((select auth.jwt()) ->> 'shop_id')::uuid
     and public.is_current_profile_enabled()
-  );
+  ); -- read-only: no policy allows insert/update/delete
 
 alter table client enable row level security;
 drop policy if exists tenant_isolation on client;
@@ -491,10 +494,10 @@ grant insert, update, delete on public.model to authenticated;
 revoke insert, update, delete, truncate, references, trigger, maintain on public.model from anon;
 revoke truncate, references, trigger, maintain on public.model from authenticated;
 
--- shop and job_status_history are read-only for clients.
-grant select on public.shop to authenticated;
+-- shop, profile and job_status_history are read-only for clients.
+grant select on public.shop    to authenticated;
+grant select on public.profile to authenticated;
 
-grant select, insert, update, delete on public.profile     to authenticated;
 grant select, insert, update, delete on public.client      to authenticated;
 grant select, insert, update, delete on public.vehicle     to authenticated;
 grant select, insert, update, delete on public.service     to authenticated;

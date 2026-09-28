@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Read(**/.env.test)",
+      "Bash(npx supabase db push *)",
+      "Bash(supabase db push *)",
+      "Bash(npx supabase db reset *)",
+      "Bash(supabase db reset *)",
+      "Bash(npx supabase migration repair *)",
+      "Bash(supabase migration repair *)",
+      "Bash(npx supabase migration up *)",
+      "Bash(supabase migration up *)",
+      "Bash(npx supabase link *)",
+      "Bash(supabase link *)",
+      "PowerShell(npx supabase db push *)",
+      "PowerShell(supabase db push *)",
+      "PowerShell(npx supabase db reset *)",
+      "PowerShell(supabase db reset *)",
+      "PowerShell(npx supabase migration repair *)",
+      "PowerShell(supabase migration repair *)",
+      "PowerShell(npx supabase migration up *)",
+      "PowerShell(supabase migration up *)",
+      "PowerShell(npx supabase link *)",
+      "PowerShell(supabase link *)"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+name: Database tests
+
+# Builds a throwaway Supabase database from the migrations (failing if any
+# migration doesn't apply) and runs the pgTAP tests in supabase/tests/.
+# Never touches a hosted project.
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - ".github/workflows/db-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+
+permissions:
+  contents: read
+
+jobs:
+  pgtap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Always runs: applying every migration to a fresh database proves they build.
+      - name: Start database and apply migrations
+        run: npx supabase db start
+      - name: Check for tests
+        id: tests
+        run: |
+          if ls supabase/tests/*.sql >/dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No pgTAP tests in supabase/tests/ yet; skipping."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Run pgTAP tests
+        if: steps.tests.outputs.found == 'true'
+        run: npx supabase test db
