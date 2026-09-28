@@ -40,13 +40,22 @@ create table brand (
 );
 create unique index idx_brand_name_ci on brand (lower(name));
 
+create table model (
+  id       uuid primary key default gen_random_uuid(),
+  brand_id uuid not null references brand(id),
+  name     text not null,
+  enabled  boolean not null default true,
+  unique (id, brand_id)
+);
+create unique index idx_model_brand_name_ci on model (brand_id, lower(name));
+
 create table vehicle (
   id         uuid primary key default gen_random_uuid(),
   shop_id    uuid not null references shop(id),
   client_id  uuid,
   plate      text not null,
   brand_id   uuid not null references brand(id),
-  model      text not null,
+  model_id   uuid not null,
   year       int,
   vin        text,
   enabled    boolean not null default true,
@@ -54,7 +63,8 @@ create table vehicle (
   updated_at timestamptz not null default now(),
   unique (shop_id, plate),
   unique (id, shop_id),
-  foreign key (client_id, shop_id) references client (id, shop_id)
+  foreign key (client_id, shop_id) references client (id, shop_id),
+  foreign key (model_id, brand_id) references model (id, brand_id)
 );
 
 create table service (
@@ -105,7 +115,8 @@ create table job (
   enabled        boolean not null default true,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
-  foreign key (vehicle_id, shop_id)     references vehicle (id, shop_id),     
+  unique (id, shop_id),
+  foreign key (vehicle_id, shop_id)     references vehicle (id, shop_id),
   foreign key (client_id, shop_id)      references client (id, shop_id),     
   foreign key (assigned_to, shop_id)    references profile (id, shop_id),    
   foreign key (appointment_id, shop_id) references appointment (id, shop_id) 
@@ -113,14 +124,15 @@ create table job (
 
 create table job_item (
   id                 uuid primary key default gen_random_uuid(),
-  job_id             uuid not null references job(id),
-  shop_id            uuid not null, 
-  service_id         uuid not null, 
+  job_id             uuid not null,
+  shop_id            uuid not null,
+  service_id         uuid not null,
   quantity           numeric not null default 1,
   quoted_unit_price  numeric not null,
-  final_unit_price   numeric, 
+  final_unit_price   numeric,
   created_at         timestamptz not null default now(),
-  foreign key (service_id, shop_id) references service (id, shop_id) 
+  foreign key (job_id, shop_id)     references job (id, shop_id),
+  foreign key (service_id, shop_id) references service (id, shop_id)
 );
 
 create table job_status_history (
@@ -142,6 +154,7 @@ create index idx_client_shop             on client(shop_id);
 
 create index idx_vehicle_shop            on vehicle(shop_id);
 create index idx_vehicle_client          on vehicle(client_id);
+create index idx_vehicle_model           on vehicle(model_id);
 
 create index idx_service_shop            on service(shop_id);
 
@@ -167,12 +180,15 @@ create index idx_job_status_history_job  on job_status_history(job_id);
 -- =============================================================================
 
 create or replace function set_updated_at()
-returns trigger as $$
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
 begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 create or replace trigger trg_client_updated_at      before update on client      for each row execute function set_updated_at();
 create or replace trigger trg_vehicle_updated_at     before update on vehicle     for each row execute function set_updated_at();
@@ -395,3 +411,4 @@ create policy tenant_isolation_select on job_status_history
   );
 
 alter table brand disable row level security;
+alter table model disable row level security;

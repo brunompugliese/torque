@@ -48,13 +48,25 @@ create table brand (
 );
 create unique index idx_brand_name_ci on brand (lower(name));
 
+-- Global catalog like brand: shared across shops, no RLS, same grants.
+create table model (
+  id       uuid primary key default gen_random_uuid(),
+  brand_id uuid not null references brand(id),
+  name     text not null,
+  enabled  boolean not null default true,
+  unique (id, brand_id) -- lets vehicle enforce "model belongs to this brand" via composite FK
+);
+create unique index idx_model_brand_name_ci on model (brand_id, lower(name)); -- one name per brand, case-insensitive; also serves brand_id lookups
+
+-- brand+model is intentionally NOT unique: many vehicles share a brand and model.
+-- Only the plate identifies a vehicle (unique per shop).
 create table vehicle (
   id         uuid primary key default gen_random_uuid(),
   shop_id    uuid not null references shop(id),
   client_id  uuid, -- optional: a vehicle doesn't require a known owner
   plate      text not null,
   brand_id   uuid not null references brand(id),
-  model      text not null,
+  model_id   uuid not null,
   year       int,
   vin        text,
   enabled    boolean not null default true,
@@ -62,7 +74,8 @@ create table vehicle (
   updated_at timestamptz not null default now(),
   unique (shop_id, plate), -- prevents the same physical car getting a duplicate row
   unique (id, shop_id),    -- lets other tables enforce "same shop as this vehicle" via composite FK
-  foreign key (client_id, shop_id) references client (id, shop_id) -- client must belong to the same shop as the vehicle
+  foreign key (client_id, shop_id) references client (id, shop_id), -- client must belong to the same shop as the vehicle
+  foreign key (model_id, brand_id) references model (id, brand_id)  -- model must belong to the vehicle's brand
 );
 
 -- Controlled vocabulary of job types. No price here on purpose —
@@ -115,6 +128,7 @@ create table job (
   enabled        boolean not null default true,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
+  unique (id, shop_id), -- lets job_item enforce "same shop as this job" via composite FK
   foreign key (vehicle_id, shop_id)     references vehicle (id, shop_id),     -- vehicle must belong to the same shop as the job
   foreign key (client_id, shop_id)      references client (id, shop_id),     -- client must belong to the same shop as the job
   foreign key (assigned_to, shop_id)    references profile (id, shop_id),    -- assignee must belong to the same shop as the job
@@ -126,13 +140,14 @@ create table job (
 -- was actually quoted or charged.
 create table job_item (
   id                 uuid primary key default gen_random_uuid(),
-  job_id             uuid not null references job(id),
+  job_id             uuid not null,
   shop_id            uuid not null, -- denormalized from job; set by trigger below, never sent by clients
   service_id         uuid not null, -- mandatory: every line is a named service
   quantity           numeric not null default 1,
   quoted_unit_price  numeric not null,
   final_unit_price   numeric, -- filled in once work is actually done; may differ from quoted
   created_at         timestamptz not null default now(),
+  foreign key (job_id, shop_id)     references job (id, shop_id),    -- job must belong to the same shop as the job_item (blocks re-pointing job_id to another tenant's job on update)
   foreign key (service_id, shop_id) references service (id, shop_id) -- service must belong to the same shop as the job_item
 );
 
@@ -158,6 +173,7 @@ create index idx_client_shop             on client(shop_id);
 
 create index idx_vehicle_shop            on vehicle(shop_id);
 create index idx_vehicle_client          on vehicle(client_id);
+create index idx_vehicle_model           on vehicle(model_id);
 
 create index idx_service_shop            on service(shop_id);
 
@@ -184,12 +200,15 @@ create index idx_job_status_history_job  on job_status_history(job_id);
 
 -- Generic updated_at bump, applied to every table that has the column.
 create or replace function set_updated_at()
-returns trigger as $$
+returns trigger
+language plpgsql
+set search_path = '' -- pinned so callers can't shadow now() via search_path
+as $$
 begin
   new.updated_at = now();
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 create or replace trigger trg_client_updated_at      before update on client      for each row execute function set_updated_at();
 create or replace trigger trg_vehicle_updated_at     before update on vehicle     for each row execute function set_updated_at();
@@ -447,9 +466,49 @@ create policy tenant_isolation_select on job_status_history
     and public.is_current_profile_enabled()
   );
 
--- brand: shared catalog, no RLS. Grants alone control access:
--- anyone (even anon) can read; only logged-in users can manage entries.
+-- brand/model: shared catalogs, no RLS. Grants alone control access (see below).
+-- Disabled explicitly in case an auto-enable-RLS event trigger turned it on at create time.
 alter table brand disable row level security;
+alter table model disable row level security;
+
+-- =============================================================================
+-- GRANTS
+-- This project's default privileges give anon/authenticated only
+-- TRUNCATE/REFERENCES/TRIGGER/MAINTAIN on new tables — no SELECT/INSERT/
+-- UPDATE/DELETE — so Data API access must be granted explicitly here.
+-- TRUNCATE bypasses RLS, so it's revoked everywhere.
+-- =============================================================================
+
+-- brand: anyone (even anon) can read; only logged-in users can manage entries.
+grant select on public.brand to anon, authenticated;
 grant insert, update, delete on public.brand to authenticated;
-revoke insert, update, delete, truncate, references, trigger on public.brand from anon;
-revoke truncate, references, trigger on public.brand from authenticated;
+revoke insert, update, delete, truncate, references, trigger, maintain on public.brand from anon;
+revoke truncate, references, trigger, maintain on public.brand from authenticated;
+
+-- model: same access as brand.
+grant select on public.model to anon, authenticated;
+grant insert, update, delete on public.model to authenticated;
+revoke insert, update, delete, truncate, references, trigger, maintain on public.model from anon;
+revoke truncate, references, trigger, maintain on public.model from authenticated;
+
+-- shop and job_status_history are read-only for clients.
+grant select on public.shop to authenticated;
+
+grant select, insert, update, delete on public.profile     to authenticated;
+grant select, insert, update, delete on public.client      to authenticated;
+grant select, insert, update, delete on public.vehicle     to authenticated;
+grant select, insert, update, delete on public.service     to authenticated;
+grant select, insert, update, delete on public.appointment to authenticated;
+grant select, insert, update, delete on public.job         to authenticated;
+grant select, insert, update, delete on public.job_item    to authenticated;
+
+grant select on public.job_status_history to authenticated;
+
+-- Tenant tables: nothing for anon, no table-level admin privileges for authenticated.
+revoke all on public.shop, public.profile, public.client, public.vehicle, public.service,
+              public.appointment, public.job, public.job_item, public.job_status_history
+  from anon;
+revoke truncate, references, trigger, maintain
+  on public.shop, public.profile, public.client, public.vehicle, public.service,
+     public.appointment, public.job, public.job_item, public.job_status_history
+  from authenticated;
