@@ -5,10 +5,10 @@ node_modules/
 .branches
 .temp
 
-# dotenvx
-.env.keys
-.env.local
-.env.*.local
+# Environment files (only the placeholder template is committed)
+.env
+.env.*
+!.env.example
 
 
 # IDEs y code editors
