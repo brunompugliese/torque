@@ -123,6 +123,7 @@ create table job (
                    'completado', 'entregado', 'cancelado'
                  )), -- values constrained; order of transitions is NOT enforced, by choice
   observations   text,
+  kilometers     integer check (kilometers >= 0), -- odometer when the job was opened; kept per job (not on vehicle) to preserve mileage history
   quoted_total   numeric,
   final_total    numeric,
   enabled        boolean not null default true,
