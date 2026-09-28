@@ -37,6 +37,31 @@ Generic means: it takes data and callbacks through props, knows nothing about a 
 - **shadcn/ui primitives** are added with the shadcn CLI into `components/ui/` and edited as little as possible. Customize by wrapping them in `components/shared/`.
 - Components never call Supabase directly. They receive data from a page or call a Server Action.
 
+## Colors and theming
+
+Every color in the app is a CSS variable, so switching to another brand kit means editing one block of variables and no component code.
+
+- **One source.** Colors are defined only in `:root` in `src/app/globals.css`, using shadcn/ui's token names (`--background`, `--foreground`, `--card`, `--primary`, `--muted`, `--border`, `--ring`, …) and exposed to Tailwind through `@theme inline`.
+- **Components use tokens only.** Use token classes such as `bg-primary`, `text-muted-foreground` and `border-border`. Never use Tailwind palette colors (`bg-teal-600`, `text-gray-500`), hex or `rgb()` values, or arbitrary values (`bg-[#2F7A78]`) in components. Tints come from tokens too (`bg-primary/10`).
+- **New color needs get a new token.** If no token fits (for example status colors such as success or warning), add a semantic variable to `:root` (`--success`, `--success-foreground`), register it in `@theme inline`, and use it through its class. Name tokens by role, not by hue.
+- **Light mode only.** There is no dark theme and no `.dark` block. Backgrounds are never pure white (`#FFFFFF`).
+- **Changing brand kit:** replace the values in `:root`, keep the token names, then check text contrast (WCAG AA, 4.5:1 for body text) on `background`, `card` and `primary`.
+
+Current palette, *Sand & Teal*:
+
+| Token | Value | Use |
+|---|---|---|
+| `--background` | `#F4F1EA` | Page background (sand) |
+| `--card`, `--popover` | `#FAF8F3` | Raised surfaces |
+| `--foreground` | `#22302F` | Main text (ink) |
+| `--muted`, `--secondary`, `--accent` | `#E8E3D8` | Subtle fills, hover states |
+| `--muted-foreground` | `#6B6558` | Secondary text |
+| `--border`, `--input` | `#DAD3C5` | Borders, input outlines |
+| `--primary`, `--ring` | `#2F7A78` | Main actions, links, focus ring (teal) |
+| `--primary-foreground` | `#FAF8F3` | Text on primary |
+
+The remaining shadcn tokens (`destructive`, `chart-*`, `sidebar-*`, the `*-foreground` variants) are derived from the same palette when the frontend is scaffolded and recorded in this table.
+
 ## Data access
 
 - **Reads:** functions in `features/<domain>/queries.ts`, called from Server Components, using the server Supabase client from `lib/supabase/`.

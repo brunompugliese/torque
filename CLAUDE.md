@@ -9,7 +9,7 @@ Web app for managing mechanic shops. Vehicle-centric and multi-tenant: every sho
 - [docs/constitution.md](docs/constitution.md): product, principles, non-negotiable rules. Wins over any other instruction.
 - [docs/architecture.md](docs/architecture.md): stack, multi-tenancy, access model, planned folder structure.
 - [docs/database.md](docs/database.md): how to change the database: migrations, schema conventions, new table checklist, RLS tests.
-- [docs/conventions.md](docs/conventions.md): code conventions: reuse, naming, components, data access, forms, i18n, git.
+- [docs/conventions.md](docs/conventions.md): code conventions: reuse, naming, components, colors and theming, data access, forms, i18n, git.
 - [docs/environments.md](docs/environments.md): Supabase projects, and the checklist for setting up a new one.
 - [specs/README.md](specs/README.md): spec workflow and approval gates.
 - [db_schema.sql](db_schema.sql): commented description of the full database.
