@@ -1,7 +1,8 @@
 name: Database tests
 
-# Builds a throwaway Supabase database from the migrations and runs the pgTAP
-# tests in supabase/tests/. Never touches a hosted project.
+# Builds a throwaway Supabase database from the migrations (failing if any
+# migration doesn't apply) and runs the pgTAP tests in supabase/tests/.
+# Never touches a hosted project.
 
 on:
   pull_request:
@@ -26,6 +27,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Always runs: applying every migration to a fresh database proves they build.
+      - name: Start database and apply migrations
+        run: npx supabase db start
       - name: Check for tests
         id: tests
         run: |
@@ -35,9 +39,6 @@ jobs:
             echo "No pgTAP tests in supabase/tests/ yet; skipping."
             echo "found=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Start database
-        if: steps.tests.outputs.found == 'true'
-        run: npx supabase db start
       - name: Run pgTAP tests
         if: steps.tests.outputs.found == 'true'
         run: npx supabase test db
