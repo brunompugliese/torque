@@ -2,7 +2,7 @@
 
 Web app for managing mechanic shops. Vehicle-centric and multi-tenant: every shop's data is isolated from every other shop.
 
-**Status:** the Supabase database exists (schema, RLS, triggers, migrations). The Next.js frontend is not built yet.
+**Status:** the Supabase database exists (schema, RLS, triggers, migrations). The Next.js frontend has its app shell (layout, navigation, theme, i18n, tests); feature screens are not built yet.
 
 ## Read before working
 
@@ -13,10 +13,11 @@ Web app for managing mechanic shops. Vehicle-centric and multi-tenant: every sho
 - [docs/environments.md](docs/environments.md): Supabase projects, and the checklist for setting up a new one.
 - [specs/README.md](specs/README.md): spec workflow and approval gates.
 - [db_schema.sql](db_schema.sql): commented description of the full database.
+- [AGENTS.md](AGENTS.md): Next.js notes managed by `next dev`. This Next.js version may differ from what you know; read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
 ## Stack
 
-Supabase (Postgres, Data API, Auth, RLS) · Next.js App Router + TypeScript (planned) · shadcn/ui + Tailwind (planned) · next-intl, Spanish only (planned) · Zod · Vitest + pgTAP · GitHub + Vercel. Package manager: npm.
+Supabase (Postgres, Data API, Auth, RLS) · Next.js 16 App Router + TypeScript · shadcn/ui (Base UI) + Tailwind v4 · Phosphor icons · next-intl, Spanish only · Zod · Vitest + Testing Library + pgTAP · GitHub + Vercel. Package manager: npm. Node 22.13 or newer.
 
 ## Hard rules
 
@@ -27,6 +28,15 @@ Supabase (Postgres, Data API, Auth, RLS) · Next.js App Router + TypeScript (pla
 5. **Reuse first.** Search for existing components, schemas and helpers before creating new ones. Anything plausibly reusable goes in `components/shared/` or `lib/`.
 6. **Language.** Code, comments and docs in English. UI text in Spanish, only via `next-intl` messages. DB status values stay in Spanish.
 7. **Tests.** RLS changes need pgTAP tests; logic and validation need Vitest tests. Don't call a task done until they pass.
+
+## Commands
+
+```bash
+npm run dev      # Start the app on http://localhost:3000
+npm test         # Run Vitest once (npm run test:watch to watch)
+npm run lint     # ESLint
+npm run build    # Production build
+```
 
 ## Database changes
 
@@ -45,3 +55,7 @@ Never run `npx supabase db push` or anything else that changes a hosted database
 3. Run the tests.
 4. Update docs, specs and `db_schema.sql` if behavior changed.
 5. Work on a branch and open a PR; never commit directly to `main`.
+
+## Git
+
+Never run a git or GitHub CLI command (`git`, `gh`) without the owner's explicit approval, including read-only ones such as `git status`. Ask first, say exactly which command and why, and wait for a yes. Approval covers only the command asked about, not later ones.
