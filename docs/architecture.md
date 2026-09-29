@@ -14,11 +14,11 @@ Browser ──► Next.js on Vercel (will) ──► Supabase Data API (PostgRES
 | Database | Supabase Postgres 17 | Exists |
 | API | Supabase auto-generated Data API | Exists |
 | Auth | Supabase Auth (email/password) | Exists |
-| Frontend | Next.js (App Router, TypeScript) | Planned |
-| UI | shadcn/ui + Tailwind CSS | Planned |
-| i18n | `next-intl`, Spanish only | Planned |
+| Frontend | Next.js 16 (App Router, TypeScript) | App shell exists (spec 001); feature screens planned |
+| UI | shadcn/ui (Base UI) + Tailwind CSS v4, Phosphor icons | Exists |
+| i18n | `next-intl`, Spanish only | Exists |
 | Validation | Zod | Planned |
-| Tests | pgTAP for RLS, Vitest for unit tests | Planned |
+| Tests | pgTAP for RLS, Vitest + Testing Library for unit and component tests | Vitest exists; pgTAP set up in CI |
 | Hosting | GitHub (code), Vercel (frontend), Supabase (backend) | Code on GitHub; deployments planned |
 
 ## Backend (exists)
@@ -72,7 +72,7 @@ Roles (`owner`, `receptionist`, `mechanic`) do not change data access: every ena
 - `supabase/migrations/`: source of truth for the deployed state. Naming: `<timestamp>_<type>[-<subject>].sql`, where type is `ddl` (structure, policies, triggers), `dcl` (grants/revokes) or `data-insert-<table>-<nnn>` (reference data).
 - `db_schema.sql`: human-readable, commented description of the full current schema. Not executed; updated alongside every migration.
 
-## Frontend (planned)
+## Frontend (partly built)
 
 ### Principles
 
@@ -82,23 +82,36 @@ Roles (`owner`, `receptionist`, `mechanic`) do not change data access: every ena
 - **One validation, two uses.** Each Zod schema will validate the form on the client and the input in the Server Action.
 - **Spanish UI through `next-intl`.** A single `es` locale, no locale prefix in URLs. Dates, numbers and currency will be formatted through `next-intl`/`Intl`, never by hand. DB status values will be mapped to display labels in the message files.
 
-### Planned structure
+### App shell (exists)
+
+- Every signed-in screen lives in the `src/app/(app)/` route group, whose layout renders the top bar, the page content and the floating bottom navigation. Pages that must not show the shell (e.g. login) will live outside that group.
+- URLs are Spanish (`/vehiculos`, `/clientes`, `/turnos`, `/trabajos`). The sections are defined once in `src/lib/navigation.ts`.
+- `next-intl` runs without i18n routing: `src/i18n/request.ts` fixes the `es` locale, and `src/global.d.ts` type-checks message keys against `messages/es.json`.
+- The theme lives in `src/app/globals.css` (see [conventions.md](conventions.md#colors-and-theming)).
+
+### Structure
+
+Folders marked *(planned)* don't exist yet.
 
 ```
 src/
   app/                  # Routes (App Router). Thin: compose features, no business logic
+    (app)/              # Routes that show the app shell
+      _components/      # Components used only by this layout (e.g. MainNav)
+  i18n/request.ts       # next-intl config (fixed es locale)
   components/
     ui/                 # shadcn/ui primitives (generated, edited sparingly)
     shared/             # Reusable composed components (data table, calendar, form fields, status badge…)
-  features/<domain>/    # Per-domain code: vehicle, client, job, appointment, service…
+  features/<domain>/    # (planned) Per-domain code: vehicle, client, job, appointment, service…
     components/         # Components specific to this domain
     actions.ts          # Server Actions
     queries.ts          # Data access (Supabase queries)
     schemas.ts          # Zod schemas
   lib/
-    supabase/           # Supabase client factories (server, browser, middleware)
-    utils/              # Generic helpers
-  types/database.ts     # Generated Supabase types
+    supabase/           # (planned) Supabase client factories (server, browser, middleware)
+    navigation.ts       # App sections for the navigation
+    utils.ts            # cn() and other generic helpers
+  types/database.ts     # (planned) Generated Supabase types
 messages/es.json        # UI text
 supabase/tests/         # pgTAP RLS tests
 ```

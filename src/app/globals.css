@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Light mode only. Nothing sets a `.dark` class, so shadcn's `dark:` utilities
+   never apply; without this line Tailwind would tie them to the OS setting. */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Brand kit: Sand & Teal. The only place colors are defined; see
+   docs/conventions.md#colors-and-theming before changing it. */
+:root {
+  --background: #f4f1ea;
+  --foreground: #22302f;
+  --card: #faf8f3;
+  --card-foreground: #22302f;
+  --popover: #faf8f3;
+  --popover-foreground: #22302f;
+  --primary: #2f7a78;
+  --primary-foreground: #faf8f3;
+  --secondary: #e8e3d8;
+  --secondary-foreground: #22302f;
+  --muted: #e8e3d8;
+  --muted-foreground: #6b6558;
+  --accent: #e8e3d8;
+  --accent-foreground: #22302f;
+  --destructive: #b4442f;
+  --border: #dad3c5;
+  --input: #dad3c5;
+  --ring: #2f7a78;
+  --chart-1: #2f7a78;
+  --chart-2: #6fa9a6;
+  --chart-3: #c08a3e;
+  --chart-4: #8a7f6b;
+  --chart-5: #22302f;
+  --radius: 0.625rem;
+  --sidebar: #faf8f3;
+  --sidebar-foreground: #22302f;
+  --sidebar-primary: #2f7a78;
+  --sidebar-primary-foreground: #faf8f3;
+  --sidebar-accent: #e8e3d8;
+  --sidebar-accent-foreground: #22302f;
+  --sidebar-border: #dad3c5;
+  --sidebar-ring: #2f7a78;
+
+  /* Floating bottom navigation. The bar and the space <main> reserves for it
+     both read these, so they can't drift apart. */
+  --floating-nav-height: 3.5rem;
+  --floating-nav-offset: 0.75rem;
+  --floating-nav-space: calc(
+    var(--floating-nav-height) + var(--floating-nav-offset) + 1rem
+  );
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}

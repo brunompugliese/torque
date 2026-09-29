@@ -1,0 +1,36 @@
+name: Frontend
+
+# Lints, tests and builds the Next.js app. Needs no secrets: no page reads
+# data yet, so the build doesn't contact Supabase.
+
+on:
+  pull_request:
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
+      - "specs/**"
+      - "**/*.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "supabase/**"
+      - "docs/**"
+      - "specs/**"
+      - "**/*.md"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build

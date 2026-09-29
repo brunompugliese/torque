@@ -35,6 +35,7 @@ Generic means: it takes data and callbacks through props, knows nothing about a 
 
 - **Server Components by default.** Add `"use client"` only for interactivity (state, events, browser APIs), and keep client components small.
 - **shadcn/ui primitives** are added with the shadcn CLI into `components/ui/` and edited as little as possible. Customize by wrapping them in `components/shared/`.
+- **Icons come from Phosphor** (`@phosphor-icons/react`; use `@phosphor-icons/react/ssr` in Server Components) with the `*Icon` names (`HouseIcon`, not the deprecated `House`). `components.json` sets `iconLibrary` to `phosphor`, so shadcn components use it too. Don't add other icon libraries. Use the `regular` weight by default and `fill` for active or selected states.
 - Components never call Supabase directly. They receive data from a page or call a Server Action.
 
 ## Colors and theming
@@ -59,8 +60,14 @@ Current palette, *Sand & Teal*:
 | `--border`, `--input` | `#DAD3C5` | Borders, input outlines |
 | `--primary`, `--ring` | `#2F7A78` | Main actions, links, focus ring (teal) |
 | `--primary-foreground` | `#FAF8F3` | Text on primary |
+| `--card-foreground`, `--popover-foreground`, `--secondary-foreground`, `--accent-foreground` | `#22302F` | Text on those surfaces |
+| `--destructive` | `#B4442F` | Errors and destructive actions |
+| `--chart-1` … `--chart-5` | `#2F7A78`, `#6FA9A6`, `#C08A3E`, `#8A7F6B`, `#22302F` | Chart series |
+| `--sidebar-*` | Same values as `card`, `foreground`, `primary`, `accent`, `border` and `ring` | shadcn sidebar component |
 
-The remaining shadcn tokens (`destructive`, `chart-*`, `sidebar-*`, the `*-foreground` variants) are derived from the same palette when the frontend is scaffolded and recorded in this table.
+Shadcn's `dark:` utilities stay in the generated components but never apply: `globals.css` binds them to a `.dark` class that the app never sets.
+
+Layout sizes that must stay in sync also live in `:root` (for example `--floating-nav-height`, `--floating-nav-offset`, `--floating-nav-space`).
 
 ## Data access
 
@@ -110,3 +117,4 @@ Explain **why**, not what. Business decisions and non-obvious constraints get a 
 - Never commit to `main`. One branch per spec or change: `feat/<name>`, `fix/<name>`, `docs/<name>`, `chore/<name>`.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `feat: add vehicle search`.
 - Merge through a PR; tests must pass.
+- **Agents never run git or GitHub CLI commands (`git`, `gh`) without the owner's explicit approval**, read-only ones included. They ask first, naming the exact command and why, and approval covers only that command. The owner's `.claude/settings.local.json` also marks these commands as "ask", so each one needs a confirmation.

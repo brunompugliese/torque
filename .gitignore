@@ -17,3 +17,18 @@ node_modules/
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/launch.json
+# Next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+
+# Testing
+/coverage
+
+# Misc
+.DS_Store
+*.pem
+npm-debug.log*
