@@ -26,26 +26,41 @@ Without it, JWTs have no `shop_id` claim and RLS denies every query.
 
 - [ ] Authentication → Hooks → *Customize Access Token*: enable it and select the Postgres function `public.custom_access_token_hook`.
 
-### 3. Auth URLs (required)
+### 3. Auth settings (required)
+
+See [specs/002-login/design.md](../specs/002-login/design.md#supabase-dashboard-settings-not-in-migrations) for the reasons.
+
+- [ ] Authentication → Sign In / Providers → **Allow new users to sign up**: off. Accounts are created only in the dashboard.
+- [ ] Email provider → **Confirm email**: on.
+- [ ] Password → **Minimum length**: 12. **Requirements**: none. **Leaked password protection**: off.
+- [ ] Sessions → time-box and inactivity timeout: off (the app enforces its own 24-hour inactivity limit).
+- [ ] Rate limits → sign-ins: keep the default or lower.
+- [ ] JWT signing keys: asymmetric (e.g. ES256), recommended so the app can verify tokens without a network call.
+
+### 4. Auth URLs (required)
 
 - [ ] Authentication → URL Configuration → **Site URL**: the app's domain for this environment (e.g. the production Vercel domain).
 - [ ] **Redirect URLs**: add the same domain (with `/**`) so auth emails such as password reset link back to the app.
 
-### 4. Vercel (required)
+### 5. Vercel (required)
 
-- [ ] Copy the new project's URL and publishable (anon) key from Project Settings → API.
-- [ ] Add them as environment variables in the Vercel project, scoped to the right environment (Production for the prod project). Never commit them.
+All three variables are server-only; never use the `NEXT_PUBLIC_` prefix for them. See `.env.example`.
+
+- [ ] `SUPABASE_URL`: Project Settings → Data API (Project URL).
+- [ ] `SUPABASE_ANON_KEY`: Project Settings → API Keys (publishable key, or the legacy anon key).
+- [ ] `SESSION_COOKIE_SECRET`: a new random value for this environment (`openssl rand -base64 32`), marked **Sensitive**. Changing it signs everyone in that environment out.
+- [ ] Scope each variable to the right Vercel environment (Production for the prod project). Never commit them.
 - [ ] Redeploy so the new values take effect.
 
-### 5. Data
+### 6. Data
 
 - [ ] Create the shop(s), auth users and their profiles in the dashboard.
 
-### 6. Verify
+### 7. Verify
 
 - [ ] Log in to the app as a user of each shop.
 - [ ] Confirm the JWT contains `shop_id` and that each user sees only their own shop's data.
 
-### 7. Relink
+### 8. Relink
 
 - [ ] Link back to `torque-dev` (`npx supabase link --project-ref <dev-project-ref>`) so future `db push` runs don't hit production by accident.

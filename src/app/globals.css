@@ -105,4 +105,26 @@
   html {
     @apply font-sans;
   }
+
+  /* Every enabled clickable element shows the hand pointer, app-wide, so no
+     component needs its own cursor class (docs/conventions.md). */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  select:not(:disabled),
+  label[for],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:is([type="submit"], [type="button"], [type="reset"]):disabled {
+    cursor: not-allowed;
+  }
 }

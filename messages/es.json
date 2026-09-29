@@ -10,5 +10,31 @@
     "clients": "Clientes",
     "appointments": "Turnos",
     "jobs": "Trabajos"
+  },
+  "validation": {
+    "emailRequired": "Ingresá tu email.",
+    "emailInvalid": "Ingresá un email válido.",
+    "passwordRequired": "Ingresá tu contraseña.",
+    "passwordTooShort": "La contraseña debe tener al menos 12 caracteres.",
+    "passwordTooLong": "La contraseña es demasiado larga."
+  },
+  "auth": {
+    "login": {
+      "title": "Iniciar sesión",
+      "email": "Email",
+      "password": "Contraseña",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña",
+      "submit": "Iniciar sesión",
+      "submitting": "Iniciando sesión…"
+    },
+    "signOut": "Cerrar sesión",
+    "errors": {
+      "invalidCredentials": "Email o contraseña incorrectos.",
+      "rateLimited": "Demasiados intentos. Esperá unos minutos y volvé a intentar.",
+      "accountUnavailable": "Tu cuenta no está habilitada. Contactá al responsable del taller.",
+      "sessionExpired": "Tu sesión se cerró por inactividad. Iniciá sesión de nuevo.",
+      "unexpected": "No se pudo iniciar sesión. Intentá de nuevo."
+    }
   }
 }

@@ -13,7 +13,7 @@ Browser ──► Next.js on Vercel (will) ──► Supabase Data API (PostgRES
 |---|---|---|
 | Database | Supabase Postgres 17 | Exists |
 | API | Supabase auto-generated Data API | Exists |
-| Auth | Supabase Auth (email/password) | Exists |
+| Auth | Supabase Auth (email/password), server-side sign-in with encrypted session cookies | Exists (spec 002) |
 | Frontend | Next.js 16 (App Router, TypeScript) | App shell exists (spec 001); feature screens planned |
 | UI | shadcn/ui (Base UI) + Tailwind CSS v4, Phosphor icons | Exists |
 | i18n | `next-intl`, Spanish only | Exists |
@@ -89,6 +89,16 @@ Roles (`owner`, `receptionist`, `mechanic`) do not change data access: every ena
 - `next-intl` runs without i18n routing: `src/i18n/request.ts` fixes the `es` locale, and `src/global.d.ts` type-checks message keys against `messages/es.json`.
 - The theme lives in `src/app/globals.css` (see [conventions.md](conventions.md#colors-and-theming)).
 
+### Authentication (exists)
+
+Designed in [specs/002-login](../specs/002-login/design.md).
+
+- **Sign-in and sign-out run on the server** (Server Actions in `src/features/auth/actions.ts`). No Supabase client exists in the browser.
+- **Session cookie:** the tokens `@supabase/ssr` would store, plus a last-activity stamp, are encrypted with AES-256-GCM (`SESSION_COOKIE_SECRET`) and stored in `HttpOnly` `torque-session.<n>` cookies (`src/lib/auth/session-store.ts`). The browser sees only ciphertext.
+- **Proxy** (`src/proxy.ts` → `src/lib/supabase/proxy.ts`), on every request except static assets: verifies and refreshes the session (`getClaims`), signs out sessions idle for more than 24 hours (revoking the refresh token), and redirects signed-out visitors from every path except `/ingresar`. This is the optimistic layer.
+- **DAL** (`src/lib/auth/session.ts`): `requireSession()` is the authoritative check, called by every app page and before every data access. It verifies the token and requires the `shop_id` claim; users without one are signed out through `GET /salir`.
+- **Security headers** are set in `next.config.ts` (framing forbidden, `nosniff`, referrer and permissions policies, HSTS in production). `npm run check:bundle` fails the build in CI if Supabase details appear in browser bundles.
+
 ### Structure
 
 Folders marked *(planned)* don't exist yet.
@@ -102,13 +112,14 @@ src/
   components/
     ui/                 # shadcn/ui primitives (generated, edited sparingly)
     shared/             # Reusable composed components (data table, calendar, form fields, status badge…)
-  features/<domain>/    # (planned) Per-domain code: vehicle, client, job, appointment, service…
+  features/<domain>/    # Per-domain code (auth and shop exist): vehicle, client, job, appointment, service…
     components/         # Components specific to this domain
     actions.ts          # Server Actions
     queries.ts          # Data access (Supabase queries)
     schemas.ts          # Zod schemas
   lib/
-    supabase/           # (planned) Supabase client factories (server, browser, middleware)
+    auth/               # Session store, inactivity rules, redirects, DAL (requireSession)
+    supabase/           # Server and proxy Supabase clients (no browser client)
     navigation.ts       # App sections for the navigation
     utils.ts            # cn() and other generic helpers
   types/database.ts     # (planned) Generated Supabase types
@@ -120,7 +131,7 @@ Rule of placement: code starts in `features/<domain>/`. As soon as a second doma
 
 ### Environments and configuration
 
-- Configuration will come from environment variables: `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` for the app. Values live in `.env.local` locally and in Vercel project settings for deployments. Only `.env.example` is committed.
+- Configuration comes from server-only environment variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SESSION_COOKIE_SECRET`, validated on first use by `src/lib/env.ts`. None use the `NEXT_PUBLIC_` prefix, so none reach the browser. Values live in `.env.local` locally and in Vercel project settings for deployments. Only `.env.example` is committed.
 - There is no local Supabase stack. Local development and Vercel both point to the hosted `torque-dev` project, where the access token hook is registered in the dashboard.
 - Migrations are applied by the project owner with `npx supabase db push` to the linked project. Agents write migrations but never apply them.
 - A separate production project will be created later. Vercel Production will point to it, while local development and Vercel Preview deployments stay on `torque-dev`. See [environments.md](environments.md) for the setup checklist.

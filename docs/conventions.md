@@ -37,6 +37,9 @@ Generic means: it takes data and callbacks through props, knows nothing about a 
 - **shadcn/ui primitives** are added with the shadcn CLI into `components/ui/` and edited as little as possible. Customize by wrapping them in `components/shared/`.
 - **Icons come from Phosphor** (`@phosphor-icons/react`; use `@phosphor-icons/react/ssr` in Server Components) with the `*Icon` names (`HouseIcon`, not the deprecated `House`). `components.json` sets `iconLibrary` to `phosphor`, so shadcn components use it too. Don't add other icon libraries. Use the `regular` weight by default and `fill` for active or selected states.
 - Components never call Supabase directly. They receive data from a page or call a Server Action.
+- **Hand pointer on everything clickable.** A base rule in `src/app/globals.css` gives every enabled button, link, `[role="button"]`, `summary`, `select`, `label[for]` and clickable input `cursor: pointer`, and disabled buttons `cursor: not-allowed`. Don't add `cursor-*` classes to components; if a new kind of clickable element isn't covered, extend that rule.
+- **Forms use shadcn `Field`** (`Field`, `FieldLabel`, `FieldError`) for every field, with `aria-invalid` and `aria-describedby` pointing at the error. Field errors are plain text under the field, without a box.
+- **Messages about a whole form go in `FormAlert`** (`src/components/shared/form-alert.tsx`): a box with a translucent tint of its color as background (`bg-destructive/10`) and a matching border. Any message shown inside a container follows this pattern; add variants to `FormAlert` (with their own semantic tokens) instead of styling alerts ad hoc.
 
 ## Colors and theming
 
@@ -68,6 +71,16 @@ Current palette, *Sand & Teal*:
 Shadcn's `dark:` utilities stay in the generated components but never apply: `globals.css` binds them to a `.dark` class that the app never sets.
 
 Layout sizes that must stay in sync also live in `:root` (for example `--floating-nav-height`, `--floating-nav-offset`, `--floating-nav-space`).
+
+## Authentication and sessions
+
+- **Every app page and every data access calls `requireSession()`** from `src/lib/auth/session.ts`. Layouts don't re-render on client navigation, so a check in the layout alone is not enough.
+- Identify the user only with `getSession()`/`requireSession()` (verified claims). Never use `supabase.auth.getSession()` on the server: it trusts the cookie without verifying it.
+- Create Supabase clients only with `createServerSupabase()` (`src/lib/supabase/server.ts`). Never create a browser client, never use the `service_role` key, and never give an env var the `NEXT_PUBLIC_` prefix unless it is truly public.
+- Never pass session objects, tokens, user ids or shop ids to Client Components; pass only the values they display.
+- Auth errors shown to users must not reveal whether an account exists (see `mapAuthError`). Log error codes, never emails, passwords or tokens.
+- Redirect targets that come from the URL go through `getSafeRedirectPath()`.
+- Field validation messages live under `validation.*` in `messages/es.json` and are shared by every form; feature-specific messages live under the feature's namespace (e.g. `auth.errors.*`).
 
 ## Data access
 

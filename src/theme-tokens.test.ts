@@ -65,8 +65,9 @@ describe("findColorViolations", () => {
 describe("app source uses theme tokens only", () => {
   const root = join(__dirname, "..");
   const files = [
-    ...sourceFiles(join(root, "src/components")),
-    ...sourceFiles(join(root, "src/app")),
+    // All of src (components, app, features, lib); globals.css isn't a
+    // .ts/.tsx file, so the one place colors are defined stays exempt.
+    ...sourceFiles(join(root, "src")),
   ];
 
   it.each(files.map((file) => [relative(root, file), file]))(
