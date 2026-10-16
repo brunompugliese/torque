@@ -884,9 +884,13 @@ grant insert, update, delete on public.model to authenticated;
 revoke insert, update, delete, truncate, references, trigger, maintain on public.model from anon;
 revoke truncate, references, trigger, maintain on public.model from authenticated;
 
--- shop, profile and job_status_history are read-only for clients.
+-- shop, profile and job_status_history are read-only for clients: SELECT is
+-- granted and writes are revoked explicitly, because the Supabase default
+-- privileges may already have granted them (RLS alone would only make writes
+-- match zero rows instead of failing).
 grant select on public.shop    to authenticated;
 grant select on public.profile to authenticated;
+revoke insert, update, delete on public.shop, public.profile, public.job_status_history from authenticated;
 
 grant select, insert, update, delete on public.client      to authenticated;
 grant select, insert, update, delete on public.vehicle     to authenticated;
