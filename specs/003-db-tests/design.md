@@ -16,6 +16,8 @@ None. Tests only; no migrations, no `db_schema.sql` changes.
 
 If a test reveals a bug in a migration, the fix is a new migration in its own task, reflected in `db_schema.sql`, and the spec is updated first (specs/README rule).
 
+Found during implementation (2026-10-16): `shop` and `job_status_history` were read-only only through RLS. With Supabase's default privileges, `authenticated` kept UPDATE/DELETE grants, so writes matched zero rows instead of failing. Fixed by `20261016000000_dcl-read-only-tables.sql` (task 2a), which revokes them, matching `profile`.
+
 ## Test files
 
 ```
