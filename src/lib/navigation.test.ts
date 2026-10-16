@@ -22,7 +22,7 @@ describe("isNavItemActive", () => {
 describe("NAV_ITEMS", () => {
   it("lists the five sections in order", () => {
     expect(NAV_ITEMS.map((item) => item.href)).toEqual([
-      "/",
+      "/inicio",
       "/vehiculos",
       "/clientes",
       "/turnos",

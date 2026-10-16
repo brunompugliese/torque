@@ -1,6 +1,6 @@
 # 002 — Login: Requirements
 
-**Status:** Approved
+**Status:** Done (revised 2026-10-15: page layout and copy from the owner's Login document, URLs `/login` and `/inicio`, sign-out toast)
 
 ## Problem
 
@@ -26,53 +26,55 @@ All roles (`owner`, `receptionist`, `mechanic`). Accounts, profiles and password
 
 Access control
 
-- [ ] Given a visitor without a session, when they request any path other than `/ingresar` (app pages such as `/vehiculos/123`, unknown paths, route handlers), then they are redirected to `/ingresar?next=<path>`. Only the static assets the login page itself needs (Next.js build files, fonts, favicon) are served without a session.
-- [ ] Given a signed-in user, when they open `/ingresar`, then they are redirected to `/`.
-- [ ] Given a signed-in user whose token has no `shop_id` claim (no profile, or the auth hook is missing), when they open an app page, then their session is ended and they are sent to `/ingresar` with the "account unavailable" message.
-- [ ] Given a signed-in user, when an app page renders, then the top bar shows "Torque × <shop name>".
+- [x] Given a visitor without a session, when they request any path other than `/login` (app pages such as `/vehiculos/123`, unknown paths, route handlers), then they are redirected to `/login?next=<path>`. Only the static assets the login page itself needs (Next.js build files, fonts, favicon) are served without a session.
+- [x] Given a signed-in user, when they open `/login`, then they are redirected to `/inicio`.
+
+- [x] Given anyone, when they open `/`, then they end up on `/inicio` (or on `/login` first, without a `next`, if signed out).
+- [x] Given a signed-in user whose token has no `shop_id` claim (no profile, or the auth hook is missing), when they open an app page, then their session is ended and they are sent to `/login` with the "account unavailable" message.
+- [x] Given a signed-in user, when an app page renders, then the top bar shows "Torque × <shop name>".
 
 Sign-in form
 
-- [ ] Given `/ingresar`, when it loads, then it shows the "Torque" name, a centered "Iniciar sesión" heading (no subtitle), an email field, a password field, a show/hide password control and an "Iniciar sesión" button, and the email field has focus.
-- [ ] Given the form, when inspected, then the email field has `type="email"` and `autocomplete="username"`, and the password field has `autocomplete="current-password"`, so password managers work.
-- [ ] Given the password field, when the user activates the show/hide control, then the password toggles between hidden and visible, and the control's accessible name and `aria-pressed` state reflect it.
-- [ ] Given an empty or malformed email, or an empty password, when the user submits, then a Spanish message appears under the field, the field is marked `aria-invalid`, and no request reaches Supabase Auth.
-- [ ] Given the same invalid input sent directly to the server (bypassing the browser), when the server action runs, then it rejects it with the same validation and does not call Supabase Auth.
-- [ ] Given an email longer than 254 characters, when submitted, then it is rejected by validation.
-- [ ] Given a non-empty password of any length or content, when submitted, then the form sends it to the server as typed (no length or character rules at sign-in); only Supabase Auth decides whether it's correct. Password rules apply only where passwords are created or changed.
-- [ ] Given a submission in progress, when the user looks at the form, then the button is disabled and shows a pending label, so the form can't be submitted twice.
-- [ ] Given any enabled clickable element in the app (buttons, links, the show/hide password control, the navigation items), when the mouse is over it, then the pointer is a hand. Disabled buttons show the not-allowed pointer instead.
-- [ ] Given a form-level error such as "Email o contraseña incorrectos.", when it is shown inside a container (box), then the container has a translucent tint of the error color as its background, with a matching border, so the message stands out while staying legible. Field errors shown as plain text under a field have no container.
+- [x] Given `/login`, when it loads, then it shows no header or navbar: on the page background, a centered white panel about 380px wide with a 12px radius and a border, containing the Torque logo (64px rounded square) with "Torque" below it, the heading "Ingresar" (18px semibold), an email field, a password field with a show/hide control ("Mostrar contraseña" / "Ocultar contraseña") and a full-width "Ingresar" button; the email field has focus. The login page shows product branding, not a shop's, because before sign-in the shop is unknown.
+- [x] Given the form, when inspected, then the email field has `type="email"` and `autocomplete="username"`, and the password field has `autocomplete="current-password"`, so password managers work.
+- [x] Given the password field, when the user activates the show/hide control, then the password toggles between hidden and visible, and the control's accessible name and `aria-pressed` state reflect it.
+- [x] Given an empty or malformed email, or an empty password, when the user submits, then a Spanish message appears under the field, the field is marked `aria-invalid`, and no request reaches Supabase Auth.
+- [x] Given the same invalid input sent directly to the server (bypassing the browser), when the server action runs, then it rejects it with the same validation and does not call Supabase Auth.
+- [x] Given an email longer than 254 characters, when submitted, then it is rejected by validation.
+- [x] Given a non-empty password of any length or content, when submitted, then the form sends it to the server as typed (no length or character rules at sign-in); only Supabase Auth decides whether it's correct. Password rules apply only where passwords are created or changed.
+- [x] Given a submission in progress, when the user looks at the form, then the button is disabled and shows a spinner next to its label, so the form can't be submitted twice. Enter submits the form.
+- [x] Given any enabled clickable element in the app (buttons, links, the show/hide password control, the navigation items), when the mouse is over it, then the pointer is a hand. Disabled buttons show the not-allowed pointer instead.
+- [x] Given a form-level error such as "El email o la contraseña no son correctos.", when it is shown inside a container (box), then the container has a translucent tint of the error color as its background, with a matching border, so the message stands out while staying legible. Field errors shown as plain text under a field have no container.
 
 Sign-in outcomes
 
-- [ ] Given valid credentials of an enabled profile, when the user submits, then they are signed in and sent to the validated `next` path, or `/` if there is none.
-- [ ] Given a `next` value that is not a same-site relative path (e.g. `https://evil.example`, `//evil.example`, `/\evil.example`, `javascript:alert(1)`), when sign-in succeeds, then the user is sent to `/`.
-- [ ] Given a wrong password, an unknown email, a disabled (banned) profile or an unconfirmed email, when the user submits, then the same message is shown: "Email o contraseña incorrectos." The email stays filled in (kept by the browser, not echoed back by the server) and the password is cleared.
-- [ ] Given Supabase Auth rate-limits the request, when the user submits, then they see "Demasiados intentos. Esperá unos minutos y volvé a intentar."
-- [ ] Given valid credentials of a user with no profile (no `shop_id` claim), when they submit, then their session is ended immediately and they see "Tu cuenta no está habilitada. Contactá al responsable del taller."
-- [ ] Given any other failure, when the user submits, then they see a generic "No se pudo iniciar sesión. Intentá de nuevo." and the server logs only the error code, never the email or password.
+- [x] Given valid credentials of an enabled profile, when the user submits, then they are signed in and sent to the validated `next` path, or `/inicio` (Inicio) if there is none.
+- [x] Given a `next` value that is not a same-site relative path (e.g. `https://evil.example`, `//evil.example`, `/\evil.example`, `javascript:alert(1)`), when sign-in succeeds, then the user is sent to `/inicio`.
+- [x] Given a wrong password, an unknown email, a disabled (banned) profile or an unconfirmed email, when the user submits, then the same message is shown above the button: "El email o la contraseña no son correctos." It never says which one failed. The email stays filled in (kept by the browser, not echoed back by the server), and the password is cleared and focused.
+- [x] Given Supabase Auth rate-limits the request, when the user submits, then they see "Demasiados intentos. Esperá unos minutos y volvé a intentar."
+- [x] Given valid credentials of a user with no profile (no `shop_id` claim), when they submit, then their session is ended immediately and they see "Tu cuenta no está habilitada. Contactá al responsable del taller."
+- [x] Given any other failure, when the user submits, then they see a generic "No se pudo iniciar sesión. Intentá de nuevo." and the server logs only the error code, never the email or password.
 
 Sign-out
 
-- [ ] Given a signed-in user, when they activate "Cerrar sesión" in the top bar, then the session on this device is ended, the auth cookies are removed, and they land on `/ingresar`.
-- [ ] Given a signed-out user, when they press the browser's back button, then app pages do not show data from the previous session (they redirect to `/ingresar`).
+- [x] Given a signed-in user, when they activate "Cerrar sesión" in the top bar, then the session on this device is ended, the auth cookies are removed, and they land on `/login` with a toast "Cerraste sesión." (bottom right, about 3 seconds, announced to screen readers). Reloading the page doesn't show the toast again.
+- [x] Given a signed-out user, when they press the browser's back button, then app pages do not show data from the previous session (they redirect to `/login`).
 
 Session lifetime
 
-- [ ] Given a signed-in user whose access token has expired (Supabase's default is 1 hour), when they open a page or submit a form, then the session is refreshed on the server without asking for the password again.
-- [ ] Given a signed-in user who used the app less than 24 hours ago, when they open it again (even after closing the browser), then they are still signed in.
-- [ ] Given a signed-in user whose last request was more than 24 hours ago, when they open any page, then the session is ended on the server (the refresh token is revoked, not just the cookie deleted) and they are sent to `/ingresar` with "Tu sesión se cerró por inactividad. Iniciá sesión de nuevo."
-- [ ] Given a signed-in user, when they make any request, then the 24-hour window starts again from that request.
+- [x] Given a signed-in user whose access token has expired (Supabase's default is 1 hour), when they open a page or submit a form, then the session is refreshed on the server without asking for the password again.
+- [x] Given a signed-in user who used the app less than 24 hours ago, when they open it again (even after closing the browser), then they are still signed in.
+- [x] Given a signed-in user whose last request was more than 24 hours ago, when they open any page, then the session is ended on the server (the refresh token is revoked, not just the cookie deleted) and they are sent to `/login` with "Tu sesión se cerró por inactividad. Iniciá sesión de nuevo."
+- [x] Given a signed-in user, when they make any request, then the 24-hour window starts again from that request.
 
 Session and transport security
 
-- [ ] Given a successful sign-in, when the auth cookies are inspected, then they are `HttpOnly`, `SameSite=Lax`, `Secure` outside local development, named without the Supabase project ref, and their values are encrypted: no token, email, user id or shop id can be read from them.
-- [ ] Given any page, when its response headers are inspected, then it forbids framing (`X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'`) and sends `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` and a restrictive `Permissions-Policy`.
-- [ ] Given the server checks who the user is, when it does so, then it uses a verified token (`getClaims`), never the unverified cookie session (`getSession`).
-- [ ] Given the codebase, when searched, then the `service_role` key is not used and no Supabase browser client is created.
-- [ ] Given the page source, JavaScript bundles and network responses, when inspected, then they contain no Supabase URL, anon key, access or refresh token, user id or shop id. (The only credential that ever travels is the password the user types, sent once over HTTPS in the sign-in request.)
-- [ ] Given any response, when its headers are inspected, then there is no `X-Powered-By` header.
+- [x] Given a successful sign-in, when the auth cookies are inspected, then they are `HttpOnly`, `SameSite=Lax`, `Secure` outside local development, named without the Supabase project ref, and their values are encrypted: no token, email, user id or shop id can be read from them.
+- [x] Given any page, when its response headers are inspected, then it forbids framing (`X-Frame-Options: DENY` and `Content-Security-Policy: frame-ancestors 'none'`) and sends `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` and a restrictive `Permissions-Policy`.
+- [x] Given the server checks who the user is, when it does so, then it uses a verified token (`getClaims`), never the unverified cookie session (`getSession`).
+- [x] Given the codebase, when searched, then the `service_role` key is not used and no Supabase browser client is created.
+- [x] Given the page source, JavaScript bundles and network responses, when inspected, then they contain no Supabase URL, anon key, access or refresh token, user id or shop id. (The only credential that ever travels is the password the user types, sent once over HTTPS in the sign-in request.)
+- [x] Given any response, when its headers are inspected, then there is no `X-Powered-By` header.
 
 ## Out of scope
 
@@ -87,4 +89,4 @@ Session and transport security
 
 ## Open questions
 
-- None. Decided with the owner: no self-service reset, no CAPTCHA, MFA later, URL `/ingresar`, passwords of at least 12 characters with no other rules when they are set (dashboard now, a future registration or password-change form later) but no password rules at sign-in, no breached-password checks, encrypted session cookies, 24-hour sliding inactivity timeout, no disposable-email check at login (it belongs to future forms that collect emails), rate limiting in the backlog, hand pointer on every clickable element, tinted background on error containers.
+- None. Decided with the owner: no self-service reset, no CAPTCHA, MFA later, URL `/login` with Inicio at `/inicio` (revised 2026-10-15; was `/ingresar` and `/`), Torque branding on the login page (the shop is unknown before sign-in), 24-hour inactivity timeout kept over "session until sign-out", header redesign in its own spec, passwords of at least 12 characters with no other rules when they are set (dashboard now, a future registration or password-change form later) but no password rules at sign-in, no breached-password checks, encrypted session cookies, 24-hour sliding inactivity timeout, no disposable-email check at login (it belongs to future forms that collect emails), rate limiting in the backlog, hand pointer on every clickable element, tinted background on error containers.

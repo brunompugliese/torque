@@ -1,11 +1,12 @@
-export const LOGIN_PATH = "/ingresar";
+export const LOGIN_PATH = "/login";
 export const SIGN_OUT_PATH = "/salir";
-export const HOME_PATH = "/";
+export const HOME_PATH = "/inicio";
 
 // Values of the `motivo` query parameter on the login page.
 export const SIGN_OUT_REASONS = {
   inactivity: "inactividad",
   account: "cuenta",
+  signedOut: "salida",
 } as const;
 
 export type SignOutReason = (typeof SIGN_OUT_REASONS)[keyof typeof SIGN_OUT_REASONS];
@@ -16,7 +17,7 @@ const NON_RETURNABLE_PATHS = [LOGIN_PATH, SIGN_OUT_PATH];
 
 const SAFE_BASE = "http://localhost";
 
-// Only same-site relative paths survive; everything else becomes "/". This is
+// Only same-site relative paths survive; everything else becomes HOME_PATH. This is
 // what stops `?next=` from being used as an open redirect.
 export function getSafeRedirectPath(value: unknown): string {
   if (typeof value !== "string" || value.length === 0 || value.length > 2048) {
@@ -57,6 +58,10 @@ export function resolveAuthRedirect(
 
   const next = getSafeRedirectPath(`${pathname}${search}`);
   return {
-    redirectTo: next === HOME_PATH ? LOGIN_PATH : `${LOGIN_PATH}?next=${encodeURIComponent(next)}`,
+    // The root and the home page are where sign-in lands anyway: no `next`.
+    redirectTo:
+      next === HOME_PATH || next === "/"
+        ? LOGIN_PATH
+        : `${LOGIN_PATH}?next=${encodeURIComponent(next)}`,
   };
 }

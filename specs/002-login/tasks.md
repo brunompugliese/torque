@@ -1,6 +1,6 @@
 # 002 — Login: Tasks
 
-**Status:** Approved
+**Status:** Done
 **Design:** [design.md](design.md)
 
 Each task is small, leaves the project working, and says how it is verified. Check it off when done.
@@ -35,9 +35,18 @@ Each task is small, leaves the project working, and says how it is verified. Che
 - [x] **10. Security headers**
   - Do: `headers()` and `poweredByHeader: false` in `next.config.ts`; the bundle check script, also run in CI after the build.
   - Verify: response headers in the browser dev tools match the design; the bundle check passes.
-- [ ] **11. Manual checks**
-  - Do: with the owner, on `torque-dev`: wrong password, unknown email and disabled profile show the same message; `next=https://evil.example` lands on `/`; cookies are `HttpOnly` and their values are ciphertext; no project URL, token or id appears in the network tab or page source; a page left open past token expiry still submits; an idle session (limit lowered for the test) is signed out with the inactivity message; sign-out clears the cookies; back button after sign-out redirects; every path except `/ingresar` redirects when signed out; every clickable element shows the hand pointer; the title is centered and error boxes are tinted; measure how Supabase's per-IP limit counts server-side sign-ins and record it in the design's risks.
+- [x] **11. Manual checks**
+  - Do: with the owner, on `torque-dev`: wrong password, unknown email and disabled profile show the same message; `next=https://evil.example` lands on `/inicio`; cookies are `HttpOnly` and their values are ciphertext; no project URL, token or id appears in the network tab or page source; a page left open past token expiry still submits; an idle session (limit lowered for the test) is signed out with the inactivity message; sign-out clears the cookies; back button after sign-out redirects; every path except `/login` redirects when signed out; sign-out shows the toast once; every clickable element shows the hand pointer; the panel matches the design at 360px and desktop, and error boxes are tinted; measure how Supabase's per-IP limit counts server-side sign-ins and record it in the design's risks.
   - Verify: every acceptance criterion is checked.
 - [x] **12. Docs**
   - Do: dashboard settings and env vars in `docs/environments.md`; auth flow in `docs/architecture.md`; auth conventions (DAL, `requireSession`, no browser client) in `docs/conventions.md`; rate limiting noted as backlog; spec statuses to `Done`.
   - Verify: docs match the implemented behavior.
+- [x] **13. Revision 2026-10-15: routes**
+  - Do: `LOGIN_PATH` `/login`, `HOME_PATH` `/inicio`; move the login page to `src/app/login/`, the home page to `src/app/(app)/inicio/`; `/` redirects to `/inicio`; nav item points to `/inicio`; update redirect, proxy, action and navigation tests; docs.
+  - Verify: `npm test`, `npm run lint`, `npm run build` pass.
+- [x] **14. Revision 2026-10-15: page and copy**
+  - Do: `LogoMark` with tests; login panel layout; new copy in `es.json`; spinner; password focus after a server error; `LoginForm` tests.
+  - Verify: `npm test` passes; the page matches the design at 360px and desktop.
+- [x] **15. Revision 2026-10-15: sign-out toast**
+  - Do: install `sonner`; `Toaster` in the root layout; `signOut` redirects with `motivo=salida`; toast + URL cleanup on the login page, with tests.
+  - Verify: `npm test` passes; signing out shows "Cerraste sesión." once.

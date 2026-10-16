@@ -56,13 +56,13 @@ describe("updateSession", () => {
     auth.getClaims.mockResolvedValue(SIGNED_OUT);
     const response = await updateSession(request("/vehiculos/7"));
     expect(response.headers.get("location")).toBe(
-      "https://torque.example/ingresar?next=%2Fvehiculos%2F7",
+      "https://torque.example/login?next=%2Fvehiculos%2F7",
     );
   });
 
   it("lets signed-out visitors open the login page", async () => {
     auth.getClaims.mockResolvedValue(SIGNED_OUT);
-    const response = await updateSession(request("/ingresar"));
+    const response = await updateSession(request("/login"));
     expect(response.headers.get("location")).toBeNull();
   });
 
@@ -81,7 +81,7 @@ describe("updateSession", () => {
     const response = await updateSession(request("/turnos", cookie));
     expect(auth.signOut).toHaveBeenCalledWith({ scope: "local" });
     expect(response.headers.get("location")).toBe(
-      "https://torque.example/ingresar?motivo=inactividad",
+      "https://torque.example/login?motivo=inactividad",
     );
     const cleared = response.cookies.get("torque-session.0");
     expect(cleared?.value).toBe("");
@@ -91,7 +91,7 @@ describe("updateSession", () => {
   it("sends signed-in users away from the login page", async () => {
     auth.getClaims.mockResolvedValue(SIGNED_IN);
     const cookie = await sessionCookieHeader(Date.now());
-    const response = await updateSession(request("/ingresar", cookie));
-    expect(response.headers.get("location")).toBe("https://torque.example/");
+    const response = await updateSession(request("/login", cookie));
+    expect(response.headers.get("location")).toBe("https://torque.example/inicio");
   });
 });

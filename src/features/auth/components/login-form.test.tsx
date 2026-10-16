@@ -19,7 +19,7 @@ function renderForm(props: Parameters<typeof LoginForm>[0] = {}) {
   return {
     email: screen.getByLabelText("Email"),
     password: screen.getByLabelText("Contraseña"),
-    submit: screen.getByRole("button", { name: "Iniciar sesión" }),
+    submit: screen.getByRole("button", { name: "Ingresar" }),
   };
 }
 
@@ -43,7 +43,7 @@ describe("LoginForm", () => {
     fireEvent.change(email, { target: { value: "no-es-email" } });
     fireEvent.click(submit);
 
-    expect(await screen.findByText("Ingresá un email válido.")).toBeInTheDocument();
+    expect(await screen.findByText("Revisá el formato del email.")).toBeInTheDocument();
     expect(screen.getByText("Ingresá tu contraseña.")).toBeInTheDocument();
     expect(email).toHaveAttribute("aria-invalid", "true");
     expect(email).toHaveAttribute("aria-describedby", "email-error");
@@ -63,10 +63,11 @@ describe("LoginForm", () => {
     expect(data.get("email")).toBe("persona@taller.com");
     expect(data.get("next")).toBe("/turnos");
 
-    const alert = await screen.findByText("Email o contraseña incorrectos.");
+    const alert = await screen.findByText("El email o la contraseña no son correctos.");
     expect(alert.closest("[role=alert]")).toHaveClass("bg-destructive/10");
     expect(email).toHaveValue("persona@taller.com");
     expect(password).toHaveValue("");
+    await waitFor(() => expect(password).toHaveFocus());
   });
 
   it("shows why the user was signed out", () => {
@@ -84,8 +85,10 @@ describe("LoginForm", () => {
     fireEvent.change(password, { target: { value: "una-clave-larga" } });
     fireEvent.click(submit);
 
-    const pending = await screen.findByRole("button", { name: "Iniciando sesión…" });
+    const pending = await screen.findByRole("button", { name: "Ingresando…" });
     expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute("aria-busy", "true");
+    expect(pending.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     await act(async () => resolve({ status: "idle" }));
   });
 });

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { getSafeRedirectPath, LOGIN_PATH } from "@/lib/auth/redirects";
+import { getSafeRedirectPath, LOGIN_PATH, SIGN_OUT_REASONS } from "@/lib/auth/redirects";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { toFieldErrors, type ValidationErrorKey } from "@/lib/validation/fields";
 
@@ -61,5 +61,6 @@ export async function signOut(): Promise<never> {
   await supabase.auth.signOut({ scope: "local" });
   store.clear();
   await persist();
-  redirect(LOGIN_PATH);
+  // The login page confirms it with a toast.
+  redirect(`${LOGIN_PATH}?motivo=${SIGN_OUT_REASONS.signedOut}`);
 }

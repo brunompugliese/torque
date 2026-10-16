@@ -29,7 +29,6 @@ create table client (
   enabled      boolean not null default true,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
-  unique (shop_id, dni),
   unique (id, shop_id)
 );
 
@@ -61,7 +60,6 @@ create table vehicle (
   enabled    boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (shop_id, plate),
   unique (id, shop_id),
   foreign key (client_id, shop_id) references client (id, shop_id),
   foreign key (model_id, brand_id) references model (id, brand_id)
@@ -87,7 +85,7 @@ create table appointment (
   time       time not null,
   reason     text,
   status     text not null default 'pendiente'
-             check (status in ('pendiente', 'confirmado', 'cancelado')),
+             check (status in ('pendiente', 'confirmado', 'completado', 'cancelado')),
   enabled    boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -103,12 +101,11 @@ create table job (
   client_id      uuid,         
   assigned_to    uuid,         
   appointment_id uuid,         
-  status         text not null default 'borrador'
+  status         text not null default 'pendiente'
                  check (status in (
-                   'borrador', 'presupuesto_enviado', 'presupuesto_aceptado',
-                   'presupuesto_rechazado', 'pendiente', 'en_progreso',
-                   'completado', 'entregado', 'cancelado'
-                 )), 
+                   'pendiente', 'presupuesto_enviado', 'presupuesto_aceptado',
+                   'en_progreso', 'completado', 'entregado', 'cancelado'
+                 )),
   observations   text,
   quoted_total   numeric,
   final_total    numeric,

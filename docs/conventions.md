@@ -1,6 +1,6 @@
 # Torque — Code Conventions
 
-How code will be written once the frontend exists. The folder structure is defined in [architecture.md](architecture.md); database conventions are in [database.md](database.md).
+How code will be written once the frontend exists. The folder structure is defined in [architecture.md](architecture.md); database conventions are in [architecture.md](architecture.md#changing-the-database); non-negotiable rules (security, git) are in [CLAUDE.md](../CLAUDE.md); how the app looks and behaves (layout, copy, formats, shared UI patterns, business rules) is in [design.md](design.md).
 
 ## Reuse first
 
@@ -48,25 +48,40 @@ Every color in the app is a CSS variable, so switching to another brand kit mean
 - **One source.** Colors are defined only in `:root` in `src/app/globals.css`, using shadcn/ui's token names (`--background`, `--foreground`, `--card`, `--primary`, `--muted`, `--border`, `--ring`, …) and exposed to Tailwind through `@theme inline`.
 - **Components use tokens only.** Use token classes such as `bg-primary`, `text-muted-foreground` and `border-border`. Never use Tailwind palette colors (`bg-teal-600`, `text-gray-500`), hex or `rgb()` values, or arbitrary values (`bg-[#2F7A78]`) in components. Tints come from tokens too (`bg-primary/10`).
 - **New color needs get a new token.** If no token fits (for example status colors such as success or warning), add a semantic variable to `:root` (`--success`, `--success-foreground`), register it in `@theme inline`, and use it through its class. Name tokens by role, not by hue.
-- **Light mode only.** There is no dark theme and no `.dark` block. Backgrounds are never pure white (`#FFFFFF`).
+- **Light mode only.** There is no dark theme and no `.dark` block, even when the user's system is in dark mode.
 - **Changing brand kit:** replace the values in `:root`, keep the token names, then check text contrast (WCAG AA, 4.5:1 for body text) on `background`, `card` and `primary`.
 
-Current palette, *Sand & Teal*:
+Current palette, *Neutral* (the visual identity in [design.md](design.md#visual-identity)): black, white and greys, so status colors are the only strong color on screen.
 
 | Token | Value | Use |
 |---|---|---|
-| `--background` | `#F4F1EA` | Page background (sand) |
-| `--card`, `--popover` | `#FAF8F3` | Raised surfaces |
-| `--foreground` | `#22302F` | Main text (ink) |
-| `--muted`, `--secondary`, `--accent` | `#E8E3D8` | Subtle fills, hover states |
-| `--muted-foreground` | `#6B6558` | Secondary text |
-| `--border`, `--input` | `#DAD3C5` | Borders, input outlines |
-| `--primary`, `--ring` | `#2F7A78` | Main actions, links, focus ring (teal) |
-| `--primary-foreground` | `#FAF8F3` | Text on primary |
-| `--card-foreground`, `--popover-foreground`, `--secondary-foreground`, `--accent-foreground` | `#22302F` | Text on those surfaces |
-| `--destructive` | `#B4442F` | Errors and destructive actions |
-| `--chart-1` … `--chart-5` | `#2F7A78`, `#6FA9A6`, `#C08A3E`, `#8A7F6B`, `#22302F` | Chart series |
+| `--background` | `#FAFAFA` | Page background, behind panels |
+| `--card`, `--popover` | `#FFFFFF` | Panels, modals, inputs, cards |
+| `--foreground` | `#09090B` | Body text and values |
+| `--muted`, `--secondary`, `--accent` | `#F4F4F5` | Row hover, selected items, read-only fields |
+| `--muted-foreground` | `#6B6B74` | Labels, hints, metadata, empty values |
+| `--border`, `--input` | `#E4E4E7` | Panels, tables, inputs |
+| `--primary`, `--ring` | `#18181B` | Primary buttons, current navbar item, today marker, focus ring |
+| `--primary-foreground` | `#FAFAFA` | Text on primary |
+| `--card-foreground`, `--popover-foreground`, `--secondary-foreground`, `--accent-foreground` | `#09090B` | Text on those surfaces |
+| `--destructive` | `#B91C1C` | Cancel actions, field errors |
+| `--warning`, `--warning-border`, `--warning-foreground` | `#FFFBEB`, `#FCD34D`, `#78350F` | Closing-a-job warning |
+| `--plate-band` | `#1E4FB8` | Top band of the plate drawing |
+| `--status-<family>`, `-foreground`, `-dot` (`-border` for `done`, `cancelled`) | See [design.md](design.md#visual-identity) | Status badges and calendar cards |
+| `--chart-1` … `--chart-5` | `#18181B`, `#3B82F6`, `#8B5CF6`, `#22C55E`, `#F59E0B` | Chart series |
 | `--sidebar-*` | Same values as `card`, `foreground`, `primary`, `accent`, `border` and `ring` | shadcn sidebar component |
+
+Status families map to database values in one shared helper, never per component:
+
+| Family | Job status | Appointment status |
+|---|---|---|
+| `pending` | `pendiente` | `pendiente` |
+| `quote-sent` | `presupuesto_enviado` | — |
+| `quote-accepted` | `presupuesto_aceptado` | — |
+| `in-progress` | `en_progreso` | — |
+| `done` | `completado` | `confirmado`, `completado` |
+| `delivered` | `entregado` | — |
+| `cancelled` | `cancelado` | `cancelado` |
 
 Shadcn's `dark:` utilities stay in the generated components but never apply: `globals.css` binds them to a `.dark` class that the app never sets.
 
@@ -90,6 +105,9 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
   2. Uses the server Supabase client, acting as the logged-in user.
   3. Returns a typed result (`{ ok: true, data }` or `{ ok: false, error }`) instead of throwing to the UI.
 - Never send `shop_id` from the UI when it can be derived; the database checks it anyway.
+- **Encrypted tables** ([how it works](architecture.md#sensitive-data)): write to the table, read through its `<table>_decrypted` view, including right after a write. Never send or select `*_hash` columns. Normalize search terms with one shared helper that matches the database's `normalize_search`.
+- **Business-rule errors** from the database ([codes](architecture.md#automatic-behavior-triggers)) are mapped to UI messages in one place; the UI prevents them first.
+- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)).
 - Select only the columns you need.
 
 ## Forms and validation
@@ -109,25 +127,12 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 - Show the user a translated, friendly message; log the technical detail on the server.
 - **Never log personal data** (DNI, phone, email, names) or secrets.
 
-## Security
-
-- The repository is **public**. Everything committed is visible to anyone, including history.
-- No credentials, keys, tokens, project refs or personal data in code, tests, fixtures, docs or commit messages. Test data is fake.
-- Environment variables only; `.env.example` holds placeholders.
-
 ## Tests
 
 - Unit tests with Vitest, next to the code they test: `vehicle-schemas.test.ts` beside `schemas.ts`.
 - Test Zod schemas, calculations (e.g. job totals) and helpers. Every shared helper and every schema has tests.
-- RLS tests follow [database.md](database.md#rls-tests).
+- Database tests follow [architecture.md](architecture.md#database-tests).
 
 ## Comments
 
 Explain **why**, not what. Business decisions and non-obvious constraints get a comment; self-explanatory code does not.
-
-## Git
-
-- Never commit to `main`. One branch per spec or change: `feat/<name>`, `fix/<name>`, `docs/<name>`, `chore/<name>`.
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `feat: add vehicle search`.
-- Merge through a PR; tests must pass.
-- **Agents never run git or GitHub CLI commands (`git`, `gh`) without the owner's explicit approval**, read-only ones included. They ask first, naming the exact command and why, and approval covers only that command. The owner's `.claude/settings.local.json` also marks these commands as "ask", so each one needs a confirmation.
