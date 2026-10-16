@@ -163,7 +163,7 @@ Tables without their own `shop_id` (like `job_status_history`) must reach the sh
 
 ### Database tests
 
-Tests live in `supabase/tests/` and use [pgTAP](https://pgtap.org/). They run in GitHub Actions against a temporary database built from the migrations, never against a hosted project.
+Tests live in `supabase/tests/` and use [pgTAP](https://pgtap.org/); [supabase/tests/README.md](../supabase/tests/README.md) lists what each file covers and how to write one with the shared fixtures. They run in GitHub Actions against a temporary database built from the migrations, never against a hosted project.
 
 Each test runs in a transaction that is rolled back, creates its own shops, users and profiles (and throwaway Vault secrets with `vault.create_secret(...)`), and simulates a logged-in user:
 
