@@ -24,19 +24,19 @@ describe("getSafeRedirectPath", () => {
     "vehiculos",
     "/\tevil.example",
     "/\nevil.example",
-    "/ingresar",
-    "/ingresar?next=/x",
-    "/ingresar/",
+    "/login",
+    "/login?next=/x",
+    "/login/",
     "/salir",
     "/salir?motivo=cuenta",
     "",
     "/" + "a".repeat(3000),
   ])("rejects %j", (input) => {
-    expect(getSafeRedirectPath(input)).toBe("/");
+    expect(getSafeRedirectPath(input)).toBe("/inicio");
   });
 
   it.each([undefined, null, 42, ["/vehiculos"], {}])("rejects non-strings (%j)", (input) => {
-    expect(getSafeRedirectPath(input)).toBe("/");
+    expect(getSafeRedirectPath(input)).toBe("/inicio");
   });
 
   it("keeps an encoded double slash inside the path (it stays same-origin)", () => {
@@ -46,11 +46,11 @@ describe("getSafeRedirectPath", () => {
 
 describe("resolveAuthRedirect", () => {
   it("lets signed-out visitors see the login page", () => {
-    expect(resolveAuthRedirect("/ingresar", "", false)).toBeNull();
+    expect(resolveAuthRedirect("/login", "", false)).toBeNull();
   });
 
   it("sends signed-in users away from the login page", () => {
-    expect(resolveAuthRedirect("/ingresar", "?next=/x", true)).toEqual({ redirectTo: "/" });
+    expect(resolveAuthRedirect("/login", "?next=/x", true)).toEqual({ redirectTo: "/inicio" });
   });
 
   it("lets signed-in users through everywhere else", () => {
@@ -59,11 +59,11 @@ describe("resolveAuthRedirect", () => {
   });
 
   it.each([
-    ["/vehiculos/123", "", "/ingresar?next=%2Fvehiculos%2F123"],
-    ["/turnos", "?dia=hoy", "/ingresar?next=%2Fturnos%3Fdia%3Dhoy"],
-    ["/no-existe", "", "/ingresar?next=%2Fno-existe"],
-    ["/", "", "/ingresar"],
-    ["/salir", "", "/ingresar"],
+    ["/vehiculos/123", "", "/login?next=%2Fvehiculos%2F123"],
+    ["/turnos", "?dia=hoy", "/login?next=%2Fturnos%3Fdia%3Dhoy"],
+    ["/no-existe", "", "/login?next=%2Fno-existe"],
+    ["/", "", "/login"],
+    ["/salir", "", "/login"],
   ])("redirects signed-out visitors from %s%s", (pathname, search, expected) => {
     expect(resolveAuthRedirect(pathname, search, false)).toEqual({ redirectTo: expected });
   });

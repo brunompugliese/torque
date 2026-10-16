@@ -19,7 +19,7 @@ export type NavItem = {
 
 // The app's main sections, in the order the navigation shows them.
 export const NAV_ITEMS: readonly NavItem[] = [
-  { href: "/", labelKey: "home", icon: HouseIcon },
+  { href: "/inicio", labelKey: "home", icon: HouseIcon },
   { href: "/vehiculos", labelKey: "vehicles", icon: CarIcon },
   { href: "/clientes", labelKey: "clients", icon: UsersIcon },
   { href: "/turnos", labelKey: "appointments", icon: CalendarDotsIcon },

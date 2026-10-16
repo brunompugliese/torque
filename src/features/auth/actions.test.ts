@@ -124,7 +124,7 @@ describe("signOut", () => {
 
   it("ends this device's session, clears cookies and goes to the login page", async () => {
     mocks.auth.signOut.mockResolvedValue({ error: null });
-    await expect(signOut()).rejects.toThrow("NEXT_REDIRECT:/ingresar");
+    await expect(signOut()).rejects.toThrow("NEXT_REDIRECT:/login?motivo=salida");
     expect(mocks.auth.signOut).toHaveBeenCalledWith({ scope: "local" });
     expect(mocks.store.clear).toHaveBeenCalled();
     expect(mocks.persist).toHaveBeenCalled();

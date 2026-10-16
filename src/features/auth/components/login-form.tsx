@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { startTransition, useActionState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -36,13 +37,15 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
     reValidateMode: "onChange",
   });
 
-  // Server-side errors: show them on the fields and never keep the password.
+  // Server-side errors: show them on the fields, never keep the password, and
+  // put the cursor back in it so the user can retype it right away.
   useEffect(() => {
     if (state.status !== "error") return;
     form.resetField("password");
     for (const [field, key] of Object.entries(state.fieldErrors ?? {})) {
       form.setError(field as keyof LoginInput, { message: key });
     }
+    if (state.formError) form.setFocus("password");
   }, [state, form]);
 
   const onSubmit = form.handleSubmit((values) => {
@@ -95,8 +98,15 @@ export function LoginForm({ next, initialError }: LoginFormProps) {
 
       {formError ? <FormAlert>{t(`errors.${formError}`)}</FormAlert> : null}
 
-      <Button type="submit" size="lg" disabled={isPending} className="w-full">
-        {isPending ? t("login.submitting") : t("login.submit")}
+      <Button type="submit" size="lg" disabled={isPending} aria-busy={isPending} className="w-full">
+        {isPending ? (
+          <>
+            <CircleNotchIcon aria-hidden="true" className="motion-safe:animate-spin" />
+            {t("login.submitting")}
+          </>
+        ) : (
+          t("login.submit")
+        )}
       </Button>
     </form>
   );

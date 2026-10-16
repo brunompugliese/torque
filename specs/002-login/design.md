@@ -1,11 +1,11 @@
 # 002 — Login: Design
 
-**Status:** Approved
+**Status:** Approved (revised 2026-10-15, see [Revision 2026-10-15](#revision-2026-10-15))
 **Requirements:** [requirements.md](requirements.md)
 
 ## Summary
 
-Email and password sign-in through Supabase Auth, run entirely on the server. A Server Action validates the input with Zod, signs in with `@supabase/ssr`, and stores the session in encrypted `HttpOnly` cookies. `src/proxy.ts` refreshes the session on every request, ends sessions idle for more than 24 hours, and redirects signed-out visitors from every path except `/ingresar`. A server-only data access layer (DAL) verifies the token (`getClaims`) and the `shop_id` claim before any app page renders. The top bar gets the shop name and a "Cerrar sesión" button.
+Email and password sign-in through Supabase Auth, run entirely on the server. A Server Action validates the input with Zod, signs in with `@supabase/ssr`, and stores the session in encrypted `HttpOnly` cookies. `src/proxy.ts` refreshes the session on every request, ends sessions idle for more than 24 hours, and redirects signed-out visitors from every path except `/login`. A server-only data access layer (DAL) verifies the token (`getClaims`) and the `shop_id` claim before any app page renders. The top bar gets the shop name and a "Cerrar sesión" button.
 
 Defense in depth: the proxy redirect is only an optimistic check; the DAL check in every app route is authoritative; RLS in the database remains the final guard for data.
 
@@ -39,18 +39,20 @@ Added to the checklist in [environments.md](../../docs/environments.md) for ever
 src/
   proxy.ts                    # Session refresh + optimistic redirects
   app/
-    ingresar/page.tsx         # /ingresar (outside the (app) group: no shell)
+    page.tsx                  # / → redirects to /inicio
+    login/page.tsx            # /login (outside the (app) group: no shell)
     (app)/layout.tsx          # requireSession() + shop name + sign-out
+    (app)/inicio/page.tsx     # /inicio, the home page (HOME_PATH)
 ```
 
 ### Request flow
 
 1. **Proxy** (`src/proxy.ts`, every route except static assets): creates a server Supabase client bound to the request/response cookies and calls `getClaims()`, which refreshes an expired access token and writes the new cookies. Then it applies `resolveAuthRedirect`:
-   - no session and path is not `/ingresar` → redirect to `/ingresar?next=<path+query>`. This covers app pages, unknown paths (so a signed-out visitor doesn't learn which pages exist) and route handlers;
-   - session and path is `/ingresar` → redirect to `/`;
+   - no session and path is not `/login` → redirect to `/login?next=<path+query>` (no `next` for `/` or `/inicio`). This covers app pages, unknown paths (so a signed-out visitor doesn't learn which pages exist) and route handlers;
+   - session and path is `/login` → redirect to `/inicio`;
    - otherwise continue.
    The matcher excludes only `/_next/static`, `/_next/image` and `/favicon.ico`, which the login page itself needs. This is an optimistic check (per the Next.js auth guide); it does no database queries.
-2. **DAL** (`src/lib/auth/session.ts`, `import "server-only"`): `getSession()` returns `{ userId, shopId }` from verified claims, or `null`. It is wrapped in React `cache()` so one request verifies once. `requireSession()` redirects to `/ingresar` when there is no session, and to the sign-out route with the "account unavailable" reason when the `shop_id` claim is missing.
+2. **DAL** (`src/lib/auth/session.ts`, `import "server-only"`): `getSession()` returns `{ userId, shopId }` from verified claims, or `null`. It is wrapped in React `cache()` so one request verifies once. `requireSession()` redirects to `/login` when there is no session, and to the sign-out route with the "account unavailable" reason when the `shop_id` claim is missing.
 3. **App layout** calls `requireSession()` and `getShopName()`. Each app page also calls `requireSession()`, because layouts don't re-render on client navigation; future data queries call it too.
 
 ### Sign-in (Server Action `signIn`)
@@ -67,11 +69,11 @@ The action returns only `{ ok: false, error }` or field-error keys. It never ech
 
 ### Sign-out (Server Action `signOut`)
 
-`supabase.auth.signOut({ scope: "local" })` ends the session on this device only, which clears the cookies, then `redirect("/ingresar")`. It is a POST (form + Server Action), so Next.js's Origin check protects it against CSRF. The "account unavailable" path uses a Route Handler `GET /salir?motivo=cuenta` because it is triggered by a redirect during rendering, where cookies can't be written; it only signs out and redirects, so a forged link can do no more than log the user out.
+`supabase.auth.signOut({ scope: "local" })` ends the session on this device only, which clears the cookies, then `redirect("/login?motivo=salida")`; the login page shows the "Cerraste sesión." toast for that reason. It is a POST (form + Server Action), so Next.js's Origin check protects it against CSRF. The "account unavailable" path uses a Route Handler `GET /salir?motivo=cuenta` because it is triggered by a redirect during rendering, where cookies can't be written; it only signs out and redirects, so a forged link can do no more than log the user out.
 
 ### Safe redirects
 
-`getSafeRedirectPath(value)` returns `value` only if it starts with a single `/`, doesn't start with `//` or `/\`, contains no control characters or backslashes, is at most 2048 characters, and resolves to the app's own origin when parsed with `new URL(value, "http://localhost")`. It also rejects `/ingresar` and `/salir` (returning to `/salir` after signing in would sign the user straight out). Anything else → `/`.
+`getSafeRedirectPath(value)` returns `value` only if it starts with a single `/`, doesn't start with `//` or `/\`, contains no control characters or backslashes, is at most 2048 characters, and resolves to the app's own origin when parsed with `new URL(value, "http://localhost")`. It also rejects `/login` and `/salir` (returning to `/salir` after signing in would sign the user straight out). Anything else → `/inicio` (`HOME_PATH`).
 
 ### Session lifetime (24-hour sliding window)
 
@@ -79,7 +81,7 @@ Supabase issues a short-lived access token (1 hour) and a refresh token that doe
 
 1. **Activity stamp.** The encrypted session cookie also carries `lastSeenAt`, a timestamp the app writes itself. Because the cookie is encrypted and authenticated (AES-GCM), the stamp can't be read or forged in the browser.
 2. **On every request**, the proxy reads `lastSeenAt`:
-   - more than 24 hours ago → calls `signOut({ scope: "local" })`, which revokes the refresh token in Supabase Auth (a copied cookie is then useless too), clears the cookies and redirects to `/ingresar?motivo=inactividad`;
+   - more than 24 hours ago → calls `signOut({ scope: "local" })`, which revokes the refresh token in Supabase Auth (a copied cookie is then useless too), clears the cookies and redirects to `/login?motivo=inactividad`;
    - otherwise → continues and rewrites the stamp. To avoid rewriting cookies on every single request, the stamp is only rewritten when it's more than 5 minutes old; the window is therefore 24 hours ± 5 minutes.
 3. **Token refresh.** `getClaims()` refreshes an expired access token with the refresh token and writes the new cookies, so a page left open for hours still works as long as it's within the 24-hour window. Server Actions and Route Handlers go through the proxy too.
 4. **Cookie lifetime.** Cookies get `maxAge` 24 hours, renewed with each stamp rewrite, so the browser also drops them after a day without use. The server check in step 2 is the authoritative one; the browser expiry is a backup.
@@ -125,13 +127,15 @@ Strict-Transport-Security: max-age=63072000; includeSubDomains   (production onl
 
 ### Login page UI
 
-A single centered card on the sand background, no top bar or floating nav:
+A single centered panel on the page background (`bg-background`), no top bar or floating nav:
 
-- "Torque" wordmark above the card, `h1` "Iniciar sesión" centered in the card header. No subtitle.
-- Email field, password field with an icon button (Phosphor `EyeIcon` / `EyeSlashIcon`) to show/hide it.
-- Full-width "Iniciar sesión" button; while pending: disabled, label "Iniciando sesión…".
+- `Card` about 380px wide (`max-w-[380px]`), 12px radius, `border-border` border instead of the default ring, white (`bg-card`).
+- Inside, centered: `LogoMark` (64px rounded square, `bg-primary` with a white Phosphor `WrenchIcon`, decorative) with "Torque" (17px bold) below it; then `h1` "Ingresar" (18px semibold). No subtitle.
+- Email field, password field with an icon button (Phosphor `EyeIcon` / `EyeSlashIcon`, named "Mostrar contraseña" / "Ocultar contraseña") to show/hide it.
+- Full-width "Ingresar" button; while pending: disabled, `aria-busy`, a spinning Phosphor `CircleNotchIcon` before the label "Ingresando…" (static under reduced motion). Enter submits (native form submit).
 - Form-level errors in a `FormAlert` (see below) above the button; field errors as plain text under each field (shadcn `FieldError`), linked with `aria-describedby`.
-- Email field is auto-focused.
+- Email field is auto-focused. After a server error, the password is cleared and focused.
+- Toasts: `?motivo=salida` shows "Cerraste sesión." through the shared `Toaster` (shadcn Sonner, bottom right, 3 seconds, light theme); `FlashToast` then removes `motivo` from the URL (`router.replace`) so a reload doesn't repeat it. The other reasons (`inactividad`, `cuenta`) stay as `FormAlert` messages, since they explain why the user must sign in.
 - The form uses `react-hook-form` with the Zod resolver for instant client-side feedback, then submits `FormData` to the Server Action, which validates again.
 
 ### Shared UI rules (app-wide, not login-only)
@@ -202,24 +206,25 @@ New `messages/es.json` keys under `validation` (shared) and `auth`:
 {
   "validation": {
     "emailRequired": "Ingresá tu email.",
-    "emailInvalid": "Ingresá un email válido.",
+    "emailInvalid": "Revisá el formato del email.",
     "passwordRequired": "Ingresá tu contraseña.",
     "passwordTooShort": "La contraseña debe tener al menos 12 caracteres.",
     "passwordTooLong": "La contraseña es demasiado larga."
   },
   "auth": {
     "login": {
-      "title": "Iniciar sesión",
+      "title": "Ingresar",
       "email": "Email",
       "password": "Contraseña",
       "showPassword": "Mostrar contraseña",
       "hidePassword": "Ocultar contraseña",
-      "submit": "Iniciar sesión",
-      "submitting": "Iniciando sesión…"
+      "submit": "Ingresar",
+      "submitting": "Ingresando…"
     },
     "signOut": "Cerrar sesión",
+    "signedOut": "Cerraste sesión.",
     "errors": {
-      "invalidCredentials": "Email o contraseña incorrectos.",
+      "invalidCredentials": "El email o la contraseña no son correctos.",
       "rateLimited": "Demasiados intentos. Esperá unos minutos y volvé a intentar.",
       "accountUnavailable": "Tu cuenta no está habilitada. Contactá al responsable del taller.",
       "sessionExpired": "Tu sesión se cerró por inactividad. Iniciá sesión de nuevo.",
@@ -239,7 +244,7 @@ New `messages/es.json` keys under `validation` (shared) and `auth`:
   - Proxy inactivity path (Supabase mocked): idle session calls `signOut({ scope: "local" })`, clears cookies and redirects with `motivo=inactividad`.
   - Cookie encryption: round trip; tampered value and wrong secret mean no session; chunking keeps every cookie under 4 KB and reassembles; plaintext never appears in the stored value.
   - Bundle check: after `npm run build`, a script (also run in CI) searches `.next/static` for `supabase.co` and the configured Supabase host, and fails if found.
-  - `getSafeRedirectPath`: `/`, `/vehiculos?x=1` kept; `https://evil.example`, `//evil.example`, `/\evil.example`, `javascript:alert(1)`, `%2F%2Fevil.example` decoded forms, paths with control characters, overly long paths, `/ingresar`, `/salir`, empty and missing → `/`.
+  - `getSafeRedirectPath`: `/`, `/vehiculos?x=1` kept; `https://evil.example`, `//evil.example`, `/\evil.example`, `javascript:alert(1)`, `%2F%2Fevil.example` decoded forms, paths with control characters, overly long paths, `/login`, `/salir`, empty and missing → `/inicio`.
   - `resolveAuthRedirect`: each branch, including query strings preserved in `next`.
   - `mapAuthError`: each Supabase code, unknown codes, and that banned/unconfirmed map to `invalidCredentials`.
   - `signIn` (Supabase client mocked): invalid input never calls Supabase; each error maps to the right message; the password is never returned; a missing `shop_id` claim triggers sign-out; success redirects to the sanitized path; logs contain no email or password.
@@ -250,6 +255,25 @@ New `messages/es.json` keys under `validation` (shared) and `auth`:
   - Theme-token test (from spec 001), widened from `src/components` and `src/app` to all of `src`, so feature and lib code are covered too.
   - Env: missing or malformed variables throw a clear error that doesn't contain their values.
 - Manual check: sign in and out against `torque-dev`; inspect cookie flags, cookie values (ciphertext only) and response headers in the browser dev tools; search the network tab and page source for the project URL, tokens and ids; try a disabled profile, a wrong password and an unknown email and confirm the same message; hover every button, link, nav item and the password toggle and confirm the hand pointer (and not-allowed on the disabled submit button); check the "Iniciar sesión" title is centered and the error box has the tinted background; leave a page open past token expiry and submit a form; to test the 24-hour limit without waiting, temporarily lower it via a development-only setting and confirm the sign-out and message.
+
+## Revision 2026-10-15
+
+Merges the owner's Login document into this spec. Security, session and data behavior are unchanged.
+
+| Change | Before | Now |
+|---|---|---|
+| URLs | `/ingresar`, home at `/` | `/login`, home at `/inicio` (`LOGIN_PATH`, `HOME_PATH`); `/` redirects to `/inicio` |
+| Page | "Torque" wordmark, card on sand, "Iniciar sesión" | Neutral palette, 380px panel, `LogoMark` + "Torque", "Ingresar" |
+| Pending | Label "Iniciando sesión…" | Spinner + label "Ingresando…", `aria-busy` |
+| Copy | "Email o contraseña incorrectos.", "Ingresá un email válido." | "El email o la contraseña no son correctos.", "Revisá el formato del email." |
+| Wrong credentials | Password cleared | Password cleared and focused |
+| Sign-out | Lands on login | Lands on `/login?motivo=salida` with the "Cerraste sesión." toast |
+
+Kept from the original over the Login document, by the owner's decision: the 24-hour inactivity timeout (the document said "until Cerrar sesión") and Torque branding instead of a shop's (the shop is unknown before sign-in). The header redesign (logo, shop name, user name) gets its own spec.
+
+New code: `LogoMark` (`src/components/shared/logo-mark.tsx`, generic: size and content from props, reusable by the future header), `FlashToast` (`src/components/shared/flash-toast.tsx`, generic: shows a one-time toast and removes its query parameter) and `Toaster` (`src/components/ui/sonner.tsx`, shadcn Sonner without `next-themes`, mounted once in the root layout). New dependency: `sonner`.
+
+Tests: `redirects` and proxy tests use the new paths; `LoginForm` covers the new copy, spinner and password focus; a test for the sign-out toast and URL cleanup; `signOut` redirects with `motivo=salida`; `navigation` tests use `/inicio`.
 
 ## Risks and alternatives
 
