@@ -2,7 +2,7 @@
 
 Web app for managing mechanic shops. Vehicle-centric (the vehicle is the main record; clients, appointments and jobs hang off it) and multi-tenant (every shop's data is isolated from every other shop).
 
-**Status:** the Supabase database exists (schema, RLS, triggers, migrations). The Next.js frontend has its app shell (layout, navigation, theme, i18n, tests) and login; feature screens are not built yet.
+**Status:** the Supabase database exists (schema, RLS, encryption, triggers, migrations) and is covered by pgTAP tests in CI. The Next.js frontend has its app shell (layout, navigation, theme, i18n, tests) and login; feature screens are not built yet.
 
 **One fact, one place.** Each fact lives in exactly one doc; the others link to it. When something changes, update that doc only.
 
