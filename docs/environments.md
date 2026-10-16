@@ -20,13 +20,25 @@ Migrations recreate the database, but some settings live in the Supabase platfor
 - [ ] Confirm the linked project is the new one: `npx supabase projects list` (the linked project is marked).
 - [ ] Apply migrations: `npx supabase db push`.
 
-### 2. Auth hook (required)
+### 2. Encryption keys (required)
+
+Without them every write to `client`, `vehicle`, `appointment` and `job` fails with "Vault secret … is missing". Run once in the SQL editor of the new project; the values are generated in the database and never shown or stored anywhere else:
+
+```sql
+select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'torque_data_key');
+select vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'torque_hash_key');
+```
+
+- [ ] Both secrets exist (Project Settings → Vault).
+- [ ] Never rotate or delete them while data exists: rows encrypted with a lost key can't be recovered, and a new hash key breaks plate/DNI uniqueness. Rotation needs its own migration plan.
+
+### 3. Auth hook (required)
 
 Without it, JWTs have no `shop_id` claim and RLS denies every query.
 
 - [ ] Authentication → Hooks → *Customize Access Token*: enable it and select the Postgres function `public.custom_access_token_hook`.
 
-### 3. Auth settings (required)
+### 4. Auth settings (required)
 
 See [specs/002-login/design.md](../specs/002-login/design.md#supabase-dashboard-settings-not-in-migrations) for the reasons.
 
@@ -37,12 +49,12 @@ See [specs/002-login/design.md](../specs/002-login/design.md#supabase-dashboard-
 - [ ] Rate limits → sign-ins: keep the default or lower.
 - [ ] JWT signing keys: asymmetric (e.g. ES256), recommended so the app can verify tokens without a network call.
 
-### 4. Auth URLs (required)
+### 5. Auth URLs (required)
 
 - [ ] Authentication → URL Configuration → **Site URL**: the app's domain for this environment (e.g. the production Vercel domain).
 - [ ] **Redirect URLs**: add the same domain (with `/**`) so auth emails such as password reset link back to the app.
 
-### 5. Vercel (required)
+### 6. Vercel (required)
 
 All three variables are server-only; never use the `NEXT_PUBLIC_` prefix for them. See `.env.example`.
 
@@ -52,15 +64,15 @@ All three variables are server-only; never use the `NEXT_PUBLIC_` prefix for the
 - [ ] Scope each variable to the right Vercel environment (Production for the prod project). Never commit them.
 - [ ] Redeploy so the new values take effect.
 
-### 6. Data
+### 7. Data
 
 - [ ] Create the shop(s), auth users and their profiles in the dashboard.
 
-### 7. Verify
+### 8. Verify
 
 - [ ] Log in to the app as a user of each shop.
 - [ ] Confirm the JWT contains `shop_id` and that each user sees only their own shop's data.
 
-### 8. Relink
+### 9. Relink
 
 - [ ] Link back to `torque-dev` (`npx supabase link --project-ref <dev-project-ref>`) so future `db push` runs don't hit production by accident.

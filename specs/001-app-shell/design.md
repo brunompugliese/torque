@@ -130,7 +130,7 @@ Section page titles reuse the `nav.*` keys. The "×" separator in the top bar is
   - `NAV_ITEMS`: five items in the required order, unique hrefs, every `labelKey` exists in `messages/es.json`.
   - `FloatingNav` (Testing Library): renders a `nav` with the given `aria-label`; each link shows its label, has it as its accessible name, and has the right `href`; exactly one link has `aria-current="page"` for a given pathname (mocking `usePathname`).
   - `TopBar`: shows "Torque" alone without `shopName`, and "Torque × Taller Ejemplo" with it.
-- Manual check (no E2E by constitution): scroll to the bottom at 360px and at desktop width to confirm the bar never covers content; check that all five labels fit at 360px without truncation, and check keyboard focus.
+- Manual check (no E2E: out of scope in CLAUDE.md): scroll to the bottom at 360px and at desktop width to confirm the bar never covers content; check that all five labels fit at 360px without truncation, and check keyboard focus.
 - Theme token rule: a Vitest test scans `src/components/**` and `src/app/**` (excluding `globals.css`) for hex colors, `rgb(`/`hsl(`, arbitrary color classes (`bg-[#`) and Tailwind palette color classes (`-teal-`, `-gray-`, …) and fails if any are found.
 
 ## Risks and alternatives
