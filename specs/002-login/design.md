@@ -1,6 +1,6 @@
 # 002 — Login: Design
 
-**Status:** Approved (revised 2026-10-15, see [Revision 2026-10-15](#revision-2026-10-15))
+**Status:** Done (revised 2026-10-15, see [Revision 2026-10-15](#revision-2026-10-15))
 **Requirements:** [requirements.md](requirements.md)
 
 ## Summary

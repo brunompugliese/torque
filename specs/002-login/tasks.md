@@ -1,6 +1,6 @@
 # 002 — Login: Tasks
 
-**Status:** Approved
+**Status:** Done
 **Design:** [design.md](design.md)
 
 Each task is small, leaves the project working, and says how it is verified. Check it off when done.
@@ -35,7 +35,7 @@ Each task is small, leaves the project working, and says how it is verified. Che
 - [x] **10. Security headers**
   - Do: `headers()` and `poweredByHeader: false` in `next.config.ts`; the bundle check script, also run in CI after the build.
   - Verify: response headers in the browser dev tools match the design; the bundle check passes.
-- [ ] **11. Manual checks**
+- [x] **11. Manual checks**
   - Do: with the owner, on `torque-dev`: wrong password, unknown email and disabled profile show the same message; `next=https://evil.example` lands on `/inicio`; cookies are `HttpOnly` and their values are ciphertext; no project URL, token or id appears in the network tab or page source; a page left open past token expiry still submits; an idle session (limit lowered for the test) is signed out with the inactivity message; sign-out clears the cookies; back button after sign-out redirects; every path except `/login` redirects when signed out; sign-out shows the toast once; every clickable element shows the hand pointer; the panel matches the design at 360px and desktop, and error boxes are tinted; measure how Supabase's per-IP limit counts server-side sign-ins and record it in the design's risks.
   - Verify: every acceptance criterion is checked.
 - [x] **12. Docs**
