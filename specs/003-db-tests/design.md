@@ -1,6 +1,6 @@
 # 003 — Database tests: Design
 
-**Status:** Approved
+**Status:** Done
 **Requirements:** [requirements.md](requirements.md)
 
 ## Summary
