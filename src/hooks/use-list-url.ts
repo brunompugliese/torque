@@ -1,14 +1,13 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { parseListParams, toListSearch, type ListParams } from "@/lib/list/params";
 
-export const SEARCH_DEBOUNCE_MS = 300;
+export const SEARCH_DEBOUNCE_MS = 200;
 
 export function useListUrl() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const params = useMemo(() => parseListParams(new URLSearchParams(searchParams.toString())), [searchParams]);
@@ -16,9 +15,10 @@ export function useListUrl() {
   const navigate = useCallback(
     (next: ListParams) => {
       const query = toListSearch(next);
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      // Shallow: the list fetches its own results (useListResults).
+      window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
     },
-    [router, pathname],
+    [pathname],
   );
 
   const [searchValue, setSearchValueState] = useState(params.search);

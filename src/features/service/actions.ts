@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
 import { requireSession } from "@/lib/auth/session";
+import { parseListParams } from "@/lib/list/params";
 import { existsWhere, findByKey } from "@/lib/data/lookups";
 import { normalizeSearch } from "@/lib/search/normalize";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { toFieldErrors } from "@/lib/validation/fields";
 
+import { listServices, type ServicePage } from "./queries";
 import {
   SERVICE_COLUMNS,
   serviceFormSchema,
@@ -148,4 +150,9 @@ export async function setServiceArchived(id: unknown, archived: boolean): Promis
 
   revalidatePath(SERVICES_PATH);
   return ok(serviceRowSchema.parse(data));
+}
+
+export async function searchServices(listSearch: unknown): Promise<ServicePage> {
+  const params = parseListParams(new URLSearchParams(typeof listSearch === "string" ? listSearch : ""));
+  return listServices(params);
 }

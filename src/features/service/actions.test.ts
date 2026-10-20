@@ -14,7 +14,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/auth/session", () => ({ requireSession: mocks.requireSession }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
-import { createService, setServiceArchived, updateService } from "./actions";
+import { createService, searchServices, setServiceArchived, updateService } from "./actions";
 
 const ID = "6f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 const OTHER_ID = "7a1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
@@ -185,5 +185,30 @@ describe("setServiceArchived", () => {
   it("returns notFound when no row was updated", async () => {
     setup((query) => (query.operation === "update" ? { data: null } : undefined));
     expect(await setServiceArchived(ID, true)).toEqual({ ok: false, error: "notFound" });
+  });
+});
+
+describe("searchServices", () => {
+  it("returns only the matching page for the given list state", async () => {
+    const queries = setup(() => ({ data: [ROW], count: 1 }));
+    const result = await searchServices("buscar=aceite&orden=creado&sentido=desc&pagina=2");
+
+    expect(result).toEqual({
+      ok: true,
+      rows: [expect.objectContaining({ id: ID, name: "Cambio de aceite" })],
+      matching: 1,
+    });
+    expect(queries).toHaveLength(1);
+    expect(queries[0].calls).toContainEqual(["like", "search_text", "%aceite%"]);
+    expect(queries[0].calls).toContainEqual(["order", "created_at", { ascending: false }]);
+    expect(queries[0].calls).toContainEqual(["range", 25, 49]);
+    expect(mocks.requireSession).toHaveBeenCalled();
+  });
+
+  it("falls back to the defaults for anything that isn't a list search", async () => {
+    const queries = setup(() => ({ data: [], count: 0 }));
+    await searchServices({ evil: true });
+    expect(queries[0].calls).toContainEqual(["eq", "enabled", true]);
+    expect(queries[0].calls).toContainEqual(["order", "name_key", { ascending: true }]);
   });
 });

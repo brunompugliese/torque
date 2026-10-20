@@ -1,7 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { ArchivedBadge } from "@/components/shared/archived-badge";
@@ -22,12 +21,11 @@ const NAME_CELL_CLASS = "w-full max-w-0";
 
 type ServicesTableProps =
   | { ok: true; rows: Service[]; matching: number; total: number }
-  | { ok: false };
+  | { ok: false; onRetry: () => void };
 
 export function ServicesTable(props: ServicesTableProps) {
   const t = useTranslations("services");
   const tList = useTranslations("list");
-  const router = useRouter();
   const { params, clearSearch, setShowArchived, toggleSort, setPage } = useListUrl();
   const { openService, openCreate } = useServicesPanel();
 
@@ -36,7 +34,7 @@ export function ServicesTable(props: ServicesTableProps) {
     if (pastTheEnd) setPage(1);
   }, [pastTheEnd, setPage]);
 
-  if (!props.ok) return <ListError onRetry={() => router.refresh()} />;
+  if (!props.ok) return <ListError onRetry={props.onRetry} />;
 
   if (props.rows.length === 0) {
     if (params.search) {

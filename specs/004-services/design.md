@@ -7,7 +7,7 @@
 
 `/servicios` is the first real list page, so it builds the shared list-page kit (table, toolbar, pagination, states, skeletons, detail modal, confirmation, URL state, list query) generic in `components/shared/`, `hooks/` and `lib/`, and the services page is a thin composition of it.
 
-The page is a Server Component. The list state lives in the URL (`?buscar=&archivados=1&orden=creado&sentido=desc&pagina=2`), so search, sort and paging run on the server and the Back button works. Data sections stream inside `<Suspense>` boundaries with skeleton fallbacks. The service modal is client state opened from the row already loaded, so opening it costs no request. Writes are Server Actions that call `revalidatePath`, so the updated list comes back in the same response.
+The page is a Server Component. The list state lives in the URL (`?buscar=&archivados=1&orden=creado&sentido=desc&pagina=2`), so search, sort and paging run on the server and a link reopens the same list. The first render streams inside `<Suspense>` boundaries with skeleton fallbacks; after that, list changes update the URL shallowly (`history.replaceState`) and fetch only the matching rows through the `searchServices` Server Action, without re-rendering the page. The service modal is client state opened from the row already loaded, so opening it costs no request. Writes are Server Actions that call `revalidatePath`, so the updated list comes back in the same response.
 
 Cheap on the free tier: normalization happens once per write (trigger), reads are plain indexed column filters, and the counts use `head` queries.
 
@@ -39,16 +39,15 @@ src/app/(app)/servicios/
 `page.tsx` renders:
 
 1. `PageHeader` with the title, the summary inside `<Suspense>` (one-line skeleton), and the "Agregar servicio" button.
-2. The toolbar (client, outside any Suspense so the search box keeps focus) with the result count in a keyed `<Suspense>`.
-3. The table in a `<Suspense key={list params}>` with `DataTableSkeleton` as fallback, so every search/sort/page change shows the skeleton.
+2. The list (`ServicesListView`: toolbar with the result count, table, pagination) in one `<Suspense>` with the toolbar and table skeletons as fallback. It's rendered once with the server's first page; later list changes keep it mounted, so the search box keeps focus.
 
-All three data sections call the same `cache()`d queries, so one request runs at most: list page (with `count`), total count, archived count.
+The first render runs the list page (with `count`), the total count and the archived count, shared through `cache()`. Each later search, sort or page change runs only the list query (`searchServices`); the total for "3 de 15 servicios" comes from the first render and is refreshed when a save revalidates the page.
 
 ### URL state (`useListUrl`)
 
 Params: `buscar`, `archivados` (`1`), `orden` (column id: `nombre` → `name_key`, `creado` → `created_at`; absent = `nombre`), `sentido` (`desc`; absent = ascending), `pagina` (absent = 1). Clicking the sorted column flips its direction; another column starts ascending.
 
-Columns: "Servicio" (name in medium weight, description below in secondary text, truncated) and "Creado el" (shared `TableDate`: `DATE_FORMAT`, secondary text, no wrap). Any change but paging resets to page 1. Search is debounced (300 ms). Navigation uses `router.replace` with `scroll: false`.
+Columns: "Servicio" (name in medium weight, description below in secondary text, truncated) and "Creado el" (shared `TableDate`: `DATE_FORMAT`, secondary text, no wrap). Any change but paging resets to page 1. Search is debounced (200 ms). The URL is updated with `history.replaceState` (no server render); `useListResults` fetches the rows and drops answers that arrive after a newer request.
 
 ### Interactions
 
@@ -79,6 +78,7 @@ Columns: "Servicio" (name in medium weight, description below in secondary text,
 | App layout | `app/(app)/layout.tsx` | Fixed: content width 1280px per design.md (was 1024px) |
 | `NAV_ITEMS` | `lib/navigation.ts` | Extended: Servicios (`ToolboxIcon`) |
 | `useListUrl` | `hooks/use-list-url.ts` | New |
+| `useListResults` | `hooks/use-list-results.ts` | New: server rows first, then fetch-only updates |
 | `parseListParams`, `toListSearch`, `LIST_PAGE_SIZE` | `lib/list/params.ts` | New |
 | `pageWindow` | `lib/list/pagination.ts` | New: page numbers with gaps |
 | `applyListQuery` | `lib/list/query.ts` | New: search on `search_text`, archived filter (off when searching), sort, range |
