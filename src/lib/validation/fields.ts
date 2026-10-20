@@ -33,12 +33,28 @@ export const newPasswordField = z
   .min(NEW_PASSWORD_MIN_LENGTH, { error: "passwordTooShort" })
   .max(NEW_PASSWORD_MAX_LENGTH, { error: "passwordTooLong" });
 
+export function requiredTextField(requiredKey: ValidationErrorKey) {
+  return z
+    .string({ error: requiredKey })
+    .transform((value) => value.trim().replace(/\s+/g, " "))
+    .pipe(z.string().min(1, { error: requiredKey }));
+}
+
+export const optionalTextField = z
+  .string()
+  .nullish()
+  .transform((value) => {
+    const trimmed = value?.trim() ?? "";
+    return trimmed === "" ? null : trimmed;
+  });
+
 export type ValidationErrorKey =
   | "emailRequired"
   | "emailInvalid"
   | "passwordRequired"
   | "passwordTooShort"
-  | "passwordTooLong";
+  | "passwordTooLong"
+  | "nameRequired";
 
 // First issue per field, as the key the form translates.
 export function toFieldErrors<Field extends string>(

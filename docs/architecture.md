@@ -70,7 +70,7 @@ Personal and vehicle-identifying data is encrypted at rest:
 - **Writes** send plaintext to the tables as usual. A `BEFORE` trigger per table normalizes (plate uppercase without spaces, DNI digits only), hashes and encrypts the values, so tables hold only ciphertext.
 - **Uniqueness:** plate and DNI also get a keyed hash (HMAC-SHA256) of the normalized value, stored in `vehicle.plate_hash` / `client.dni_hash`, with `unique (shop_id, hash)`. Hash columns are set only by the trigger.
 - **Reads** go through `security_invoker` views: `client_decrypted`, `vehicle_decrypted`, `appointment_decrypted`, `job_decrypted`. They decrypt only the rows RLS lets the user see. After a write, read the row back through its view.
-- **Search, sorting and pagination** run in the database on the views. `client_decrypted` and `vehicle_decrypted` expose `search_text` (lowercase, no accents, no spaces, dots or dashes; vehicles include brand and model); the app normalizes the search term the same way and filters with `ilike`. Decrypting in queries is fine at a single shop's scale; revisit if a shop grows to many thousands of rows.
+- **Search, sorting and pagination** run in the database on the views (and on `service`, which isn't encrypted: its `name_key` and `search_text` columns are set by `trg_service_normalize` on every write). `client_decrypted` and `vehicle_decrypted` expose `search_text` (lowercase, no accents, no spaces, dots or dashes; vehicles include brand and model); the app normalizes the search term the same way and filters with `ilike`. Decrypting in queries is fine at a single shop's scale; revisit if a shop grows to many thousands of rows.
 - Helpers (`private.encrypt_text`, `decrypt_text`, `blind_index`, `normalize_search`, `vault_secret`) live in the `private` schema, which the Data API doesn't expose. `authenticated` can only execute `decrypt_text` and `normalize_search`.
 
 ### Automatic behavior (triggers)
@@ -84,6 +84,7 @@ Personal and vehicle-identifying data is encrypted at rest:
 | `encrypt_client`, `encrypt_vehicle`, `encrypt_appointment`, `encrypt_job` | Normalize, hash and encrypt sensitive columns on write (see [Sensitive data](#sensitive-data)) |
 | `guard_closed_job`, `guard_closed_job_item` | A job in `entregado` or `cancelado` can only be archived/unarchived; its items can't change |
 | `check_job_kilometers` | A job's km can't be lower than the vehicle's previous non-archived jobs |
+| `normalize_service` | Sets `service.name_key` (normalized name: A–Z sort and the app's "name taken" lookup) and `service.search_text` on every write, overwriting client values |
 | `check_appointment_parents_active`, `check_job_parents_active`, `check_job_item_service_active` | No new appointments/jobs on archived vehicles, no archived clients on jobs, no archived services on job items |
 
 Business-rule triggers raise SQLSTATE `23514` with a stable message (`job_closed`, `job_kilometers_below_previous`, `vehicle_archived`, `client_archived`, `service_archived`) that the app maps to UI text.
@@ -195,10 +196,20 @@ Read-only tables (`shop`, `profile`, `job_status_history`) must also be tested t
 ### App shell (exists)
 
 - Every signed-in screen lives in the `src/app/(app)/` route group, whose layout renders the top bar, the page content and the floating bottom navigation. Pages that must not show the shell (e.g. login) will live outside that group.
-- URLs are Spanish (`/inicio`, `/vehiculos`, `/clientes`, `/turnos`, `/trabajos`); `/login` is outside the shell and `/` redirects to `/inicio`. The sections are defined once in `src/lib/navigation.ts`.
+- URLs are Spanish (`/inicio`, `/vehiculos`, `/clientes`, `/turnos`, `/trabajos`, `/servicios`); `/login` is outside the shell and `/` redirects to `/inicio`. The sections are defined once in `src/lib/navigation.ts`.
 - Toasts: one `Toaster` (shadcn Sonner, `src/components/ui/sonner.tsx`) is mounted in the root layout. A one-time toast after a redirect uses `FlashToast` (`src/components/shared/flash-toast.tsx`), which also removes its query parameter from the URL.
 - `next-intl` runs without i18n routing: `src/i18n/request.ts` fixes the `es` locale, and `src/global.d.ts` type-checks message keys against `messages/es.json`.
 - The theme lives in `src/app/globals.css` (see [conventions.md](conventions.md#colors-and-theming)).
+
+### List pages (exists)
+
+Built by [specs/004-services](../specs/004-services/design.md); every list page reuses it. Behavior is in [design.md](design.md#list-pages).
+
+- **State in the URL:** `?buscar=&archivados=1&orden=creado&sentido=desc&pagina=2` (`orden` is a column id, absent for the page's default column; `sentido=desc` reverses it), parsed by `lib/list/params.ts` on the server and updated by the `useListUrl` hook (`hooks/use-list-url.ts`) on the client (debounced search; any change but paging returns to page 1).
+- **Server query:** `applyListQuery` (`lib/list/query.ts`) maps the column id to a database column through a per-page whitelist (unknown ids fall back to the default), and adds search on a normalized `search_text` column (always including archived rows), the archived filter, sorting with an `id` tie-breaker, and the 25-row range. Queries are wrapped in `cache()` so the summary, the count and the table share one request.
+- **Streaming:** the page renders the title and toolbar right away; the summary, the count and the table stream in `<Suspense>` boundaries keyed by the list params, with skeleton fallbacks. Each route also has a `loading.tsx`.
+- **Components** (`components/shared/`): `DataTable` (+ `DataTableSkeleton`), `ListToolbar` (+ `ListToolbarSkeleton`), `PaginationBar`, `ListEmpty`, `ListError`, `ArchivedBadge`, `DetailModal`, `DetailList`, `ConfirmDialog`, `LoadingRegion`, `TextSkeleton`.
+- **Detail modals** open from the row already loaded (no request); writes are Server Actions that call `revalidatePath`, so the list refreshes in the same response.
 
 ### Authentication (exists)
 
@@ -223,16 +234,23 @@ src/
   components/
     ui/                 # shadcn/ui primitives (generated, edited sparingly)
     shared/             # Reusable composed components (data table, calendar, form fields, status badge…)
-  features/<domain>/    # Per-domain code (auth and shop exist): vehicle, client, job, appointment, service…
+  features/<domain>/    # Per-domain code (auth, shop and service exist): vehicle, client, job, appointment…
     components/         # Components specific to this domain
     actions.ts          # Server Actions
     queries.ts          # Data access (Supabase queries)
     schemas.ts          # Zod schemas
+  hooks/                # Client hooks (useListUrl)
   lib/
+    actions/            # ActionResult, ok(), fail()
     auth/               # Session store, inactivity rules, redirects, DAL (requireSession)
+    data/               # Generic lookups: findByKey (uniqueness), existsWhere
+    format/             # DATE_FORMAT, APP_TIME_ZONE
+    list/               # List URL params, pagination, applyListQuery
+    search/             # normalizeSearch, the app twin of private.normalize_search
     supabase/           # Server and proxy Supabase clients (no browser client)
     navigation.ts       # App sections for the navigation
     utils.ts            # cn() and other generic helpers
+  test/                 # Test helpers: renderWithIntl, createFakeSupabase
   types/database.ts     # (planned) Generated Supabase types
 messages/es.json        # UI text
 supabase/tests/         # pgTAP RLS tests

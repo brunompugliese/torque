@@ -2,6 +2,7 @@ import {
   CalendarDotsIcon,
   CarIcon,
   HouseIcon,
+  ToolboxIcon,
   UsersIcon,
   WrenchIcon,
   type Icon,
@@ -24,6 +25,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/clientes", labelKey: "clients", icon: UsersIcon },
   { href: "/turnos", labelKey: "appointments", icon: CalendarDotsIcon },
   { href: "/trabajos", labelKey: "jobs", icon: WrenchIcon },
+  { href: "/servicios", labelKey: "services", icon: ToolboxIcon },
 ];
 
 function stripTrailingSlash(path: string): string {

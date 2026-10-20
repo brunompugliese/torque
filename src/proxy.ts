@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except the build assets and favicon the login page itself
+  // Everything except the build assets and icon the login page itself
   // needs; see specs/002-login/design.md.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };

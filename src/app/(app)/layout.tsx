@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <TopBar appName={t("name")} shopName={shopName ?? undefined} actions={<SignOutButton />} />
-      <main className="mx-auto max-w-5xl px-4 pb-[calc(var(--floating-nav-space)+env(safe-area-inset-bottom,0px))] sm:px-6">
+      <main className="mx-auto max-w-7xl px-4 pb-[calc(var(--floating-nav-space)+env(safe-area-inset-bottom,0px))] sm:px-8">
         {children}
       </main>
       <MainNav />
