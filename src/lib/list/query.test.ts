@@ -5,6 +5,7 @@ import { applyListQuery, type ListQueryBuilder } from "./query";
 
 class FakeQuery implements ListQueryBuilder<FakeQuery> {
   calls: unknown[][] = [];
+  nullsFirst = new Map<string, boolean | undefined>();
   like(column: string, pattern: string) {
     this.calls.push(["like", column, pattern]);
     return this;
@@ -13,8 +14,9 @@ class FakeQuery implements ListQueryBuilder<FakeQuery> {
     this.calls.push(["eq", column, value]);
     return this;
   }
-  order(column: string, options: { ascending: boolean }) {
+  order(column: string, options: { ascending: boolean; nullsFirst?: boolean }) {
     this.calls.push(["order", column, options.ascending]);
+    this.nullsFirst.set(column, options.nullsFirst);
     return this;
   }
   range(from: number, to: number) {
@@ -60,6 +62,11 @@ describe("applyListQuery", () => {
   it("sorts by the chosen column, and by the default for unknown ones", () => {
     expect(run({ sortBy: "creado" })).toContainEqual(["order", "created_at", true]);
     expect(run({ sortBy: "otro" })).toContainEqual(["order", "name_key", true]);
+  });
+
+  it.each([["asc"], ["desc"]] as const)("puts empty values last when sorting %s", (sort) => {
+    const query = applyListQuery(new FakeQuery(), { ...DEFAULT_LIST_PARAMS, sort }, OPTIONS);
+    expect(query.nullsFirst.get("name_key")).toBe(false);
   });
 
   it("sorts Z–A and pages", () => {

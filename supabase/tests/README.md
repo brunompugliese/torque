@@ -11,6 +11,7 @@ pgTAP tests for tenant isolation, encryption at rest and the business rules the 
 | `04_job_rules.sql` | Job and appointment statuses, status history, closed jobs and their items, kilometers |
 | `05_archived.sql` | No new work on archived vehicles, clients and services; existing records keep working |
 | `06_services.sql` | Service `name_key` and `search_text` set by the database on every write, same key for names written differently, archived services found by key, search and sort per shop ([spec 004](../../specs/004-services/requirements.md)) |
+| `07_clients.sql` | Client sort keys in `client_decrypted` (`name_key`, `dni_number`, `phone_key`, `email_key`), search across name, DNI, phone and email, brand and model names in `vehicle_decrypted`, assigning vehicles to a client (guard, archived owner, cross-shop rejected), all per shop ([spec 005](../../specs/005-clients/requirements.md)) |
 
 ## Writing a test
 

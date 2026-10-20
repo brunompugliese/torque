@@ -643,7 +643,12 @@ select
   c.id, c.shop_id,
   d.name, d.surname, d.dni, d.phone_number, d.email,
   c.enabled, c.created_at, c.updated_at,
-  private.normalize_search(concat_ws('|', concat(d.name, d.surname), d.dni, d.phone_number, d.email)) as search_text
+  private.normalize_search(concat_ws('|', concat(d.name, d.surname), d.dni, d.phone_number, d.email)) as search_text,
+  -- Sort keys of the clients page, computed here from the decrypted values and never stored:
+  private.normalize_search(concat_ws(' ', d.name, d.surname)) as name_key,   -- A–Z ignoring case/accents
+  case when d.dni ~ '^\d+$' then d.dni::numeric end           as dni_number, -- 7-digit DNIs before 8-digit
+  regexp_replace(d.phone_number, '\D', '', 'g')               as phone_key,  -- digits only
+  lower(d.email)                                              as email_key
 from public.client c
 cross join lateral (
   select
@@ -660,7 +665,9 @@ select
   v.id, v.shop_id, v.client_id,
   d.plate, v.brand_id, v.model_id, v.year, d.vin,
   v.enabled, v.created_at, v.updated_at,
-  private.normalize_search(concat_ws('|', d.plate, d.vin, concat(b.name, m.name))) as search_text
+  private.normalize_search(concat_ws('|', d.plate, d.vin, concat(b.name, m.name))) as search_text,
+  b.name as brand_name,
+  m.name as model_name
 from public.vehicle v
 join public.brand b on b.id = v.brand_id
 join public.model m on m.id = v.model_id
