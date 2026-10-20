@@ -51,7 +51,7 @@ describe("ServicesTable", () => {
 
     const table = screen.getByRole("table", { name: "Servicios" });
     const [nameHeader, createdHeader] = within(table).getAllByRole("columnheader");
-    expect(nameHeader).toHaveAttribute("aria-sort", "ascending");
+    expect(nameHeader).not.toHaveAttribute("aria-sort");
     expect(createdHeader).toHaveTextContent("Creado el");
     expect(createdHeader).not.toHaveAttribute("aria-sort");
     const dates = within(table).getAllByText("13/10/2026");
@@ -62,14 +62,22 @@ describe("ServicesTable", () => {
     const archivedRow = within(table).getByText("Lavado de motor").closest("tr")!;
     expect(archivedRow).toHaveAttribute("data-muted", "true");
     expect(within(archivedRow).getByText("Archivado")).toBeInTheDocument();
-    expect(screen.getByText("Mostrando 1–2 de 2")).toBeInTheDocument();
+    expect(screen.getByText("Mostrando 1–2 de 2")).toHaveAttribute("aria-live", "polite");
   });
 
-  it("reverses the order from the header", () => {
+  it("sorts by Servicio A–Z from its header, then reverses it", () => {
     nav.search = "pagina=2";
     renderTable({ ok: true, rows: [ACTIVE], matching: 30, total: 30 });
     fireEvent.click(within(screen.getAllByRole("columnheader")[0]).getByRole("button"));
-    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?sentido=desc");
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?orden=nombre");
+  });
+
+  it("reverses the sorted column", () => {
+    nav.search = "orden=nombre";
+    renderTable({ ok: true, rows: [ACTIVE], matching: 1, total: 1 });
+    expect(screen.getAllByRole("columnheader")[0]).toHaveAttribute("aria-sort", "ascending");
+    fireEvent.click(within(screen.getAllByRole("columnheader")[0]).getByRole("button"));
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?orden=nombre&sentido=desc");
   });
 
   it("sorts by Creado el from its header", () => {
@@ -149,10 +157,9 @@ describe("ServicesToolbar", () => {
   it("has the services placeholder and drives the URL", async () => {
     vi.useFakeTimers();
     try {
-      renderWithIntl(<ServicesToolbar count="2 de 15 servicios" />);
+      renderWithIntl(<ServicesToolbar />);
       const search = screen.getByRole("searchbox", { name: "Buscar" });
       expect(search).toHaveAttribute("placeholder", "Buscar por nombre o descripción");
-      expect(screen.getByText("2 de 15 servicios")).toBeInTheDocument();
 
       fireEvent.change(search, { target: { value: "aceite" } });
       await act(async () => vi.advanceTimersByTime(300));

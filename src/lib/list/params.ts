@@ -13,7 +13,7 @@ export type SortDirection = "asc" | "desc";
 export type ListParams = {
   search: string;
   showArchived: boolean;
-  // Column id; "" means the page's default column.
+  // Column id; "" means no column chosen (the page's default order, no header marked).
   sortBy: string;
   sort: SortDirection;
   page: number;

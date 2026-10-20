@@ -13,7 +13,6 @@ function renderToolbar(props: Partial<Parameters<typeof ListToolbar>[0]> = {}) {
       searchValue="ace"
       searchPlaceholder="Buscar por nombre"
       showArchived={false}
-      count="3 de 15 servicios"
       {...handlers}
       {...props}
     />,
@@ -37,11 +36,6 @@ describe("ListToolbar", () => {
     expect(toggle).not.toBeChecked();
     fireEvent.click(toggle);
     expect(onShowArchivedChange).toHaveBeenCalledWith(true);
-  });
-
-  it("shows the count in a live region", () => {
-    renderToolbar();
-    expect(screen.getByText("3 de 15 servicios")).toHaveAttribute("aria-live", "polite");
   });
 
   it("renders page-specific filters", () => {

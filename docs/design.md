@@ -107,7 +107,7 @@ WCAG 2.1 AA on every page. In practice:
 - Text and badges meet AA contrast against their background.
 - Modals trap focus, close with Esc and return focus to what opened them.
 - Dropdowns and popovers support arrow keys and Enter, and close with Esc or a click outside.
-- Result counts, toasts and calendar range changes are announced to screen readers.
+- List ranges ("Mostrando 1–25 de 140"), toasts and calendar range changes are announced to screen readers.
 - Sortable table headers announce their sort direction.
 - Changing page moves focus to the new page title.
 - Field errors are linked to their field; on save, focus moves to the first error.
@@ -127,10 +127,11 @@ WCAG 2.1 AA on every page. In practice:
 
 ### List pages
 
-- Toolbar: search, filters, "Mostrar archivados" switch (off by default), active filters as removable chips, result count on the right ("3 de 12 vehículos").
+- Toolbar: search, filters, "Mostrar archivados" switch (off by default), active filters as removable chips. No result count in the toolbar: the pagination line under the table already says how many match.
 - Table: every column sortable by clicking its header (click again to reverse). Text left-aligned, numbers right-aligned, plate drawing centered in its own column; a header aligns like its column. Clicking a row opens its detail modal.
 - Dates in table cells are dd/mm/aaaa in secondary text color, on one line.
 - Column headers look different from rows so nobody mistakes them for data: smaller, medium weight, secondary text color (see [Typography](#visual-identity)). Every sortable header always shows an up/down arrow icon after its label, so it reads as clickable in both directions. The sorted column's header switches to text color and its icon becomes a single arrow pointing the current direction (up A–Z / ascending, down Z–A / descending).
+- Lists open with no column sorted: every header is in secondary text with its up/down icon, and rows come in the page's default order (set in its spec). The first click on a header sorts by it ascending; clicking it again reverses it; clicking another header sorts by that one ascending.
 - Lists and tables over cards.
 - States: a loading skeleton while data loads (see [Loading](#loading)); an error message with "Reintentar" if it fails; an empty state with a title, a hint and a way out ("No encontramos vehículos" · "Probá con otra patente…" · "Borrar búsqueda").
 - Pagination is standard on every list: 25 rows per page, loaded from the server one page at a time, never the whole table. Controls under the table: "Mostrando 1–25 de 140" on the left; "Anterior", page numbers and "Siguiente" on the right. Search, filters and sorting apply to the full data set on the server; changing any of them returns to page 1.

@@ -21,7 +21,7 @@ export function PaginationBar({ page, pageSize, total, onPageChange }: Paginatio
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-muted-foreground">
-      <p>{t("range", { from, to, total })}</p>
+      <p aria-live="polite">{t("range", { from, to, total })}</p>
       {pages > 1 ? (
         <nav aria-label={t("pagination")} className="flex items-center gap-1">
           <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>

@@ -60,13 +60,11 @@ export function useListUrl() {
     [navigate, params],
   );
 
-  // The current column flips direction; another column starts ascending.
+  // The sorted column flips direction; any other column starts ascending.
   const toggleSort = useCallback(
-    (columnId: string, defaultSortBy: string) => {
-      const current = params.sortBy || defaultSortBy;
-      const sortBy = columnId === defaultSortBy ? "" : columnId;
-      const sort = columnId === current && params.sort === "asc" ? "desc" : "asc";
-      navigate({ ...params, sortBy, sort, page: 1 });
+    (columnId: string) => {
+      const sort = columnId === params.sortBy && params.sort === "asc" ? "desc" : "asc";
+      navigate({ ...params, sortBy: columnId, sort, page: 1 });
     },
     [navigate, params],
   );
