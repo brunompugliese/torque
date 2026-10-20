@@ -103,7 +103,7 @@ Validation and uniqueness
 Archive and unarchive
 
 - [ ] Given "Archivar", when clicked, then a confirmation asks "¿Archivar este cliente?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras. Sus vehículos no cambian y lo siguen mostrando como “(Archivado)”." + "Cancelar" / "Archivar".
-- [ ] Given the confirmation, when "Archivar" is confirmed, then the modal closes (the list refreshes and the client leaves it unless "Mostrar archivados" is on) and a toast "Cliente archivado" · "<name surname>" confirms. The client's vehicles don't change.
+- [ ] Given the confirmation, when "Archivar" is confirmed, then the modal closes (the archive standard in design.md; the list refreshes and the client leaves it unless "Mostrar archivados" is on) and a toast "Cliente archivado" · "<name surname>" confirms. The client's vehicles don't change.
 - [ ] Given an archived client, when "Desarchivar" is clicked, then it is restored immediately, without confirmation, the modal closes and a toast "Cliente desarchivado" · "<name surname>" confirms.
 
 Loading

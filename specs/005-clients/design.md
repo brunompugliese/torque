@@ -125,6 +125,7 @@ Color: a new token `--whatsapp` (and `--color-whatsapp`) in the brand kit in `gl
 | `SearchBox` | `components/shared/search-box.tsx` | New (extracted) |
 | `ListUrlToolbar`, `ListNoRows` | `components/shared/list-url-toolbar.tsx`, `components/shared/list-states.tsx` | New in a cleanup (the Servicios and Clientes pages had identical copies of the toolbar and of the three empty states); both pages use them |
 | `idSchema` | `lib/validation/fields.ts` | New: the one `z.uuid()` for record ids |
+| `useArchiveFlow`, `ArchiveToggleButton`, `ArchiveConfirmDialog` | `hooks/use-archive-flow.ts`, `components/shared/archive-controls.tsx` | New: the archive standard (confirm, toast, close the modal) extracted from the client and service modals, so Vehículos reuses it |
 | `PlateDisplay` | `components/shared/plate-display.tsx` | New |
 | `WhatsappButton` | `components/shared/whatsapp-button.tsx` | New |
 | `Checkbox` | `components/ui/checkbox.tsx` | New (shadcn) |

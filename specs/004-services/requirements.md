@@ -85,8 +85,8 @@ Validation and uniqueness
 Archive and unarchive
 
 - [ ] Given "Archivar", when clicked, then a confirmation asks "¿Archivar este servicio?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras. No se va a poder agregar a trabajos nuevos. Los trabajos que ya lo tienen no cambian." + "Cancelar" / "Archivar".
-- [ ] Given the confirmation, when "Archivar" is confirmed, then the modal shows the "Archivado" badge and "Desarchivar", and a toast "Servicio archivado" · "<name>" confirms; the service leaves the default list and the job form's dropdown.
-- [ ] Given an archived service, when "Desarchivar" is clicked, then it is restored immediately, without confirmation, with a toast "Servicio desarchivado" · "<name>".
+- [ ] Given the confirmation, when "Archivar" is confirmed, then the modal closes (the archive standard in design.md) and a toast "Servicio archivado" · "<name>" confirms; the service leaves the default list and the job form's dropdown.
+- [ ] Given an archived service, when "Desarchivar" is clicked, then it is restored immediately, without confirmation, the modal closes and a toast "Servicio desarchivado" · "<name>" confirms.
 
 Loading
 

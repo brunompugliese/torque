@@ -55,7 +55,7 @@ Columns: "Servicio" (name in medium weight, description below in secondary text,
 - "Agregar servicio" opens the modal in create mode. On success, the modal switches to the new service (view mode), a toast confirms and the list refreshes via `revalidatePath`.
 - Edit replaces the modal content with the form; Cancel goes back to view.
 - Rename: the action answers `renameNeedsConfirmation` when the normalized name changed and the service is on a job item; the form shows the confirmation and resends with `confirmRename: true`.
-- Archive: confirmation, then action; Unarchive: action directly.
+- Archive: confirmation, then action; Unarchive: action directly. After either succeeds the modal closes (archive standard in design.md).
 - Uniqueness errors come back as field errors and land on Nombre with focus.
 
 ## Components and code

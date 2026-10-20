@@ -1,14 +1,17 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
+import { ArchiveConfirmDialog, ArchiveToggleButton } from "@/components/shared/archive-controls";
 import { ArchivedBadge } from "@/components/shared/archived-badge";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { DetailList } from "@/components/shared/detail-list";
 import { DetailModal, type DetailModalProps } from "@/components/shared/detail-modal";
 import { Button } from "@/components/ui/button";
+import { useArchiveFlow } from "@/hooks/use-archive-flow";
+import { fail } from "@/lib/actions/result";
 import { DATE_FORMAT } from "@/lib/format/date";
 
 import { createService, setServiceArchived, updateService, type ServiceActionResult } from "../actions";
@@ -38,8 +41,6 @@ export function ServiceModal({ open, mode, service, onModeChange, onOpenChange }
   const format = useFormatter();
 
   const [saving, setSaving] = useState(false);
-  const [archiving, startArchiving] = useTransition();
-  const [confirmArchive, setConfirmArchive] = useState(false);
   const [pendingRename, setPendingRename] = useState<ServiceFormValues | null>(null);
   const [renaming, setRenaming] = useState(false);
 
@@ -83,19 +84,16 @@ export function ServiceModal({ open, mode, service, onModeChange, onOpenChange }
     else toast.error(tCommon("unexpectedError"));
   };
 
-  const setArchived = (archived: boolean) => {
-    if (!service) return;
-    startArchiving(async () => {
-      const result = await setServiceArchived(service.id, archived);
-      setConfirmArchive(false);
-      if (!result.ok) {
-        toast.error(tCommon("unexpectedError"));
-        return;
-      }
-      toast(t(archived ? "toasts.archived" : "toasts.unarchived"), { description: result.data.name });
-      onModeChange("view", result.data);
-    });
-  };
+  // Archive and unarchive: the standard flow, then the modal closes (docs/design.md#archive).
+  const archiveFlow = useArchiveFlow({
+    run: async (archived) => (service ? setServiceArchived(service.id, archived) : fail("notFound")),
+    notify: (archived, saved) => ({
+      title: t(archived ? "toasts.archived" : "toasts.unarchived"),
+      description: saved.name,
+    }),
+    onDone: () => onOpenChange(false),
+    errorMessage: tCommon("unexpectedError"),
+  });
 
   const formFooter = (submitLabel: string, onCancel: () => void) => (
     <div className="flex justify-end gap-2">
@@ -144,15 +142,7 @@ export function ServiceModal({ open, mode, service, onModeChange, onOpenChange }
       badge: service.enabled ? null : <ArchivedBadge />,
       actions: (
         <>
-          {service.enabled ? (
-            <Button variant="outline" onClick={() => setConfirmArchive(true)}>
-              {tCommon("archive")}
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => setArchived(false)} disabled={archiving}>
-              {tCommon("unarchive")}
-            </Button>
-          )}
+          <ArchiveToggleButton archived={!service.enabled} flow={archiveFlow} />
           <Button onClick={() => onModeChange("edit")}>{t("edit")}</Button>
         </>
       ),
@@ -173,20 +163,7 @@ export function ServiceModal({ open, mode, service, onModeChange, onOpenChange }
   return (
     <>
       <DetailModal open={open} onOpenChange={onOpenChange} {...content} />
-      <ConfirmDialog
-        open={confirmArchive}
-        onOpenChange={setConfirmArchive}
-        title={t("archiveConfirm.title")}
-        description={
-          <>
-            <p>{tCommon("archiveConfirmBody")}</p>
-            <p>{t("archiveConfirm.body")}</p>
-          </>
-        }
-        confirmLabel={tCommon("archive")}
-        onConfirm={() => setArchived(true)}
-        pending={archiving}
-      />
+      <ArchiveConfirmDialog flow={archiveFlow} title={t("archiveConfirm.title")} detail={t("archiveConfirm.body")} />
       <ConfirmDialog
         open={pendingRename !== null}
         onOpenChange={(next) => {

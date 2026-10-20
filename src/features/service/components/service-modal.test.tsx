@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test/render";
@@ -73,7 +73,7 @@ describe("ServiceModal: details", () => {
 describe("ServiceModal: archive", () => {
   it("asks first, then archives with a toast", async () => {
     mocks.setServiceArchived.mockResolvedValue({ ok: true, data: { ...SERVICE, enabled: false } });
-    const { onModeChange } = renderModal("view");
+    const { onModeChange, onOpenChange } = renderModal("view");
 
     fireEvent.click(await screen.findByRole("button", { name: "Archivar" }));
     const confirm = await screen.findByRole("alertdialog", { name: "¿Archivar este servicio?" });
@@ -86,24 +86,36 @@ describe("ServiceModal: archive", () => {
 
     expect(mocks.setServiceArchived).toHaveBeenCalledWith(SERVICE.id, true);
     expect(mocks.toast).toHaveBeenCalledWith("Servicio archivado", { description: "Cambio de aceite" });
-    expect(onModeChange).toHaveBeenCalledWith("view", { ...SERVICE, enabled: false });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
+  });
+
+  it("archives nothing, and keeps the modal open, when the confirmation is cancelled", async () => {
+    const { onOpenChange } = renderModal("view");
+    fireEvent.click(await screen.findByRole("button", { name: "Archivar" }));
+    const confirm = await screen.findByRole("alertdialog");
+    await act(async () => fireEvent.click(within(confirm).getByRole("button", { name: "Cancelar" })));
+    expect(mocks.setServiceArchived).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
   it("unarchives right away, without confirmation", async () => {
     mocks.setServiceArchived.mockResolvedValue({ ok: true, data: SERVICE });
-    renderModal("view", { ...SERVICE, enabled: false });
+    const { onOpenChange } = renderModal("view", { ...SERVICE, enabled: false });
 
     await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Desarchivar" })));
     expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(mocks.setServiceArchived).toHaveBeenCalledWith(SERVICE.id, false);
     expect(mocks.toast).toHaveBeenCalledWith("Servicio desarchivado", { description: "Cambio de aceite" });
   });
 
   it("shows an error toast when it fails", async () => {
     mocks.setServiceArchived.mockResolvedValue({ ok: false, error: "unexpected" });
-    renderModal("view", { ...SERVICE, enabled: false });
+    const { onOpenChange } = renderModal("view", { ...SERVICE, enabled: false });
     await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Desarchivar" })));
     expect(mocks.toast.error).toHaveBeenCalledWith("Algo salió mal. Probá de nuevo.");
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 });
 

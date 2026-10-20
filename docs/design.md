@@ -184,6 +184,7 @@ Vehicles, clients, jobs and services are archived, never deleted. Archiving sets
 
 - "Archivar" is in the detail modal header, next to "Editar". It always asks for confirmation: "¿Archivar este vehículo?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras." + "Cancelar" / "Archivar".
 - Archived records show an "Archivado" badge and greyed rows; "Desarchivar" restores them immediately, without confirmation.
+- **Standard for every archivable entity:** once archiving (after its confirmation) or unarchiving succeeds, the detail modal closes and a toast confirms ("Cliente archivado" · name). The list refreshes behind it. If the action fails the modal stays open with an error toast. Cancelling the confirmation changes nothing and keeps the modal open.
 - New records always start active.
 
 ### Confirmations
