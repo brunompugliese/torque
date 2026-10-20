@@ -13,13 +13,18 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/servicios",
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
-vi.mock("../actions", () => ({ createService: vi.fn(), updateService: vi.fn(), setServiceArchived: vi.fn() }));
+vi.mock("../actions", () => ({
+  createService: vi.fn(),
+  updateService: vi.fn(),
+  setServiceArchived: vi.fn(),
+  searchServices: vi.fn(),
+}));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn() }) }));
 
 import { AddServiceButton } from "./add-service-button";
 import { ServicesPanel } from "./services-panel";
 import { ServicesTable, ServicesTableSkeleton } from "./services-table";
-import { ServicesToolbar } from "./services-toolbar";
+import { ServicesListView } from "./services-list";
 
 const ACTIVE: Service = {
   id: "s1",
@@ -153,11 +158,15 @@ describe("ServicesTableSkeleton", () => {
   });
 });
 
-describe("ServicesToolbar", () => {
+describe("ServicesListView toolbar", () => {
   it("has the services placeholder and drives the URL", async () => {
     vi.useFakeTimers();
     try {
-      renderWithIntl(<ServicesToolbar />);
+      renderWithIntl(
+        <ServicesPanel>
+          <ServicesListView initial={{ ok: true, rows: [ACTIVE], matching: 1 }} initialKey="" total={1} />
+        </ServicesPanel>,
+      );
       const search = screen.getByRole("searchbox", { name: "Buscar" });
       expect(search).toHaveAttribute("placeholder", "Buscar por nombre o descripción");
 

@@ -34,7 +34,7 @@ const CLIENT: Client = {
   name: "Ana",
   surname: "Gómez",
   dni: "28456123",
-  phoneNumber: "11 12345678",
+  phoneNumber: "11 1234-5678",
   email: "ana@example.com",
   enabled: true,
   // The 13th in Argentina.
@@ -82,15 +82,15 @@ describe("ClientModal: details", () => {
     expect(within(dialog).queryByText("Archivado")).toBeNull();
   });
 
-  it("shows the phone as plain text with an icon-only WhatsApp button and no call link", async () => {
+  it("shows the phone as plain text with a WhatsApp button (icon and the word WhatsApp) and no call link", async () => {
     renderModal("view");
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("11 12345678")).toBeInTheDocument();
+    expect(within(dialog).getByText("11 1234-5678")).toBeInTheDocument();
     const links = within(dialog).getAllByRole("link");
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAccessibleName("Escribir por WhatsApp");
     expect(links[0]).toHaveAttribute("href", "https://wa.me/5491112345678");
-    expect(links[0]).toHaveTextContent("");
+    expect(links[0]).toHaveTextContent("WhatsApp");
   });
 
   it("shows only the name without a surname and Sin cargar for a missing DNI and email", async () => {
@@ -121,7 +121,7 @@ describe("ClientModal: details", () => {
 describe("ClientModal: archive", () => {
   it("asks first with the shared text plus the client sentence, then archives with a toast", async () => {
     mocks.setClientArchived.mockResolvedValue({ ok: true, data: { ...CLIENT, enabled: false } });
-    const { onModeChange } = renderModal("view");
+    const { onModeChange, onOpenChange } = renderModal("view");
 
     fireEvent.click(await screen.findByRole("button", { name: "Archivar" }));
     const confirm = await screen.findByRole("alertdialog", { name: "¿Archivar este cliente?" });
@@ -135,32 +135,36 @@ describe("ClientModal: archive", () => {
 
     expect(mocks.setClientArchived).toHaveBeenCalledWith(CLIENT.id, true);
     expect(mocks.toast).toHaveBeenCalledWith("Cliente archivado", { description: "Ana Gómez" });
-    expect(onModeChange).toHaveBeenCalledWith("view", { ...CLIENT, enabled: false });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
-  it("archives nothing when the confirmation is cancelled", async () => {
-    renderModal("view");
+  it("archives nothing, and keeps the modal open, when the confirmation is cancelled", async () => {
+    const { onOpenChange } = renderModal("view");
     fireEvent.click(await screen.findByRole("button", { name: "Archivar" }));
     const confirm = await screen.findByRole("alertdialog");
     await act(async () => fireEvent.click(within(confirm).getByRole("button", { name: "Cancelar" })));
     expect(mocks.setClientArchived).not.toHaveBeenCalled();
+    expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
   it("unarchives right away, without confirmation", async () => {
     mocks.setClientArchived.mockResolvedValue({ ok: true, data: CLIENT });
-    renderModal("view", { ...CLIENT, enabled: false });
+    const { onOpenChange } = renderModal("view", { ...CLIENT, enabled: false });
 
     await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Desarchivar" })));
     expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(mocks.setClientArchived).toHaveBeenCalledWith(CLIENT.id, false);
     expect(mocks.toast).toHaveBeenCalledWith("Cliente desarchivado", { description: "Ana Gómez" });
   });
 
   it("shows an error toast when it fails", async () => {
     mocks.setClientArchived.mockResolvedValue({ ok: false, error: "unexpected" });
-    renderModal("view", { ...CLIENT, enabled: false });
+    const { onOpenChange } = renderModal("view", { ...CLIENT, enabled: false });
     await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Desarchivar" })));
     expect(mocks.toast.error).toHaveBeenCalledWith("Algo salió mal. Probá de nuevo.");
+    expect(onOpenChange).not.toHaveBeenCalled();
   });
 });
 
@@ -202,17 +206,107 @@ describe("ClientModal: create", () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
-  it("checks the DNI and the email formats", async () => {
+  it("leaves extra space between the last field and the footer", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Email").closest("form")).toHaveClass("pb-2");
+  });
+
+  it("formats the phone as the user types and accepts only digits", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    const phone = screen.getByLabelText("Teléfono *");
+
+    for (const [typed, shown] of [
+      ["1", "1"],
+      ["11", "11"],
+      ["111", "11 1"],
+      ["11 1234", "11 1234"],
+      ["11 1234-5", "11 1234-5"],
+      ["11a1234-5678", "11 1234-5678"],
+    ]) {
+      type("Teléfono *", typed);
+      expect(phone).toHaveValue(shown);
+    }
+  });
+
+  it("holds at most 10 digits and drops a leading 0, also when pasted", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    const phone = screen.getByLabelText("Teléfono *");
+
+    type("Teléfono *", "111234567899999");
+    expect(phone).toHaveValue("11 1234-5678");
+    type("Teléfono *", "011 4444-5555");
+    expect(phone).toHaveValue("11 4444-5555");
+  });
+
+  it("shows the area-code hint under the phone, which stays a text field", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    const phone = screen.getByLabelText("Teléfono *");
+    expect(phone).toHaveAccessibleDescription("Código de área y número, sin 0 ni 15.");
+    expect(phone).toHaveAttribute("type", "tel");
+  });
+
+  it("asks for 10 digits when the phone is incomplete, keeping the hint, and focuses it", async () => {
     renderModal("create", null);
     await screen.findByRole("dialog");
     type("Nombre *", "Ana");
-    type("Teléfono *", "11 1");
-    type("DNI", "28a456");
+    type("Teléfono *", "11 1234");
+    await submit("Agregar cliente");
+
+    expect(await screen.findByText("Revisá el teléfono: tiene que tener 10 dígitos.")).toBeInTheDocument();
+    const phone = screen.getByLabelText("Teléfono *");
+    expect(phone).toHaveAccessibleDescription(
+      "Código de área y número, sin 0 ni 15. Revisá el teléfono: tiene que tener 10 dígitos.",
+    );
+    await waitFor(() => expect(phone).toHaveFocus());
+    expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it("accepts only digits in the DNI as the user types or pastes", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    const dni = screen.getByLabelText("DNI");
+    expect(dni).toHaveAttribute("inputmode", "numeric");
+    // A text input, so non-digits can be dropped as they are typed.
+    expect(dni).not.toHaveAttribute("type", "number");
+
+    for (const [typed, shown] of [
+      ["2", "2"],
+      ["28a456", "28456"],
+      ["28.456.123", "28456123"],
+      [" 28 456-123 ", "28456123"],
+      ["284561239999", "28456123"],
+      ["abc", ""],
+    ]) {
+      type("DNI", typed);
+      expect(dni).toHaveValue(shown);
+    }
+  });
+
+  it("sends the DNI as digits when it was pasted with dots", async () => {
+    mocks.createClient.mockResolvedValue({ ok: true, data: CLIENT });
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    type("Nombre *", "Ana");
+    type("Teléfono *", "1112345678");
+    type("DNI", "28.456.123");
+    await submit("Agregar cliente");
+    expect(mocks.createClient).toHaveBeenCalledWith(expect.objectContaining({ dni: "28456123" }));
+  });
+
+  it("checks the email format", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    type("Nombre *", "Ana");
+    type("Teléfono *", "1112345678");
     type("Email", "ana@");
     await submit("Agregar cliente");
 
-    expect(await screen.findByText("Revisá el DNI.")).toBeInTheDocument();
-    expect(screen.getByText("Revisá el formato del email.")).toBeInTheDocument();
+    expect(await screen.findByText("Revisá el formato del email.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Email")).toHaveAttribute("aria-invalid", "true");
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
@@ -231,7 +325,7 @@ describe("ClientModal: create", () => {
     expect(mocks.createClient).toHaveBeenCalledWith({
       name: "Ana",
       surname: "Gómez",
-      phoneNumber: "11 12345678",
+      phoneNumber: "11 1234-5678",
       dni: "28456123",
       email: "ana@example.com",
     });
@@ -244,12 +338,12 @@ describe("ClientModal: create", () => {
     renderModal("create", null);
     await screen.findByRole("dialog");
     type("Nombre *", "Zoe");
-    type("Teléfono *", "11 1");
+    type("Teléfono *", "1112345678");
     await submit("Agregar cliente");
     expect(mocks.createClient).toHaveBeenCalledWith({
       name: "Zoe",
       surname: null,
-      phoneNumber: "11 1",
+      phoneNumber: "11 1234-5678",
       dni: null,
       email: null,
     });
@@ -264,7 +358,7 @@ describe("ClientModal: create", () => {
 
     await screen.findByRole("dialog");
     type("Nombre *", "Ana");
-    type("Teléfono *", "11 1");
+    type("Teléfono *", "1112345678");
     type("DNI", "28456123");
     await submit("Agregar cliente");
 
@@ -279,7 +373,7 @@ describe("ClientModal: create", () => {
     renderModal("create", null);
     await screen.findByRole("dialog");
     type("Nombre *", "Ana");
-    type("Teléfono *", "11 1");
+    type("Teléfono *", "1112345678");
     await submit("Agregar cliente");
     expect(await screen.findByText("Algo salió mal. Probá de nuevo.")).toBeInTheDocument();
   });
@@ -298,7 +392,7 @@ describe("ClientModal: edit", () => {
     expect(dialog).toHaveTextContent("Ana GómezLos campos con * son obligatorios.");
     expect(screen.getByLabelText("Nombre *")).toHaveValue("Ana");
     expect(screen.getByLabelText("Apellido")).toHaveValue("Gómez");
-    expect(screen.getByLabelText("Teléfono *")).toHaveValue("11 12345678");
+    expect(screen.getByLabelText("Teléfono *")).toHaveValue("11 1234-5678");
     expect(screen.getByLabelText("DNI")).toHaveValue("28456123");
     expect(screen.getByLabelText("Email")).toHaveValue("ana@example.com");
   });
@@ -327,7 +421,7 @@ describe("ClientModal: edit", () => {
     expect(mocks.updateClient).toHaveBeenCalledWith(CLIENT.id, {
       name: "Ana",
       surname: "Gómez",
-      phoneNumber: "11 12345678",
+      phoneNumber: "11 1234-5678",
       dni: "28456123",
       email: null,
     });

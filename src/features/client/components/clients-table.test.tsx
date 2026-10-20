@@ -29,7 +29,7 @@ vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn() }) }))
 import { AddClientButton } from "./add-client-button";
 import { ClientsPanel } from "./clients-panel";
 import { ClientsTable, ClientsTableSkeleton } from "./clients-table";
-import { ClientsToolbar } from "./clients-toolbar";
+import { ClientsListView } from "./clients-list";
 
 const ACTIVE: Client = {
   id: "c1",
@@ -86,6 +86,12 @@ describe("ClientsTable", () => {
     expect(within(row).getByText("ana@example.com")).toHaveClass("truncate");
     expect(within(row).getByText("13/10/2026")).toHaveClass("text-muted-foreground");
     expect(within(row).queryByText("Archivado")).not.toBeInTheDocument();
+  });
+
+  it("keeps the Cliente column readable on a narrow screen with a minimum width, header included", () => {
+    renderTable({ ok: true, rows: [ACTIVE], matching: 1, total: 1 });
+    expect(screen.getByRole("columnheader", { name: /Cliente/ })).toHaveClass("min-w-44");
+    expect(screen.getByText("Ana Gómez").closest("td")).toHaveClass("min-w-44");
   });
 
   it("aligns the DNI column to the right, header included", () => {
@@ -210,11 +216,19 @@ describe("ClientsTableSkeleton", () => {
   });
 });
 
-describe("ClientsToolbar", () => {
+function renderListView() {
+  return renderWithIntl(
+    <ClientsPanel>
+      <ClientsListView initial={{ ok: true, rows: [ACTIVE], matching: 1 }} initialKey="" total={1} />
+    </ClientsPanel>,
+  );
+}
+
+describe("ClientsListView toolbar", () => {
   it("has the clients placeholder and drives the URL", async () => {
     vi.useFakeTimers();
     try {
-      renderWithIntl(<ClientsToolbar />);
+      renderListView();
       const search = screen.getByRole("searchbox", { name: "Buscar" });
       expect(search).toHaveAttribute("placeholder", "Buscar por nombre, apellido, DNI, teléfono o email");
 
@@ -230,7 +244,7 @@ describe("ClientsToolbar", () => {
   });
 
   it("has only the search and the archived switch", () => {
-    renderWithIntl(<ClientsToolbar />);
+    renderListView();
     expect(screen.getAllByRole("searchbox")).toHaveLength(1);
     expect(screen.getAllByRole("switch")).toHaveLength(1);
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();

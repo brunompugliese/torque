@@ -83,8 +83,25 @@ describe("token contrast", () => {
     return (light + 0.05) / (dark + 0.05);
   }
 
-  it("keeps the WhatsApp icon at 3:1 (AA non-text) on the card surface", () => {
-    expect(contrast(token("whatsapp"), token("card"))).toBeGreaterThanOrEqual(3);
+  // The hover fill: the token at 10% over the card, as bg-whatsapp/10 draws it.
+  function tint(foreground: string, background: string, alpha: number): string {
+    const channels = [1, 3, 5].map((start) => {
+      const fg = parseInt(foreground.slice(start, start + 2), 16);
+      const bg = parseInt(background.slice(start, start + 2), 16);
+      return Math.round(fg * alpha + bg * (1 - alpha))
+        .toString(16)
+        .padStart(2, "0");
+    });
+    return `#${channels.join("")}`;
+  }
+
+  it("keeps the WhatsApp text at 4.5:1 (AA) on the card surface", () => {
+    expect(contrast(token("whatsapp"), token("card"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("keeps the WhatsApp text at 4.5:1 (AA) on its hover fill", () => {
+    const fill = tint(token("whatsapp"), token("card"), 0.1);
+    expect(contrast(token("whatsapp"), fill)).toBeGreaterThanOrEqual(4.5);
   });
 
   it("keeps the plate characters at 4.5:1 on the plate", () => {

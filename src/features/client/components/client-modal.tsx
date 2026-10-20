@@ -17,6 +17,7 @@ import { VehicleRowsSkeleton } from "@/features/vehicle/components/vehicle-row";
 import { useLoadedData } from "@/hooks/use-loaded-data";
 import { DATE_FORMAT } from "@/lib/format/date";
 import { formatDni } from "@/lib/format/dni";
+import { formatPhone } from "@/lib/format/phone";
 import { formatPlate } from "@/lib/format/plate";
 
 import { createClient, setClientArchived, updateClient, type ClientActionResult } from "../actions";
@@ -107,7 +108,8 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
         return;
       }
       toast(t(archived ? "toasts.archived" : "toasts.unarchived"), { description: formatClientName(result.data) });
-      onModeChange("view", result.data);
+      // Done with this client: the list refreshes behind the closing modal.
+      onOpenChange(false);
     });
   };
 
@@ -199,7 +201,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
           defaultValues={{
             name: client.name,
             surname: client.surname ?? "",
-            phoneNumber: client.phoneNumber,
+            phoneNumber: formatPhone(client.phoneNumber),
             dni: client.dni ?? "",
             email: client.email ?? "",
           }}
@@ -236,7 +238,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
                 value: (
                   <span className="inline-flex items-center gap-1">
                     {client.phoneNumber}
-                    <WhatsappButton phone={client.phoneNumber} label={t("whatsapp")} />
+                    <WhatsappButton phone={client.phoneNumber} label={t("whatsapp")} text={t("whatsappText")} />
                   </span>
                 ),
               },

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   dniField,
+  idSchema,
   optionalEmailField,
   optionalLineField,
   phoneField,
@@ -48,4 +49,4 @@ export const clientRowSchema = z
 
 export type Client = z.output<typeof clientRowSchema>;
 
-export const clientIdSchema = z.uuid();
+export const clientIdSchema = idSchema;

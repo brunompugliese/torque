@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import {
   dniField,
+  idSchema,
   newPasswordField,
   optionalEmailField,
   optionalLineField,
@@ -58,14 +59,32 @@ function parse(field: z.ZodType, value: unknown) {
     : { error: toFieldErrors<"value">(result.error).value };
 }
 
+describe("idSchema", () => {
+  it("accepts a uuid only", () => {
+    expect(idSchema.safeParse("6f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b").success).toBe(true);
+    for (const value of ["nope", "", undefined, 5]) expect(idSchema.safeParse(value).success).toBe(false);
+  });
+});
+
 describe("phoneField", () => {
-  it.each([[""], ["   "], ["---"], [undefined]])("rejects %j", (phone) => {
+  it.each([[""], ["   "], ["---"], ["abc"], ["000"], [undefined]])("requires a phone for %j", (phone) => {
     expect(parse(phoneField, phone)).toEqual({ error: "phoneRequired" });
   });
 
-  it("trims, removes hyphens and keeps everything else as entered", () => {
-    expect(parse(phoneField, " 11 1234-5678 ")).toEqual({ value: "11 12345678" });
-    expect(parse(phoneField, "(011) 4444 5555")).toEqual({ value: "(011) 4444 5555" });
+  it.each([["1"], ["11 1234-567"], ["1112345678 9"], ["11 1234-56789"]])("rejects %j: not 10 digits", (phone) => {
+    expect(parse(phoneField, phone)).toEqual({ error: "phoneInvalid" });
+  });
+
+  it("stores 10 digits formatted, whatever way they were typed", () => {
+    expect(parse(phoneField, "1112345678")).toEqual({ value: "11 1234-5678" });
+    expect(parse(phoneField, " 11 1234-5678 ")).toEqual({ value: "11 1234-5678" });
+    expect(parse(phoneField, "(011) 4444 5555")).toEqual({ value: "11 4444-5555" });
+    expect(parse(phoneField, "2211234567")).toEqual({ value: "221 123-4567" });
+    expect(parse(phoneField, "2966123456")).toEqual({ value: "2966 12-3456" });
+  });
+
+  it("is idempotent: a stored phone passes again unchanged", () => {
+    expect(parse(phoneField, "11 1234-5678")).toEqual({ value: "11 1234-5678" });
   });
 });
 
@@ -79,7 +98,7 @@ describe("dniField", () => {
     expect(parse(dniField, " 28 456 123 ")).toEqual({ value: "28456123" });
   });
 
-  it.each([["28a456"], ["28-456-123"], ["12,5"]])("rejects %j", (dni) => {
+  it.each([["28a456"], ["28-456-123"], ["12,5"], ["284561239"], ["28.456.123.9"]])("rejects %j", (dni) => {
     expect(parse(dniField, dni)).toEqual({ error: "dniInvalid" });
   });
 });

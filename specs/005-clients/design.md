@@ -53,7 +53,7 @@ Columns (`features/client/components/clients-table.tsx`):
 
 | id | Header | Cell | Align | Sort column |
 |---|---|---|---|---|
-| `cliente` | Cliente | name + surname (medium weight) + `ArchivedBadge` | left | `name_key` |
+| `cliente` | Cliente | name + surname (medium weight) + `ArchivedBadge`; the column has a minimum width (`min-w-44`) so a narrow screen never squeezes it to nothing | left | `name_key` |
 | `dni` | DNI | `formatDni`, tabular figures, "—" when empty | right | `dni_number` |
 | `telefono` | Teléfono | as entered, "—" when empty | left | `phone_key` |
 | `email` | Email | address, "—" when empty | left | `email_key` |
@@ -104,9 +104,13 @@ New `hooks/use-loaded-data.ts`: `useLoadedData(load, deps)` returns `{ status: "
 
 ### WhatsApp
 
-`lib/format/whatsapp.ts`: `toWhatsappUrl(phone)` returns `https://wa.me/<number>`, where the number is the digits of `phone`, leading zeros dropped, prefixed with `549` unless it starts with `54`. `WhatsappButton` (`components/shared/whatsapp-button.tsx`) is generic: an `<a>` styled as an icon button (Phosphor `WhatsappLogoIcon`), `target="_blank"`, `rel="noopener noreferrer"`, `aria-label` from a prop, no visible text. It always renders.
+`lib/format/whatsapp.ts`: `toWhatsappUrl(phone)` returns `https://wa.me/<number>`, where the number is the digits of `phone`, leading zeros dropped, prefixed with `549` unless it starts with `54`. `WhatsappButton` (`components/shared/whatsapp-button.tsx`) is generic: an `<a>` with the Phosphor `WhatsappLogoIcon` and a visible `text` prop ("WhatsApp"), in the WhatsApp green with no border or fill at rest (`border-transparent`), and on hover or keyboard focus a light fill (`bg-whatsapp/10`) and a lighter border (`border-whatsapp/40`) plus the focus ring; `target="_blank"`, `rel="noopener noreferrer"`, `aria-label` from a prop that contains the visible text. It always renders.
 
-Color: a new token `--whatsapp` (and `--color-whatsapp`) in the brand kit in `globals.css`, `#128c7e`, picked for at least 3:1 against `--card` (non-text contrast). `theme-tokens.test.ts` covers it per conventions. `docs/design.md` lists it with the other brand colors.
+Color: a new token `--whatsapp` (and `--color-whatsapp`) in the brand kit in `globals.css`, `#137a38`. It is used for text, so it meets 4.5:1 against `--card` and against the 10% hover fill; `theme-tokens.test.ts` checks both. `docs/conventions.md` lists it with the other brand colors.
+
+### Phone
+
+`lib/format/phone.ts`: `formatPhone(input)` keeps the digits, drops leading zeros, caps them at 10 and formats them with `AsYouType("AR")` from `libphonenumber-js/min` (about 84 KB of metadata; the full metadata isn't needed). `phoneDigits(input)` returns just the digits. The same function formats in the form (on every change, before React Hook Form reads the value; the caret goes to the end) and in `phoneField`, so the value stored is the value shown. `phoneField`: empty → `phoneRequired`; not exactly 10 digits → `phoneInvalid`; otherwise `formatPhone`. Existing rows are untouched; searching and sorting use digits (`search_text` ignores spaces and hyphens, `phone_key` is digits only), so formatted and unformatted rows sort and search alike.
 
 ### Plate
 
@@ -119,6 +123,8 @@ Color: a new token `--whatsapp` (and `--color-whatsapp`) in the brand kit in `gl
 | `DataTable`, `ListToolbar`, `PaginationBar`, `ListEmpty`/`ListError`, `ArchivedBadge`, `DetailModal`, `DetailList`, `ConfirmDialog`, `TableDate`, `LoadingRegion`, `PageHeader`, `TextSkeleton` | `components/shared/` | Reused as-is |
 | `ListToolbar` | `components/shared/list-toolbar.tsx` | Extended: uses `SearchBox` |
 | `SearchBox` | `components/shared/search-box.tsx` | New (extracted) |
+| `ListUrlToolbar`, `ListNoRows` | `components/shared/list-url-toolbar.tsx`, `components/shared/list-states.tsx` | New in a cleanup (the Servicios and Clientes pages had identical copies of the toolbar and of the three empty states); both pages use them |
+| `idSchema` | `lib/validation/fields.ts` | New: the one `z.uuid()` for record ids |
 | `PlateDisplay` | `components/shared/plate-display.tsx` | New |
 | `WhatsappButton` | `components/shared/whatsapp-button.tsx` | New |
 | `Checkbox` | `components/ui/checkbox.tsx` | New (shadcn) |
@@ -128,12 +134,14 @@ Color: a new token `--whatsapp` (and `--color-whatsapp`) in the brand kit in `gl
 | `formatPlate` | `lib/format/plate.ts` | New |
 | `formatDni` | `lib/format/dni.ts` | New: dot thousands |
 | `toWhatsappUrl` | `lib/format/whatsapp.ts` | New |
-| `phoneField`, `dniField`, `optionalEmailField` | `lib/validation/fields.ts` | Extended (and `ValidationErrorKey`: `phoneRequired`, `dniInvalid`) |
+| `phoneField`, `dniField`, `optionalEmailField` | `lib/validation/fields.ts` | Extended (and `ValidationErrorKey`: `phoneRequired`, `phoneInvalid`, `dniInvalid`) |
+| `formatPhone`, `phoneDigits` | `lib/format/phone.ts` | New; adds the `libphonenumber-js` dependency |
+| `Textarea`, `ClientForm`, `ServiceForm` | `components/ui/textarea.tsx`, `features/*/components/*-form.tsx` | Form spacing: `pb-2` on the form (the text area already grows with `field-sizing-content`; no JS fallback, owner's decision) |
 | `findByKey`, `existsWhere`, `ActionResult`, `normalizeSearch`, `DATE_FORMAT` | `lib/` | Reused |
 | `NAV_ITEMS` | `lib/navigation.ts` | Reused (Clientes is already there) |
 | Client schema, queries, actions | `features/client/` | New |
 | Vehicle row schema, read queries, `assignVehiclesToClient` | `features/vehicle/` | New (the Vehículos spec extends it) |
-| `ClientsPanel`, `ClientsTable` (+ skeleton), `ClientsToolbar`, `ClientsList`/`ClientsSummary` sections, `ClientModal`, `ClientForm`, `ClientVehicles`, `AddVehicleChoice`, `AssignVehicles`, `AddClientButton` | `features/client/components/` | New |
+| `ClientsPanel`, `ClientsTable` (+ skeleton), `ClientsList`/`ClientsSummary` sections, `ClientModal`, `ClientForm`, `ClientVehicles`, `AddVehicleChoice`, `AssignVehicles`, `AddClientButton` | `features/client/components/` | New |
 | Vehicle row | `features/vehicle/components/vehicle-row.tsx` | New: plate, brand + model, year, VIN, badge; used by the client modal and the assign step |
 | `clientes/page.tsx` + `loading.tsx` | `app/(app)/clientes/` | Replaced / new |
 | `--whatsapp` | `app/globals.css` | New token |
@@ -171,20 +179,20 @@ All actions log only error codes, never personal data.
 
 - `name`: `requiredTextField("nameRequired")`.
 - `surname`: `optionalTextField`, with inner spaces collapsed.
-- `phoneNumber`: `phoneField`: trimmed, hyphens removed, required (`phoneRequired`).
-- `dni`: `dniField`: dots and spaces removed; empty → `null`; anything but digits → `dniInvalid`.
+- `phoneNumber`: `phoneField`: digits only, exactly 10, stored formatted (`phoneRequired`, `phoneInvalid`); see [Phone](#phone).
+- `dni`: `dniField` (the form also drops every non-digit as it is typed and holds 8 digits, with `dniDigits`; the schema stays strict for values sent to the server: digits only, 1 to 8): dots and spaces removed; empty → `null`; anything but digits → `dniInvalid`.
 - `email`: `optionalEmailField`: trimmed, empty → `null`, then `z.email` (`emailInvalid`, the existing key).
 
 The no-change check compares the normalized form with the current row, as services do.
 
 ## UI text
 
-`messages/es.json`: `nav` unchanged; `clients` namespace (title, summary and count with ICU plurals, columns, search placeholder, empty states, modal, form, vehicles section, add-vehicle steps, assign step, confirmation, toasts, errors); `validation.phoneRequired`, `validation.dniInvalid`; `common` reused; `list` reused (`range`, `previous`, `next`, `goToPage`, `searchLabel`, `retry`). New shared texts go under `common`/`list`, not under `clients`.
+`messages/es.json`: `nav` unchanged; `clients` namespace (title, summary and count with ICU plurals, columns, search placeholder, empty states, modal, form, vehicles section, add-vehicle steps, assign step, confirmation, toasts, errors); `validation.phoneRequired`, `validation.phoneInvalid`, `validation.dniInvalid`; `common` reused; `list` reused (`range`, `previous`, `next`, `goToPage`, `searchLabel`, `retry`). New shared texts go under `common`/`list`, not under `clients`.
 
 ## Tests
 
 - **pgTAP** `supabase/tests/07_clients.sql`: `client_decrypted.name_key` is the same for names differing in case, accents and spaces, and orders by name then surname; `dni_number` is numeric (7 digits sorts before 8) and null without DNI; `phone_key` has digits only; `email_key` is lowercase; `search_text` finds a client by name, surname, DNI with and without dots, phone without hyphens and email; `vehicle_decrypted` exposes `brand_name` and `model_name` and the right ones; another shop's clients and vehicles never show through either view; assigning `vehicle.client_id` works inside the shop, is rejected for a client of another shop (composite FK), and works for an archived client; the plate stays intact after the update.
-- **Vitest, shared:** `formatPlate`, `PlateDisplay` (white/band/text, accessible text), `toWhatsappUrl` (leading zeros, `54` prefix kept, `549` added, symbols, empty), `WhatsappButton` (always renders, no visible text, accessible name, `rel`, new tab), `formatDni`, `filterByText`/`paginate` (accents, spaces, dots, empty term, page bounds), `useLoadedData` (loading → ready, error + retry, stale answers dropped), `SearchBox`, `Checkbox`, `applyListQuery` with `nullsFirst`, the new field rules, `ListToolbar` after the extraction.
+- **Vitest, shared:** `formatPlate`, `PlateDisplay` (white/band/text, accessible text), `toWhatsappUrl` (leading zeros, `54` prefix kept, `549` added, symbols, empty), `formatPhone`/`phoneDigits` (digits only, leading 0 dropped, 10 max, 2/3/4-digit area codes, unknown area code, paste, idempotent), `WhatsappButton` (always renders, visible text, accessible name containing it, `rel`, new tab, hover classes), `formatDni`, `filterByText`/`paginate` (accents, spaces, dots, empty term, page bounds), `useLoadedData` (loading → ready, error + retry, stale answers dropped), `SearchBox`, `Checkbox`, `applyListQuery` with `nullsFirst`, the new field rules, `ListToolbar` after the extraction.
 - **Vitest, clients:** schema, queries (mocked Supabase: view and column names, sort map, counts), actions (validation on the server, create/update/read-back, DNI taken active/archived/self, archive/unarchive, unexpected errors, `assignVehiclesToClient` with all/partial/none assigned), components (list states, row opens modal, columns and "—" values, sort headers, create/edit/archive/unarchive flows and toasts, field errors with focus, WhatsApp button, vehicles section loading/empty/error/rows, add-vehicle choose step with "Próximamente" and "No hay vehículos sin cliente", assign step: skeleton, paging by 5, in-memory search without requests, selection kept across pages and filters, button label by count, no-selection error, partial-assign message, "Volver" at each step).
 - **Accessibility checks in component tests:** skeletons `aria-busy` with one announcement; checkbox names; header `aria-sort`; focus returns after the modal chain closes.
 
@@ -192,6 +200,8 @@ The no-change check compares the normalized form with the current row, as servic
 
 - **Decrypting to sort and search.** The views decrypt every row of the shop on each list request. Fine at a shop's scale (hundreds of clients); the sort keys are computed only when selected. Rejected: stored sort columns (they'd copy personal data into plaintext columns, against the encryption rule).
 - **DNI sorted as `numeric`.** Relies on the trigger leaving digits only; a non-digit value would make the view fail on that row. Mitigation: `dni` is written only through the trigger, and the pgTAP test covers it. Alternative: a padded text key, rejected for being less clear.
+- **Formatting while typing moves the caret to the end** when the user edits in the middle of the number. Accepted for a 10-digit field.
+- **Stored phones are formatted text.** The `libphonenumber-js` rules for Argentina can change between versions; a stored value stays as it was saved. Search and sort use digits, so they are unaffected.
 - **WhatsApp number rule.** Argentina's mobile format is a first version (the owner expects to iterate). A phone entered with "15" after the area code won't open the right chat; fixing it is a change in one function.
 - **Unbounded unassigned-vehicles fetch.** One query returns every vehicle without a client. Fine now; if a shop accumulates thousands, move the assign step to server-side search. Accepted by the owner.
 - **Stale assign list.** The list may include a vehicle that got a client meanwhile; the `client_id is null` guard in the update and the partial-result message cover it.

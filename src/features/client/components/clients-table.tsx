@@ -5,10 +5,9 @@ import { useEffect } from "react";
 
 import { ArchivedBadge } from "@/components/shared/archived-badge";
 import { DataTable, DataTableSkeleton, type DataTableColumn } from "@/components/shared/data-table";
-import { ListEmpty, ListError } from "@/components/shared/list-states";
+import { ListError, ListNoRows } from "@/components/shared/list-states";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { TableDate } from "@/components/shared/table-date";
-import { Button } from "@/components/ui/button";
 import { useListUrl } from "@/hooks/use-list-url";
 import { formatDni } from "@/lib/format/dni";
 import { LIST_PAGE_SIZE } from "@/lib/list/params";
@@ -18,8 +17,9 @@ import { CLIENT_SORT_COLUMNS, type Client } from "../schemas";
 import { useClientsPanel } from "./clients-panel";
 
 const SORT_IDS = Object.keys(CLIENT_SORT_COLUMNS);
-// max-w-0 lets the cell shrink so a long name truncates.
-const NAME_CELL_CLASS = "w-full max-w-0";
+// max-w-0 lets the cell shrink so a long name truncates; min-w keeps it
+// readable when a narrow screen squeezes the table (the table scrolls sideways).
+const NAME_CELL_CLASS = "w-full min-w-44 max-w-0";
 const EMAIL_CELL_CLASS = "max-w-56";
 const EMPTY = "—";
 
@@ -29,7 +29,6 @@ type ClientsTableProps =
 
 export function ClientsTable(props: ClientsTableProps) {
   const t = useTranslations("clients");
-  const tList = useTranslations("list");
   const { params, clearSearch, setShowArchived, toggleSort, setPage } = useListUrl();
   const { openClient, openCreate } = useClientsPanel();
 
@@ -41,37 +40,22 @@ export function ClientsTable(props: ClientsTableProps) {
   if (!props.ok) return <ListError onRetry={props.onRetry} />;
 
   if (props.rows.length === 0) {
-    if (params.search) {
-      return (
-        <ListEmpty
-          title={t("empty.noResultsTitle")}
-          hint={t("empty.noResultsHint")}
-          action={
-            <Button variant="outline" onClick={clearSearch}>
-              {tList("clearSearch")}
-            </Button>
-          }
-        />
-      );
-    }
-    if (props.total === 0) {
-      return (
-        <ListEmpty
-          title={t("empty.noneTitle")}
-          hint={t("empty.noneHint")}
-          action={<Button onClick={openCreate}>{t("add")}</Button>}
-        />
-      );
-    }
     return (
-      <ListEmpty
-        title={t("empty.onlyArchivedTitle")}
-        hint={t("empty.onlyArchivedHint")}
-        action={
-          <Button variant="outline" onClick={() => setShowArchived(true)}>
-            {tList("showArchived")}
-          </Button>
-        }
+      <ListNoRows
+        hasSearch={Boolean(params.search)}
+        total={props.total}
+        texts={{
+          noResultsTitle: t("empty.noResultsTitle"),
+          noResultsHint: t("empty.noResultsHint"),
+          noneTitle: t("empty.noneTitle"),
+          noneHint: t("empty.noneHint"),
+          onlyArchivedTitle: t("empty.onlyArchivedTitle"),
+          onlyArchivedHint: t("empty.onlyArchivedHint"),
+        }}
+        addLabel={t("add")}
+        onAdd={openCreate}
+        onClearSearch={clearSearch}
+        onShowArchived={() => setShowArchived(true)}
       />
     );
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDni } from "./dni";
+import { DNI_MAX_DIGITS, dniDigits, formatDni } from "./dni";
 
 describe("formatDni", () => {
   it.each([
@@ -15,5 +15,21 @@ describe("formatDni", () => {
 
   it("is idempotent", () => {
     expect(formatDni("28.456.123")).toBe("28.456.123");
+  });
+});
+
+describe("dniDigits", () => {
+  it("keeps only the digits", () => {
+    expect(dniDigits("28.456.123")).toBe("28456123");
+    expect(dniDigits(" 28 a456-123 ")).toBe("28456123");
+    expect(dniDigits("abc")).toBe("");
+    expect(dniDigits("")).toBe("");
+  });
+
+  it("holds at most 8 digits", () => {
+    expect(DNI_MAX_DIGITS).toBe(8);
+    expect(dniDigits("284561239999")).toBe("28456123");
+    expect(dniDigits("28.456.123.999")).toBe("28456123");
+    expect(dniDigits("")).toBe("");
   });
 });

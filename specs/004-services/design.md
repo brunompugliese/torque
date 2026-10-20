@@ -88,7 +88,7 @@ Columns: "Servicio" (name in medium weight, description below in secondary text,
 | `DATE_FORMAT`, `APP_TIME_ZONE` | `lib/format/date.ts` | New; `i18n/request.ts` sets the time zone |
 | `requiredTextField`, `optionalTextField` | `lib/validation/fields.ts` | Extended |
 | Service schema, queries, actions | `features/service/` | New |
-| `ServicesPanel` (modal provider), `ServicesTable`, `ServicesToolbar`, `ServiceModal`, `ServiceForm`, summary/count sections | `features/service/components/` | New |
+| `ServicesPanel` (modal provider), `ServicesTable`, `ServiceModal`, `ServiceForm`, summary/count sections | `features/service/components/` | New |
 
 Server data (`features/service/queries.ts`): `listServices(params)` and `getServiceCounts()`, wrapped in `cache()`, rows parsed with a Zod row schema (types aren't generated yet).
 

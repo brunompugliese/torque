@@ -117,6 +117,12 @@ describe("ServiceModal: create", () => {
     expect(screen.getByLabelText("Descripción")).toHaveAccessibleDescription("Qué incluye. Se muestra en el catálogo.");
   });
 
+  it("leaves extra space between the last field and the footer", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Descripción").closest("form")).toHaveClass("pb-2");
+  });
+
   it("requires a name without calling the server", async () => {
     renderModal("create", null);
     await act(async () => fireEvent.click(await screen.findByRole("button", { name: "Agregar servicio" })));

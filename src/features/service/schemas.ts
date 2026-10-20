@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { optionalTextField, requiredTextField } from "@/lib/validation/fields";
+import { idSchema, optionalTextField, requiredTextField } from "@/lib/validation/fields";
 
 export const serviceFormSchema = z.object({
   name: requiredTextField("nameRequired"),
@@ -29,4 +29,4 @@ export const serviceRowSchema = z
 
 export type Service = z.output<typeof serviceRowSchema>;
 
-export const serviceIdSchema = z.uuid();
+export const serviceIdSchema = idSchema;

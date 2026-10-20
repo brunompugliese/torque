@@ -1,7 +1,13 @@
 import { z } from "zod";
 
+import { DNI_MAX_DIGITS } from "@/lib/format/dni";
+import { PHONE_DIGITS, formatPhone, phoneDigits } from "@/lib/format/phone";
+
 // Reusable field rules. Error messages are keys under `validation` in
 // messages/es.json; forms translate them.
+
+// A record id, as it comes back from the database.
+export const idSchema = z.uuid();
 
 export const EMAIL_MAX_LENGTH = 254;
 
@@ -48,18 +54,25 @@ export const optionalTextField = z
     return trimmed === "" ? null : trimmed;
   });
 
-// Trimmed and without hyphens; the rest stays as entered (no format check).
+// Exactly 10 digits (area code + number; a leading 0 is dropped), stored the way
+// the field shows it: "11 1234-5678".
 export const phoneField = z
   .string({ error: "phoneRequired" })
-  .transform((value) => value.replace(/-/g, "").trim())
-  .pipe(z.string().min(1, { error: "phoneRequired" }));
+  .transform(phoneDigits)
+  .pipe(
+    z
+      .string()
+      .min(1, { error: "phoneRequired" })
+      .length(PHONE_DIGITS, { error: "phoneInvalid" }),
+  )
+  .transform(formatPhone);
 
-// Dots and spaces are ignored; what's left must be digits (that's how it's stored).
+// Dots and spaces are ignored; what's left must be 1 to 8 digits (that's how it's stored).
 export const dniField = z
   .string()
   .nullish()
   .transform((value) => (value ?? "").replace(/[.\s]/g, ""))
-  .pipe(z.string().regex(/^\d*$/, { error: "dniInvalid" }))
+  .pipe(z.string().regex(/^\d*$/, { error: "dniInvalid" }).max(DNI_MAX_DIGITS, { error: "dniInvalid" }))
   .transform((value) => (value === "" ? null : value));
 
 const emailFormat = z.email();
@@ -93,6 +106,7 @@ export type ValidationErrorKey =
   | "passwordTooLong"
   | "nameRequired"
   | "phoneRequired"
+  | "phoneInvalid"
   | "dniInvalid";
 
 // First issue per field, as the key the form translates.
