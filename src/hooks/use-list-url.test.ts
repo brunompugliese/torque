@@ -72,22 +72,22 @@ describe("useListUrl", () => {
     act(() => result.current.setShowArchived(true));
     expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?buscar=aceite&archivados=1");
 
-    act(() => result.current.toggleSort("nombre", "nombre"));
-    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?buscar=aceite&sentido=desc");
+    act(() => result.current.toggleSort("nombre"));
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?buscar=aceite&orden=nombre");
   });
 
   it("flips the current column and starts another column ascending", () => {
-    currentSearch = "sentido=desc";
+    currentSearch = "orden=nombre&sentido=desc";
     const { result, rerender } = renderHook(() => useListUrl());
-    act(() => result.current.toggleSort("nombre", "nombre"));
-    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios");
+    act(() => result.current.toggleSort("nombre"));
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?orden=nombre");
 
-    act(() => result.current.toggleSort("creado", "nombre"));
+    act(() => result.current.toggleSort("creado"));
     expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?orden=creado");
 
     currentSearch = "orden=creado";
     rerender();
-    act(() => result.current.toggleSort("creado", "nombre"));
+    act(() => result.current.toggleSort("creado"));
     expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?orden=creado&sentido=desc");
   });
 

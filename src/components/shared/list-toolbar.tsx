@@ -16,7 +16,6 @@ type ListToolbarProps = {
   searchPlaceholder: string;
   showArchived: boolean;
   onShowArchivedChange: (value: boolean) => void;
-  count?: ReactNode;
   filters?: ReactNode;
 };
 
@@ -26,7 +25,6 @@ export function ListToolbar({
   searchPlaceholder,
   showArchived,
   onShowArchivedChange,
-  count,
   filters,
 }: ListToolbarProps) {
   const t = useTranslations("list");
@@ -52,9 +50,6 @@ export function ListToolbar({
         <Switch checked={showArchived} onCheckedChange={(checked) => onShowArchivedChange(checked)} />
         {t("showArchived")}
       </label>
-      <div aria-live="polite" className="ml-auto text-sm text-muted-foreground">
-        {count}
-      </div>
     </div>
   );
 }
@@ -65,7 +60,6 @@ export function ListToolbarSkeleton() {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3 pb-4">
         <Skeleton className="h-9 w-full sm:w-96" />
         <Skeleton className="h-5 w-40" />
-        <Skeleton className="ml-auto h-4 w-28" />
       </div>
     </LoadingRegion>
   );

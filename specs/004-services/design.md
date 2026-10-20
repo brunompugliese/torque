@@ -39,13 +39,13 @@ src/app/(app)/servicios/
 `page.tsx` renders:
 
 1. `PageHeader` with the title, the summary inside `<Suspense>` (one-line skeleton), and the "Agregar servicio" button.
-2. The list (`ServicesListView`: toolbar with the result count, table, pagination) in one `<Suspense>` with the toolbar and table skeletons as fallback. It's rendered once with the server's first page; later list changes keep it mounted, so the search box keeps focus.
+2. The list (`ServicesListView`: toolbar, table, pagination) in one `<Suspense>` with the toolbar and table skeletons as fallback. It's rendered once with the server's first page; later list changes keep it mounted, so the search box keeps focus.
 
-The first render runs the list page (with `count`), the total count and the archived count, shared through `cache()`. Each later search, sort or page change runs only the list query (`searchServices`); the total for "3 de 15 servicios" comes from the first render and is refreshed when a save revalidates the page.
+The first render runs the list page (with `count`), the total count and the archived count, shared through `cache()`. Each later search, sort or page change runs only the list query (`searchServices`); the catalog total (for the empty states) comes from the first render and is refreshed when a save revalidates the page.
 
 ### URL state (`useListUrl`)
 
-Params: `buscar`, `archivados` (`1`), `orden` (column id: `nombre` → `name_key`, `creado` → `created_at`; absent = `nombre`), `sentido` (`desc`; absent = ascending), `pagina` (absent = 1). Clicking the sorted column flips its direction; another column starts ascending.
+Params: `buscar`, `archivados` (`1`), `orden` (column id: `nombre` → `name_key`, `creado` → `created_at`; absent = no header marked, rows by `name_key`), `sentido` (`desc`; absent = ascending), `pagina` (absent = 1). Clicking the sorted column flips its direction; any other column, including the first click on any header, starts ascending.
 
 Columns: "Servicio" (name in medium weight, description below in secondary text, truncated) and "Creado el" (shared `TableDate`: `DATE_FORMAT`, secondary text, no wrap). Any change but paging resets to page 1. Search is debounced (200 ms). The URL is updated with `history.replaceState` (no server render); `useListResults` fetches the rows and drops answers that arrive after a newer request.
 

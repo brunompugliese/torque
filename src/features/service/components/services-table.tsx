@@ -10,9 +10,9 @@ import { TableDate } from "@/components/shared/table-date";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { Button } from "@/components/ui/button";
 import { useListUrl } from "@/hooks/use-list-url";
-import { LIST_PAGE_SIZE, resolveSortBy } from "@/lib/list/params";
+import { LIST_PAGE_SIZE } from "@/lib/list/params";
 
-import { SERVICE_DEFAULT_SORT, SERVICE_SORT_COLUMNS, type Service } from "../schemas";
+import { SERVICE_SORT_COLUMNS, type Service } from "../schemas";
 import { useServicesPanel } from "./services-panel";
 
 const SORT_IDS = Object.keys(SERVICE_SORT_COLUMNS);
@@ -107,8 +107,8 @@ export function ServicesTable(props: ServicesTableProps) {
         getRowId={(service) => service.id}
         onRowClick={openService}
         isRowMuted={(service) => !service.enabled}
-        sort={{ columnId: resolveSortBy(params.sortBy, SORT_IDS, SERVICE_DEFAULT_SORT), direction: params.sort }}
-        onSortChange={(columnId) => toggleSort(columnId, SERVICE_DEFAULT_SORT)}
+        sort={SORT_IDS.includes(params.sortBy) ? { columnId: params.sortBy, direction: params.sort } : undefined}
+        onSortChange={toggleSort}
       />
       <PaginationBar page={params.page} pageSize={LIST_PAGE_SIZE} total={props.matching} onPageChange={setPage} />
     </>

@@ -72,7 +72,6 @@
   "services": {
     "title": "Servicios",
     "summary": "{total, plural, one {# servicio} other {# servicios}} en total, {archived, plural, one {# archivado} other {# archivados}}.",
-    "count": "{shown} de {total, plural, one {# servicio} other {# servicios}}",
     "add": "Agregar servicio",
     "edit": "Editar servicio",
     "columns": {
