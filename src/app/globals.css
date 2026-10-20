@@ -45,6 +45,9 @@
   --color-warning-border: var(--warning-border);
   --color-warning-foreground: var(--warning-foreground);
   --color-plate-band: var(--plate-band);
+  --color-plate: var(--plate);
+  --color-plate-foreground: var(--plate-foreground);
+  --color-whatsapp: var(--whatsapp);
   --color-status-pending: var(--status-pending);
   --color-status-pending-foreground: var(--status-pending-foreground);
   --color-status-pending-dot: var(--status-pending-dot);
@@ -117,6 +120,11 @@
   --warning-border: #fcd34d;
   --warning-foreground: #78350f;
   --plate-band: #1e4fb8;
+  /* A plate is white with black characters whatever the theme. */
+  --plate: #ffffff;
+  --plate-foreground: #09090b;
+  /* WhatsApp green, darkened to keep 3:1 non-text contrast on --card. */
+  --whatsapp: #128c7e;
 
   /* Status colors (docs/design.md). One family per meaning, shared by job and
      appointment statuses: fill, text and dot; border for calendar cards. */

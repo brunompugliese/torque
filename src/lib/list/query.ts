@@ -5,7 +5,7 @@ import { LIST_PAGE_SIZE, resolveSortBy, type ListParams } from "./params";
 export interface ListQueryBuilder<Self> {
   like(column: string, pattern: string): Self;
   eq(column: string, value: boolean): Self;
-  order(column: string, options: { ascending: boolean }): Self;
+  order(column: string, options: { ascending: boolean; nullsFirst?: boolean }): Self;
   range(from: number, to: number): Self;
 }
 
@@ -30,9 +30,10 @@ export function applyListQuery<Q extends ListQueryBuilder<Q>>(
   const sortColumn = sortColumns[resolveSortBy(params.sortBy, Object.keys(sortColumns), defaultSortBy)];
   const ascending = params.sort === "asc";
   const from = (params.page - 1) * LIST_PAGE_SIZE;
-  // id breaks ties so rows never repeat across pages.
+  // Empty values come last in both directions; id breaks ties so rows never
+  // repeat across pages.
   return result
-    .order(sortColumn, { ascending })
+    .order(sortColumn, { ascending, nullsFirst: false })
     .order("id", { ascending })
     .range(from, from + LIST_PAGE_SIZE - 1);
 }

@@ -200,7 +200,7 @@ describe("searchServices", () => {
     });
     expect(queries).toHaveLength(1);
     expect(queries[0].calls).toContainEqual(["like", "search_text", "%aceite%"]);
-    expect(queries[0].calls).toContainEqual(["order", "created_at", { ascending: false }]);
+    expect(queries[0].calls).toContainEqual(["order", "created_at", { ascending: false, nullsFirst: false }]);
     expect(queries[0].calls).toContainEqual(["range", 25, 49]);
     expect(mocks.requireSession).toHaveBeenCalled();
   });
@@ -209,6 +209,6 @@ describe("searchServices", () => {
     const queries = setup(() => ({ data: [], count: 0 }));
     await searchServices({ evil: true });
     expect(queries[0].calls).toContainEqual(["eq", "enabled", true]);
-    expect(queries[0].calls).toContainEqual(["order", "name_key", { ascending: true }]);
+    expect(queries[0].calls).toContainEqual(["order", "name_key", { ascending: true, nullsFirst: false }]);
   });
 });

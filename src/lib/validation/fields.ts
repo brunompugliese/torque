@@ -48,13 +48,52 @@ export const optionalTextField = z
     return trimmed === "" ? null : trimmed;
   });
 
+// Trimmed and without hyphens; the rest stays as entered (no format check).
+export const phoneField = z
+  .string({ error: "phoneRequired" })
+  .transform((value) => value.replace(/-/g, "").trim())
+  .pipe(z.string().min(1, { error: "phoneRequired" }));
+
+// Dots and spaces are ignored; what's left must be digits (that's how it's stored).
+export const dniField = z
+  .string()
+  .nullish()
+  .transform((value) => (value ?? "").replace(/[.\s]/g, ""))
+  .pipe(z.string().regex(/^\d*$/, { error: "dniInvalid" }))
+  .transform((value) => (value === "" ? null : value));
+
+const emailFormat = z.email();
+
+export const optionalEmailField = z
+  .string()
+  .nullish()
+  .transform((value) => {
+    const trimmed = value?.trim() ?? "";
+    return trimmed === "" ? null : trimmed;
+  })
+  .refine((value) => value === null || (value.length <= EMAIL_MAX_LENGTH && emailFormat.safeParse(value).success), {
+    error: "emailInvalid",
+  });
+
+// Single-line optional text (a surname): trimmed, inner whitespace collapsed to
+// one space, empty → null.
+export const optionalLineField = z
+  .string()
+  .nullish()
+  .transform((value) => {
+    const collapsed = value?.trim().replace(/\s+/g, " ") ?? "";
+    return collapsed === "" ? null : collapsed;
+  });
+
 export type ValidationErrorKey =
   | "emailRequired"
   | "emailInvalid"
   | "passwordRequired"
   | "passwordTooShort"
   | "passwordTooLong"
-  | "nameRequired";
+  | "nameRequired"
+  | "phoneRequired"
+  | "dniInvalid";
 
 // First issue per field, as the key the form translates.
 export function toFieldErrors<Field extends string>(

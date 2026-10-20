@@ -42,7 +42,7 @@ describe("listServices", () => {
     const [query] = queries;
     expect(query.calls[0]).toEqual(["select", "id, name, description, enabled, created_at", { count: "exact" }]);
     expect(filterValue(query, "like", "search_text")).toBe("%lav%");
-    expect(query.calls).toContainEqual(["order", "name_key", { ascending: true }]);
+    expect(query.calls).toContainEqual(["order", "name_key", { ascending: true, nullsFirst: false }]);
   });
 
   it("reports a failure without throwing", async () => {

@@ -68,6 +68,8 @@ Current palette, *Neutral* (the visual identity in [design.md](design.md#visual-
 | `--destructive` | `#B91C1C` | Cancel actions, field errors |
 | `--warning`, `--warning-border`, `--warning-foreground` | `#FFFBEB`, `#FCD34D`, `#78350F` | Closing-a-job warning |
 | `--plate-band` | `#1E4FB8` | Top band of the plate drawing |
+| `--plate`, `--plate-foreground` | `#FFFFFF`, `#09090B` | Plate drawing background, border and characters (white with black characters in any theme) |
+| `--whatsapp` | `#128C7E` | WhatsApp button icon; darker than WhatsApp's own green to keep 3:1 non-text contrast (checked in `theme-tokens.test.ts`) |
 | `--status-<family>`, `-foreground`, `-dot` (`-border` for `done`, `cancelled`) | See [design.md](design.md#visual-identity) | Status badges and calendar cards |
 | `--chart-1` … `--chart-5` | `#18181B`, `#3B82F6`, `#8B5CF6`, `#22C55E`, `#F59E0B` | Chart series |
 | `--sidebar-*` | Same values as `card`, `foreground`, `primary`, `accent`, `border` and `ring` | shadcn sidebar component |
