@@ -1,6 +1,6 @@
 # Torque — Code Conventions
 
-How code will be written once the frontend exists. The folder structure is defined in [architecture.md](architecture.md); database conventions are in [architecture.md](architecture.md#changing-the-database); non-negotiable rules (security, git) are in [CLAUDE.md](../CLAUDE.md); how the app looks and behaves (layout, copy, formats, shared UI patterns, business rules) is in [design.md](design.md).
+How code is written. The folder structure is defined in [architecture.md](architecture.md); database conventions are in [architecture.md](architecture.md#changing-the-database); non-negotiable rules (security, git) are in [CLAUDE.md](../CLAUDE.md); how the app looks and behaves (layout, copy, formats, shared UI patterns, business rules) is in [design.md](design.md).
 
 ## Reuse first
 
@@ -38,6 +38,7 @@ Generic means: it takes data and callbacks through props, knows nothing about a 
 - **Icons come from Phosphor** (`@phosphor-icons/react`; use `@phosphor-icons/react/ssr` in Server Components) with the `*Icon` names (`HouseIcon`, not the deprecated `House`). `components.json` sets `iconLibrary` to `phosphor`, so shadcn components use it too. Don't add other icon libraries. Use the `regular` weight by default and `fill` for active or selected states.
 - Components never call Supabase directly. They receive data from a page or call a Server Action.
 - **Hand pointer on everything clickable.** A base rule in `src/app/globals.css` gives every enabled button, link, `[role="button"]`, `summary`, `select`, `label[for]` and clickable input `cursor: pointer`, and disabled buttons `cursor: not-allowed`. Don't add `cursor-*` classes to components; if a new kind of clickable element isn't covered, extend that rule.
+- **Every data-loading page and component ships its skeleton** ([behavior](design.md#loading)). A route that fetches data has a `loading.tsx`, or a `<Suspense>` boundary with a skeleton fallback around the part that waits (preferred when the static parts can render first). A shared component that loads or displays fetched data exports its skeleton beside it (`DataTable` → `DataTableSkeleton`) with the same layout and sizes. Skeletons are built from shadcn's `Skeleton` (`components/ui/`) and shared composites in `components/shared/`, never ad hoc grey `div`s. Each skeleton has a test (renders, `aria-busy`, one "Cargando…" announcement). A page or component without its skeleton is not done.
 - **Forms use shadcn `Field`** (`Field`, `FieldLabel`, `FieldError`) for every field, with `aria-invalid` and `aria-describedby` pointing at the error. Field errors are plain text under the field, without a box.
 - **Messages about a whole form go in `FormAlert`** (`src/components/shared/form-alert.tsx`): a box with a translucent tint of its color as background (`bg-destructive/10`) and a matching border. Any message shown inside a container follows this pattern; add variants to `FormAlert` (with their own semantic tokens) instead of styling alerts ad hoc.
 
@@ -107,7 +108,10 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 - Never send `shop_id` from the UI when it can be derived; the database checks it anyway.
 - **Encrypted tables** ([how it works](architecture.md#sensitive-data)): write to the table, read through its `<table>_decrypted` view, including right after a write. Never send or select `*_hash` columns. Normalize search terms with one shared helper that matches the database's `normalize_search`.
 - **Business-rule errors** from the database ([codes](architecture.md#automatic-behavior-triggers)) are mapped to UI messages in one place; the UI prevents them first.
-- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)).
+- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)): build them with `applyListQuery`, `useListUrl` and the shared list components ([architecture.md](architecture.md#list-pages-exists)).
+- **Actions return `ActionResult`** (`lib/actions/result.ts`, with `ok()` / `fail()`); field errors are message keys.
+- **"Already exists" checks** use `findByKey` (`lib/data/lookups.ts`) on a normalized key column, comparing active and archived rows ([design.md](design.md#uniqueness-per-shop)); "is it used?" checks use `existsWhere`, never a count.
+- Until database types are generated, rows are parsed with a Zod row schema in the domain's `schemas.ts`.
 - Select only the columns you need.
 
 ## Forms and validation
@@ -120,7 +124,8 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 
 - All UI text lives in `messages/es.json`, namespaced by domain (`vehicle.form.plateLabel`). No hardcoded strings in components.
 - Database status values map to labels in the messages file (`status.job.en_progreso` → "En progreso").
-- Dates, numbers and currency are formatted through shared helpers built on `next-intl`, never by hand.
+- Dates, numbers and currency are formatted through shared helpers built on `next-intl`, never by hand. Dates always use `DATE_FORMAT` (`lib/format/date.ts`): `format.dateTime(value, DATE_FORMAT)` → dd/mm/aaaa in Argentina time. In table cells use `TableDate` (`components/shared/table-date.tsx`).
+- Shared UI text (buttons, list chrome, loading) lives under `common.*` and `list.*`; reuse those keys instead of repeating them per domain.
 
 ## Errors and logging
 
@@ -130,9 +135,10 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 ## Tests
 
 - Unit tests with Vitest, next to the code they test: `vehicle-schemas.test.ts` beside `schemas.ts`.
-- Test Zod schemas, calculations (e.g. job totals) and helpers. Every shared helper and every schema has tests.
+- Test Zod schemas, calculations (e.g. job totals) and helpers. Every shared helper, shared component and schema has tests.
+- Helpers in `src/test/`: `renderWithIntl` renders with the Spanish messages; `createFakeSupabase` records queries and returns canned results for queries and actions.
 - Database tests follow [architecture.md](architecture.md#database-tests).
 
 ## Comments
 
-Explain **why**, not what. Business decisions and non-obvious constraints get a comment; self-explanatory code does not.
+Minimal. Comment only to explain a business decision or a non-obvious constraint (**why**, never what), in one short line when possible. Self-explanatory code gets no comment, and docs are linked rather than repeated. Database scripts (migrations, `db_schema.sql`, pgTAP tests) are the exception: there, explaining more is better than less.

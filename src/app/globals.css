@@ -168,6 +168,8 @@
      component needs its own cursor class (docs/conventions.md). */
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [data-clickable],
   a[href],
   summary,
   select:not(:disabled),

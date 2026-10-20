@@ -91,6 +91,8 @@ create table service (
   name        text not null,
   description text,
   enabled     boolean not null default true, -- false = archived: can't be added to jobs, existing items keep it
+  name_key    text not null, -- normalize_search(name), set by trg_service_normalize: A–Z sort and the app's "name taken" lookup (no unique constraint, by decision)
+  search_text text not null, -- normalize_search(name|description), set by trg_service_normalize: search
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
   unique (id, shop_id) -- lets job_item enforce "same shop as this service" via composite FK
@@ -184,6 +186,7 @@ create index idx_vehicle_client          on vehicle(client_id);
 create index idx_vehicle_model           on vehicle(model_id);
 
 create index idx_service_shop            on service(shop_id);
+create index idx_service_shop_name_key   on service(shop_id, name_key); -- A–Z sort and name lookup
 
 create index idx_appointment_shop        on appointment(shop_id);
 create index idx_appointment_shop_date   on appointment(shop_id, date); -- calendar view
@@ -532,6 +535,25 @@ as $$
     '[[:space:].-]', '', 'g'
   ));
 $$;
+
+-- service is not encrypted, but its name and description are normalized on
+-- every write so sorting, search and the "name taken" lookup are plain column
+-- filters. Overwrites whatever a client sends. Not generated columns:
+-- normalize_search is stable (unaccent), not immutable.
+create or replace function private.normalize_service()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.name_key    := private.normalize_search(new.name);
+  new.search_text := private.normalize_search(concat_ws('|', new.name, new.description));
+  return new;
+end;
+$$;
+
+create or replace trigger trg_service_normalize before insert or update on public.service
+for each row execute function private.normalize_service();
 
 -- On insert every sensitive column is encrypted; on update only changed ones
 -- (an unchanged column still holds its ciphertext). Hashes can't be set by

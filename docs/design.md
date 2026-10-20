@@ -8,7 +8,7 @@ How the app looks and behaves. Every page follows these conventions; each page's
 - **One shop per account.** Users only see their own shop's data.
 - **Desktop-first.** Designed for a computer at the shop's front desk. Smaller screens must still work (stacked layouts, tables scrolling sideways).
 - **Spanish only.** All UI text in Spanish (Argentina).
-- **Time zone:** fixed to Argentina (UTC−3) for every date and time, including "Hoy", "Ayer" and relative dates.
+- **Time zone:** fixed to Argentina (UTC−3) for every date and time, including which day counts as today.
 - **Nothing is deleted.** Records are archived instead (see [Archive](#archive)).
 
 ## Visual identity
@@ -63,6 +63,7 @@ These values are implemented as tokens in `src/app/globals.css` ([conventions.md
 | Body, table cells, inputs | 14px regular |
 | Labels, buttons | 13px medium |
 | Hints, metadata, badges | 12px |
+| Table column headers | 12px medium, secondary text; the sorted column in text color |
 
 Numbers (money, km, times, DNI) use tabular figures so columns align.
 
@@ -87,9 +88,7 @@ Numbers (money, km, times, DNI) use tabular figures so columns align.
 
 | Data | Format | Example |
 | --- | --- | --- |
-| Date | dd/mm/aaaa | 13/10/2026 |
-| Short date | day + short month + year | 28 sept 2026 |
-| Recent date (< 7 days) | relative | Hoy 10:24, Ayer, Hace 3 días |
+| Date | dd/mm/aaaa, the only date format: never relative ("Hoy", "Ayer", "Hace 3 días"), never with month or weekday names, also inside sentences | 13/10/2026 |
 | Time | 24 h | 08:30 ("08:30 hs" inside sentences) |
 | Money | pesos, dot thousands; optional decimals with a comma, up to 2, shown only when entered | $ 605.000 · $ 12.500,50 |
 | Kilometers | dot thousands + "km" | 112.500 km |
@@ -113,6 +112,7 @@ WCAG 2.1 AA on every page. In practice:
 - Changing page moves focus to the new page title.
 - Field errors are linked to their field; on save, focus moves to the first error.
 - Animations respect the reduced-motion setting.
+- Loading regions are announced once ("Cargando…") and marked `aria-busy` (see [Loading](#loading)).
 
 ## Layout and navigation
 
@@ -120,7 +120,7 @@ WCAG 2.1 AA on every page. In practice:
 - **Header:** logo + the shop's name on the left (the name stored in the database for the shop ID in the user's session token); the logged-in user's name and "Cerrar sesión" on the right. It scrolls away with the page; it is not fixed.
 - **Navbar:** floating bar fixed at the bottom center, always visible, with an icon and label per page: Inicio, Vehículos, Clientes, Turnos, Trabajos, Servicios. The current page is highlighted (dark fill). Every page leaves enough bottom space that nothing is hidden behind it.
 - **Content width:** max 1280px, centered, identical on every page. The scrollbar space is always reserved so changing pages never shifts the layout.
-- **Page top:** page title, a one-line summary below it, and the page's main button on the right ("Agregar vehículo", "Nuevo turno", …).
+- **Page top:** page title, a one-line summary below it, and the page's main button on the right ("Agregar vehículo", "Nuevo turno", …). On list pages the summary is the total (active + archived) and the archived count, always both: "15 servicios en total, 1 archivado." · "1 servicio en total, 0 archivados."
 - **No global search.** Each page searches its own records.
 
 ## Shared patterns
@@ -128,14 +128,26 @@ WCAG 2.1 AA on every page. In practice:
 ### List pages
 
 - Toolbar: search, filters, "Mostrar archivados" switch (off by default), active filters as removable chips, result count on the right ("3 de 12 vehículos").
-- Table: every column sortable by clicking its header (click again to reverse). Text left-aligned, numbers right-aligned, plate drawing centered in its own column. Clicking a row opens its detail modal.
+- Table: every column sortable by clicking its header (click again to reverse). Text left-aligned, numbers right-aligned, plate drawing centered in its own column; a header aligns like its column. Clicking a row opens its detail modal.
+- Dates in table cells are dd/mm/aaaa in secondary text color, on one line.
+- Column headers look different from rows so nobody mistakes them for data: smaller, medium weight, secondary text color (see [Typography](#visual-identity)). Every sortable header always shows an up/down arrow icon after its label, so it reads as clickable in both directions. The sorted column's header switches to text color and its icon becomes a single arrow pointing the current direction (up A–Z / ascending, down Z–A / descending).
 - Lists and tables over cards.
-- States: a loading indicator while data loads; an error message with "Reintentar" if it fails; an empty state with a title, a hint and a way out ("No encontramos vehículos" · "Probá con otra patente…" · "Borrar búsqueda").
+- States: a loading skeleton while data loads (see [Loading](#loading)); an error message with "Reintentar" if it fails; an empty state with a title, a hint and a way out ("No encontramos vehículos" · "Probá con otra patente…" · "Borrar búsqueda").
 - Pagination is standard on every list: 25 rows per page, loaded from the server one page at a time, never the whole table. Controls under the table: "Mostrando 1–25 de 140" on the left; "Anterior", page numbers and "Siguiente" on the right. Search, filters and sorting apply to the full data set on the server; changing any of them returns to page 1.
+
+### Loading
+
+Mandatory on every page, modal and component that loads data.
+
+- While data loads, a **skeleton** shows the shape of what's coming: grey blocks (muted fill) in the place and size of the final content, so nothing jumps when it arrives. A list shows its toolbar and table header plus placeholder rows; a modal shows its header and label/value placeholders.
+- Static parts that need no data (page title, buttons, labels) render right away; only the data is a skeleton.
+- The blocks pulse gently; with reduced motion they stay still.
+- Screen readers hear one "Cargando…" for the region (`aria-busy`), not each block.
+- Spinners are only for an action in progress inside a button ("Ingresando…"), never for loading a page or a list.
 
 ### Search
 
-Filters as you type. Ignores case and accents, and also matches with spaces, dots and dashes removed ("ae 482", "AE482", "suarez", "35.123.456"). Encrypted fields are searched through the `search_text` column of the decrypted views (see [architecture.md](architecture.md#sensitive-data)).
+Filters as you type. Ignores case and accents, and also matches with spaces, dots and dashes removed ("ae 482", "AE482", "suarez", "35.123.456"). Search always includes archived records: while the search box has text, matching archived records are listed too (greyed, with the "Archivado" badge) even with "Mostrar archivados" off. Encrypted fields are searched through the `search_text` column of the decrypted views (see [architecture.md](architecture.md#sensitive-data)).
 
 ### Detail modal
 
@@ -174,11 +186,11 @@ Vehicles, clients, jobs and services are archived, never deleted. Archiving sets
 
 ### Confirmations
 
-Asked before: archiving, cancelling an appointment, and setting a job to Entregado or Cancelado. Not asked for reversible changes (confirming an appointment, changing a job to an open status, unarchiving).
+Asked before: archiving, cancelling an appointment, setting a job to Entregado or Cancelado, and renaming a service that is already on jobs. Not asked for reversible changes (confirming an appointment, changing a job to an open status, unarchiving).
 
 ### Toasts
 
-Bottom right, about 3 seconds, after every save or status change: title + one line ("Turno agregado" · "Fiat Cronos, miércoles 14 de octubre a las 09:00 hs.").
+Bottom right, about 3 seconds, after every save or status change: title + one line ("Turno agregado" · "Fiat Cronos, 14/10/2026 a las 09:00 hs.").
 
 ## Global business rules
 
@@ -230,3 +242,7 @@ A job's km is prefilled with the vehicle's latest recorded km (from its previous
 ### Uniqueness (per shop)
 
 Plate per vehicle. DNI per client, when given. **(DB)**
+
+Service name, compared the way search compares (ignoring case, accents, spaces, dots and dashes). Checked by the app only, on save; a duplicate from two simultaneous saves is accepted.
+
+Every uniqueness check compares against active and archived records alike; the error says when the match is archived ("Ya hay un servicio archivado con este nombre.").

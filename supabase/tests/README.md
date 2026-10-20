@@ -10,6 +10,7 @@ pgTAP tests for tenant isolation, encryption at rest and the business rules the 
 | `03_uniqueness_search.sql` | Plate and DNI unique per shop in any format, allowed across shops; `search_text` matches |
 | `04_job_rules.sql` | Job and appointment statuses, status history, closed jobs and their items, kilometers |
 | `05_archived.sql` | No new work on archived vehicles, clients and services; existing records keep working |
+| `06_services.sql` | Service `name_key` and `search_text` set by the database on every write, same key for names written differently, archived services found by key, search and sort per shop ([spec 004](../../specs/004-services/requirements.md)) |
 
 ## Writing a test
 
