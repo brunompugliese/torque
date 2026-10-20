@@ -1,11 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const replace = vi.fn();
+const replace = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
 let currentSearch = "";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace }),
   usePathname: () => "/servicios",
   useSearchParams: () => new URLSearchParams(currentSearch),
 }));
@@ -47,7 +46,7 @@ describe("useListUrl", () => {
 
     act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
     expect(replace).toHaveBeenCalledTimes(1);
-    expect(replace).toHaveBeenCalledWith("/servicios?buscar=alin", { scroll: false });
+    expect(replace).toHaveBeenCalledWith(null, "", "/servicios?buscar=alin");
   });
 
   it("doesn't navigate when the trimmed search didn't change", () => {
@@ -63,7 +62,7 @@ describe("useListUrl", () => {
     const { result } = renderHook(() => useListUrl());
     act(() => result.current.clearSearch());
     expect(result.current.searchValue).toBe("");
-    expect(replace).toHaveBeenCalledWith("/servicios?archivados=1", { scroll: false });
+    expect(replace).toHaveBeenCalledWith(null, "", "/servicios?archivados=1");
   });
 
   it("toggles archived and sort back to page 1, keeping the rest", () => {
@@ -71,33 +70,33 @@ describe("useListUrl", () => {
     const { result } = renderHook(() => useListUrl());
 
     act(() => result.current.setShowArchived(true));
-    expect(replace).toHaveBeenLastCalledWith("/servicios?buscar=aceite&archivados=1", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?buscar=aceite&archivados=1");
 
     act(() => result.current.toggleSort("nombre", "nombre"));
-    expect(replace).toHaveBeenLastCalledWith("/servicios?buscar=aceite&sentido=desc", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?buscar=aceite&sentido=desc");
   });
 
   it("flips the current column and starts another column ascending", () => {
     currentSearch = "sentido=desc";
     const { result, rerender } = renderHook(() => useListUrl());
     act(() => result.current.toggleSort("nombre", "nombre"));
-    expect(replace).toHaveBeenLastCalledWith("/servicios", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios");
 
     act(() => result.current.toggleSort("creado", "nombre"));
-    expect(replace).toHaveBeenLastCalledWith("/servicios?orden=creado", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?orden=creado");
 
     currentSearch = "orden=creado";
     rerender();
     act(() => result.current.toggleSort("creado", "nombre"));
-    expect(replace).toHaveBeenLastCalledWith("/servicios?orden=creado&sentido=desc", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?orden=creado&sentido=desc");
   });
 
   it("changes page keeping the filters", () => {
     currentSearch = "sentido=desc";
     const { result } = renderHook(() => useListUrl());
     act(() => result.current.setPage(2));
-    expect(replace).toHaveBeenLastCalledWith("/servicios?sentido=desc&pagina=2", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?sentido=desc&pagina=2");
     act(() => result.current.setPage(1));
-    expect(replace).toHaveBeenLastCalledWith("/servicios?sentido=desc", { scroll: false });
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?sentido=desc");
   });
 });

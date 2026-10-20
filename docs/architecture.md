@@ -71,6 +71,7 @@ Personal and vehicle-identifying data is encrypted at rest:
 - **Uniqueness:** plate and DNI also get a keyed hash (HMAC-SHA256) of the normalized value, stored in `vehicle.plate_hash` / `client.dni_hash`, with `unique (shop_id, hash)`. Hash columns are set only by the trigger.
 - **Reads** go through `security_invoker` views: `client_decrypted`, `vehicle_decrypted`, `appointment_decrypted`, `job_decrypted`. They decrypt only the rows RLS lets the user see. After a write, read the row back through its view.
 - **Search, sorting and pagination** run in the database on the views (and on `service`, which isn't encrypted: its `name_key` and `search_text` columns are set by `trg_service_normalize` on every write). `client_decrypted` and `vehicle_decrypted` expose `search_text` (lowercase, no accents, no spaces, dots or dashes; vehicles include brand and model); the app normalizes the search term the same way and filters with `ilike`. Decrypting in queries is fine at a single shop's scale; revisit if a shop grows to many thousands of rows.
+- **Never in URLs.** Values of encrypted columns, and search terms on pages that search them (Clientes, Vehículos, Turnos, Trabajos), never go in a URL: not in paths, query params or redirect targets such as `?next=`. URLs outlive the session (browser history, address-bar suggestions on a shared computer) and reach the hosting provider's request logs, outside the shop's access control. Such pages keep the search term in component state and send it in the Server Action's body; non-sensitive list state (sort, page, archived switch) may stay in the URL. Records are addressed by id, never by plate or DNI.
 - Helpers (`private.encrypt_text`, `decrypt_text`, `blind_index`, `normalize_search`, `vault_secret`) live in the `private` schema, which the Data API doesn't expose. `authenticated` can only execute `decrypt_text` and `normalize_search`.
 
 ### Automatic behavior (triggers)
@@ -205,11 +206,12 @@ Read-only tables (`shop`, `profile`, `job_status_history`) must also be tested t
 
 Built by [specs/004-services](../specs/004-services/design.md); every list page reuses it. Behavior is in [design.md](design.md#list-pages).
 
-- **State in the URL:** `?buscar=&archivados=1&orden=creado&sentido=desc&pagina=2` (`orden` is a column id, absent for the page's default column; `sentido=desc` reverses it), parsed by `lib/list/params.ts` on the server and updated by the `useListUrl` hook (`hooks/use-list-url.ts`) on the client (debounced search; any change but paging returns to page 1).
+- **State in the URL:** `?buscar=&archivados=1&orden=creado&sentido=desc&pagina=2` (`buscar` only on pages that don't search encrypted data, see [Sensitive data](#sensitive-data)) (`orden` is a column id, absent for the page's default column; `sentido=desc` reverses it), parsed by `lib/list/params.ts` on the server and updated by the `useListUrl` hook (`hooks/use-list-url.ts`) on the client with `history.replaceState`, so changing it doesn't re-render the page (search debounced 200 ms; any change but paging returns to page 1).
 - **Server query:** `applyListQuery` (`lib/list/query.ts`) maps the column id to a database column through a per-page whitelist (unknown ids fall back to the default), and adds search on a normalized `search_text` column (always including archived rows), the archived filter, sorting with an `id` tie-breaker, and the 25-row range. Queries are wrapped in `cache()` so the summary, the count and the table share one request.
-- **Streaming:** the page renders the title and toolbar right away; the summary, the count and the table stream in `<Suspense>` boundaries keyed by the list params, with skeleton fallbacks. Each route also has a `loading.tsx`.
+- **Loading:** the first render streams the summary and the list (toolbar + table) in `<Suspense>` boundaries with skeleton fallbacks; each route also has a `loading.tsx`.
+- **Search, sort, filters and paging** don't reload the page: `useListResults` (`hooks/use-list-results.ts`) starts from the server-rendered rows and, when the URL's list state changes, calls the page's search Server Action (e.g. `searchServices`), which runs only the list query. Old results stay on screen until the new ones arrive; late answers to older requests are dropped.
 - **Components** (`components/shared/`): `DataTable` (+ `DataTableSkeleton`), `ListToolbar` (+ `ListToolbarSkeleton`), `PaginationBar`, `ListEmpty`, `ListError`, `ArchivedBadge`, `DetailModal`, `DetailList`, `ConfirmDialog`, `LoadingRegion`, `TextSkeleton`.
-- **Detail modals** open from the row already loaded (no request); writes are Server Actions that call `revalidatePath`, so the list refreshes in the same response.
+- **Detail modals** open from the row already loaded (no request); writes are Server Actions that call `revalidatePath`, so the summary and the list refresh in the same response (`useListResults` adopts the new server rows).
 
 ### Authentication (exists)
 
@@ -239,7 +241,7 @@ src/
     actions.ts          # Server Actions
     queries.ts          # Data access (Supabase queries)
     schemas.ts          # Zod schemas
-  hooks/                # Client hooks (useListUrl)
+  hooks/                # Client hooks (useListUrl, useListResults)
   lib/
     actions/            # ActionResult, ok(), fail()
     auth/               # Session store, inactivity rules, redirects, DAL (requireSession)

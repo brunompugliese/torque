@@ -6,9 +6,10 @@ import { renderWithIntl } from "@/test/render";
 import type { Service } from "../schemas";
 
 const nav = vi.hoisted(() => ({ search: "", replace: vi.fn(), refresh: vi.fn() }));
+vi.spyOn(window.history, "replaceState").mockImplementation((...args) => nav.replace(...args));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: nav.replace, refresh: nav.refresh }),
+  useRouter: () => ({ refresh: nav.refresh }),
   usePathname: () => "/servicios",
   useSearchParams: () => new URLSearchParams(nav.search),
 }));
@@ -68,13 +69,13 @@ describe("ServicesTable", () => {
     nav.search = "pagina=2";
     renderTable({ ok: true, rows: [ACTIVE], matching: 30, total: 30 });
     fireEvent.click(within(screen.getAllByRole("columnheader")[0]).getByRole("button"));
-    expect(nav.replace).toHaveBeenCalledWith("/servicios?sentido=desc", { scroll: false });
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?sentido=desc");
   });
 
   it("sorts by Creado el from its header", () => {
     renderTable({ ok: true, rows: [ACTIVE], matching: 1, total: 1 });
     fireEvent.click(within(screen.getAllByRole("columnheader")[1]).getByRole("button"));
-    expect(nav.replace).toHaveBeenCalledWith("/servicios?orden=creado", { scroll: false });
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?orden=creado");
   });
 
   it("marks Creado el as sorted when the URL says so", () => {
@@ -88,7 +89,7 @@ describe("ServicesTable", () => {
   it("pages through the list", () => {
     renderTable({ ok: true, rows: [ACTIVE], matching: 30, total: 30 });
     fireEvent.click(screen.getByRole("button", { name: "Siguiente" }));
-    expect(nav.replace).toHaveBeenCalledWith("/servicios?pagina=2", { scroll: false });
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?pagina=2");
   });
 
   it("opens the service modal from a row", async () => {
@@ -103,7 +104,7 @@ describe("ServicesTable", () => {
     expect(screen.getByText("No encontramos servicios")).toBeInTheDocument();
     expect(screen.getByText("Probá con otro nombre o descripción.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Borrar búsqueda" }));
-    expect(nav.replace).toHaveBeenCalledWith("/servicios", { scroll: false });
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios");
   });
 
   it("invites to add the first service when there are none", async () => {
@@ -118,19 +119,20 @@ describe("ServicesTable", () => {
     renderTable({ ok: true, rows: [], matching: 0, total: 3 });
     expect(screen.getByText("No hay servicios activos")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Mostrar archivados" }));
-    expect(nav.replace).toHaveBeenCalledWith("/servicios?archivados=1", { scroll: false });
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?archivados=1");
   });
 
   it("goes back to page 1 when the page is past the end", () => {
     nav.search = "pagina=3";
     renderTable({ ok: true, rows: [], matching: 50, total: 50 });
-    expect(nav.replace).toHaveBeenCalledWith("/servicios", { scroll: false });
+    expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios");
   });
 
   it("shows the error state and retries", () => {
-    renderTable({ ok: false });
+    const onRetry = vi.fn();
+    renderTable({ ok: false, onRetry });
     fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(nav.refresh).toHaveBeenCalled();
+    expect(onRetry).toHaveBeenCalled();
   });
 });
 
@@ -154,10 +156,10 @@ describe("ServicesToolbar", () => {
 
       fireEvent.change(search, { target: { value: "aceite" } });
       await act(async () => vi.advanceTimersByTime(300));
-      expect(nav.replace).toHaveBeenCalledWith("/servicios?buscar=aceite", { scroll: false });
+      expect(nav.replace).toHaveBeenCalledWith(null, "", "/servicios?buscar=aceite");
 
       fireEvent.click(screen.getByRole("switch", { name: "Mostrar archivados" }));
-      expect(nav.replace).toHaveBeenLastCalledWith("/servicios?archivados=1", { scroll: false });
+      expect(nav.replace).toHaveBeenLastCalledWith(null, "", "/servicios?archivados=1");
     } finally {
       vi.useRealTimers();
     }

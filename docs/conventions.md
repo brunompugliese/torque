@@ -106,9 +106,9 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
   2. Uses the server Supabase client, acting as the logged-in user.
   3. Returns a typed result (`{ ok: true, data }` or `{ ok: false, error }`) instead of throwing to the UI.
 - Never send `shop_id` from the UI when it can be derived; the database checks it anyway.
-- **Encrypted tables** ([how it works](architecture.md#sensitive-data)): write to the table, read through its `<table>_decrypted` view, including right after a write. Never send or select `*_hash` columns. Normalize search terms with one shared helper that matches the database's `normalize_search`.
+- **Encrypted tables** ([how it works](architecture.md#sensitive-data)): write to the table, read through its `<table>_decrypted` view, including right after a write. Never send or select `*_hash` columns. Never put their values, or searches over them, in a URL. Normalize search terms with one shared helper that matches the database's `normalize_search`.
 - **Business-rule errors** from the database ([codes](architecture.md#automatic-behavior-triggers)) are mapped to UI messages in one place; the UI prevents them first.
-- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)): build them with `applyListQuery`, `useListUrl` and the shared list components ([architecture.md](architecture.md#list-pages-exists)).
+- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)): build them with `applyListQuery`, `useListUrl`, `useListResults` (plus a search Server Action per page) and the shared list components ([architecture.md](architecture.md#list-pages-exists)).
 - **Actions return `ActionResult`** (`lib/actions/result.ts`, with `ok()` / `fail()`); field errors are message keys.
 - **"Already exists" checks** use `findByKey` (`lib/data/lookups.ts`) on a normalized key column, comparing active and archived rows ([design.md](design.md#uniqueness-per-shop)); "is it used?" checks use `existsWhere`, never a count.
 - Until database types are generated, rows are parsed with a Zod row schema in the domain's `schemas.ts`.
