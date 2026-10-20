@@ -9,6 +9,189 @@
     "vehicles": "Vehículos",
     "clients": "Clientes",
     "appointments": "Turnos",
-    "jobs": "Trabajos"
+    "jobs": "Trabajos",
+    "services": "Servicios"
+  },
+  "validation": {
+    "emailRequired": "Ingresá tu email.",
+    "emailInvalid": "Revisá el formato del email.",
+    "passwordRequired": "Ingresá tu contraseña.",
+    "passwordTooShort": "La contraseña debe tener al menos 12 caracteres.",
+    "passwordTooLong": "La contraseña es demasiado larga.",
+    "nameRequired": "Ingresá el nombre.",
+    "phoneRequired": "Ingresá el teléfono.",
+    "dniInvalid": "Revisá el DNI."
+  },
+  "auth": {
+    "login": {
+      "title": "Ingresar",
+      "email": "Email",
+      "password": "Contraseña",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña",
+      "submit": "Ingresar",
+      "submitting": "Ingresando…"
+    },
+    "signOut": "Cerrar sesión",
+    "signedOut": "Cerraste sesión.",
+    "errors": {
+      "invalidCredentials": "El email o la contraseña no son correctos.",
+      "rateLimited": "Demasiados intentos. Esperá unos minutos y volvé a intentar.",
+      "accountUnavailable": "Tu cuenta no está habilitada. Contactá al responsable del taller.",
+      "sessionExpired": "Tu sesión se cerró por inactividad. Iniciá sesión de nuevo.",
+      "unexpected": "No se pudo iniciar sesión. Intentá de nuevo."
+    }
+  },
+  "common": {
+    "archived": "Archivado",
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "cancel": "Cancelar",
+    "back": "Volver",
+    "close": "Cerrar",
+    "createdOn": "Creado el {date}",
+    "requiredFields": "Los campos con * son obligatorios.",
+    "loading": "Cargando…",
+    "saving": "Guardando…",
+    "unexpectedError": "Algo salió mal. Probá de nuevo.",
+    "archiveConfirmBody": "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras."
+  },
+  "list": {
+    "showArchived": "Mostrar archivados",
+    "searchLabel": "Buscar",
+    "range": "Mostrando {from}–{to} de {total}",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pagination": "Paginación",
+    "goToPage": "Página {page}",
+    "errorTitle": "No pudimos cargar la lista",
+    "errorHint": "Revisá tu conexión y volvé a intentar.",
+    "retry": "Reintentar",
+    "clearSearch": "Borrar búsqueda",
+    "sortedAscending": "ordenado de la A a la Z",
+    "sortedDescending": "ordenado de la Z a la A"
+  },
+  "services": {
+    "title": "Servicios",
+    "summary": "{total, plural, one {# servicio} other {# servicios}} en total, {archived, plural, one {# archivado} other {# archivados}}.",
+    "add": "Agregar servicio",
+    "edit": "Editar servicio",
+    "columns": {
+      "service": "Servicio",
+      "createdOn": "Creado el"
+    },
+    "searchPlaceholder": "Buscar por nombre o descripción",
+    "empty": {
+      "noResultsTitle": "No encontramos servicios",
+      "noResultsHint": "Probá con otro nombre o descripción.",
+      "noneTitle": "Todavía no hay servicios",
+      "noneHint": "Agregá el primero para usarlo en los trabajos.",
+      "onlyArchivedTitle": "No hay servicios activos",
+      "onlyArchivedHint": "Activá Mostrar archivados para ver los archivados."
+    },
+    "fields": {
+      "name": "Nombre",
+      "description": "Descripción",
+      "descriptionHint": "Qué incluye. Se muestra en el catálogo."
+    },
+    "noDescription": "Sin descripción",
+    "save": "Guardar cambios",
+    "archiveConfirm": {
+      "title": "¿Archivar este servicio?",
+      "body": "No se va a poder agregar a trabajos nuevos. Los trabajos que ya lo tienen no cambian."
+    },
+    "renameConfirm": {
+      "title": "¿Cambiar el nombre del servicio?",
+      "body": "Este servicio ya se usó en trabajos. El nombre nuevo se va a ver en todos, incluso en los entregados.",
+      "confirm": "Cambiar nombre"
+    },
+    "toasts": {
+      "created": "Servicio agregado",
+      "updated": "Cambios guardados",
+      "archived": "Servicio archivado",
+      "unarchived": "Servicio desarchivado"
+    },
+    "errors": {
+      "nameTaken": "Ya hay un servicio con este nombre.",
+      "nameTakenArchived": "Ya hay un servicio archivado con este nombre.",
+      "notFound": "Este servicio ya no existe. Actualizá la página."
+    }
+  },
+  "clients": {
+    "title": "Clientes",
+    "summary": "{total, plural, one {# cliente} other {# clientes}} en total, {archived, plural, one {# archivado} other {# archivados}}.",
+    "add": "Agregar cliente",
+    "edit": "Editar cliente",
+    "save": "Guardar cambios",
+    "columns": {
+      "client": "Cliente",
+      "dni": "DNI",
+      "phone": "Teléfono",
+      "email": "Email",
+      "createdOn": "Creado el"
+    },
+    "searchPlaceholder": "Buscar por nombre, apellido, DNI, teléfono o email",
+    "empty": {
+      "noResultsTitle": "No encontramos clientes",
+      "noResultsHint": "Probá con otro nombre, DNI, teléfono o email.",
+      "noneTitle": "Todavía no hay clientes",
+      "noneHint": "Agregá el primero para asociarlo a sus vehículos.",
+      "onlyArchivedTitle": "No hay clientes activos",
+      "onlyArchivedHint": "Activá Mostrar archivados para ver los archivados."
+    },
+    "fields": {
+      "name": "Nombre",
+      "surname": "Apellido",
+      "phone": "Teléfono",
+      "phonePlaceholder": "11 1234-5678",
+      "dni": "DNI",
+      "email": "Email"
+    },
+    "notLoaded": "Sin cargar",
+    "whatsapp": "Escribir por WhatsApp",
+    "archiveConfirm": {
+      "title": "¿Archivar este cliente?",
+      "body": "Sus vehículos no cambian y lo siguen mostrando como “(Archivado)”."
+    },
+    "errors": {
+      "dniTaken": "Ya hay un cliente con este DNI.",
+      "dniTakenArchived": "Ya hay un cliente archivado con este DNI.",
+      "notFound": "Este cliente ya no existe. Actualizá la página."
+    },
+    "vehicles": {
+      "title": "Vehículos",
+      "add": "Agregar vehículo",
+      "empty": "Este cliente todavía no tiene vehículos."
+    },
+    "addVehicle": {
+      "title": "Agregar vehículo",
+      "assignTitle": "Asignar un vehículo existente",
+      "assignSubtitle": "Vehículos sin cliente",
+      "assignNone": "No hay vehículos sin cliente",
+      "createTitle": "Crear un vehículo nuevo",
+      "createSoon": "Próximamente"
+    },
+    "assign": {
+      "title": "Asignar un vehículo existente",
+      "searchPlaceholder": "Buscar por patente, marca, modelo o VIN",
+      "noResultsTitle": "No encontramos vehículos",
+      "noResultsHint": "Probá con otra patente, marca, modelo o VIN.",
+      "submit": "{count, plural, =0 {Asignar vehículo} one {Asignar vehículo} other {Asignar # vehículos}}",
+      "noneSelected": "Elegí al menos un vehículo.",
+      "partial": "Algunos vehículos ya tenían un cliente.",
+      "alreadyHasClient": "Este vehículo ya tiene un cliente."
+    },
+    "toasts": {
+      "created": "Cliente agregado",
+      "updated": "Cambios guardados",
+      "archived": "Cliente archivado",
+      "unarchived": "Cliente desarchivado",
+      "vehicleAssigned": "Vehículo asignado",
+      "vehiclesAssigned": "Vehículos asignados",
+      "vehiclesCount": "{count, plural, one {# vehículo} other {# vehículos}}"
+    }
+  },
+  "vehicles": {
+    "noVin": "Sin VIN"
   }
 }

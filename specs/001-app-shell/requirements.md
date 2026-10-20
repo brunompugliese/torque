@@ -52,7 +52,7 @@ Theme and text
 - Showing the real shop name: it needs an authenticated session to read `shop`. The top bar accepts the name so the auth spec only has to pass it.
 - Any content on the homepage or the section pages beyond their titles.
 - Dark mode.
-- End-to-end browser tests (excluded by the constitution).
+- End-to-end browser tests (out of scope in CLAUDE.md).
 
 ## Open questions
 

@@ -41,6 +41,36 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-warning: var(--warning);
+  --color-warning-border: var(--warning-border);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-plate-band: var(--plate-band);
+  --color-plate: var(--plate);
+  --color-plate-foreground: var(--plate-foreground);
+  --color-whatsapp: var(--whatsapp);
+  --color-status-pending: var(--status-pending);
+  --color-status-pending-foreground: var(--status-pending-foreground);
+  --color-status-pending-dot: var(--status-pending-dot);
+  --color-status-quote-sent: var(--status-quote-sent);
+  --color-status-quote-sent-foreground: var(--status-quote-sent-foreground);
+  --color-status-quote-sent-dot: var(--status-quote-sent-dot);
+  --color-status-quote-accepted: var(--status-quote-accepted);
+  --color-status-quote-accepted-foreground: var(--status-quote-accepted-foreground);
+  --color-status-quote-accepted-dot: var(--status-quote-accepted-dot);
+  --color-status-in-progress: var(--status-in-progress);
+  --color-status-in-progress-foreground: var(--status-in-progress-foreground);
+  --color-status-in-progress-dot: var(--status-in-progress-dot);
+  --color-status-done: var(--status-done);
+  --color-status-done-foreground: var(--status-done-foreground);
+  --color-status-done-dot: var(--status-done-dot);
+  --color-status-done-border: var(--status-done-border);
+  --color-status-delivered: var(--status-delivered);
+  --color-status-delivered-foreground: var(--status-delivered-foreground);
+  --color-status-delivered-dot: var(--status-delivered-dot);
+  --color-status-cancelled: var(--status-cancelled);
+  --color-status-cancelled-foreground: var(--status-cancelled-foreground);
+  --color-status-cancelled-dot: var(--status-cancelled-dot);
+  --color-status-cancelled-border: var(--status-cancelled-border);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -50,41 +80,77 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Brand kit: Sand & Teal. The only place colors are defined; see
+/* Brand kit: Neutral. The only place colors are defined; see
    docs/conventions.md#colors-and-theming before changing it. */
 :root {
-  --background: #f4f1ea;
-  --foreground: #22302f;
-  --card: #faf8f3;
-  --card-foreground: #22302f;
-  --popover: #faf8f3;
-  --popover-foreground: #22302f;
-  --primary: #2f7a78;
-  --primary-foreground: #faf8f3;
-  --secondary: #e8e3d8;
-  --secondary-foreground: #22302f;
-  --muted: #e8e3d8;
-  --muted-foreground: #6b6558;
-  --accent: #e8e3d8;
-  --accent-foreground: #22302f;
-  --destructive: #b4442f;
-  --border: #dad3c5;
-  --input: #dad3c5;
-  --ring: #2f7a78;
-  --chart-1: #2f7a78;
-  --chart-2: #6fa9a6;
-  --chart-3: #c08a3e;
-  --chart-4: #8a7f6b;
-  --chart-5: #22302f;
+  --background: #fafafa;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #09090b;
+  --muted: #f4f4f5;
+  --muted-foreground: #6b6b74;
+  --accent: #f4f4f5;
+  --accent-foreground: #09090b;
+  --destructive: #b91c1c;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #18181b;
+  --chart-1: #18181b;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #22c55e;
+  --chart-5: #f59e0b;
   --radius: 0.625rem;
-  --sidebar: #faf8f3;
-  --sidebar-foreground: #22302f;
-  --sidebar-primary: #2f7a78;
-  --sidebar-primary-foreground: #faf8f3;
-  --sidebar-accent: #e8e3d8;
-  --sidebar-accent-foreground: #22302f;
-  --sidebar-border: #dad3c5;
-  --sidebar-ring: #2f7a78;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #fafafa;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #09090b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #18181b;
+
+  --warning: #fffbeb;
+  --warning-border: #fcd34d;
+  --warning-foreground: #78350f;
+  --plate-band: #1e4fb8;
+  /* A plate is white with black characters whatever the theme. */
+  --plate: #ffffff;
+  --plate-foreground: #09090b;
+  /* WhatsApp green, darkened to keep 3:1 non-text contrast on --card. */
+  --whatsapp: #128c7e;
+
+  /* Status colors (docs/design.md). One family per meaning, shared by job and
+     appointment statuses: fill, text and dot; border for calendar cards. */
+  --status-pending: #fffbeb;
+  --status-pending-foreground: #92400e;
+  --status-pending-dot: #f59e0b;
+  --status-quote-sent: #eff6ff;
+  --status-quote-sent-foreground: #1e40af;
+  --status-quote-sent-dot: #3b82f6;
+  --status-quote-accepted: #ecfeff;
+  --status-quote-accepted-foreground: #155e75;
+  --status-quote-accepted-dot: #06b6d4;
+  --status-in-progress: #f5f3ff;
+  --status-in-progress-foreground: #5b21b6;
+  --status-in-progress-dot: #8b5cf6;
+  --status-done: #f0fdf4;
+  --status-done-foreground: #166534;
+  --status-done-dot: #22c55e;
+  --status-done-border: #bbf7d0;
+  --status-delivered: #f8fafc;
+  --status-delivered-foreground: #1e293b;
+  --status-delivered-dot: #334155;
+  --status-cancelled: #fef2f2;
+  --status-cancelled-foreground: #991b1b;
+  --status-cancelled-dot: #ef4444;
+  --status-cancelled-border: #fecaca;
 
   /* Floating bottom navigation. The bar and the space <main> reserves for it
      both read these, so they can't drift apart. */
@@ -104,5 +170,29 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* Every enabled clickable element shows the hand pointer, app-wide, so no
+     component needs its own cursor class (docs/conventions.md). */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [data-clickable],
+  a[href],
+  summary,
+  select:not(:disabled),
+  label[for],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:is([type="submit"], [type="button"], [type="reset"]):disabled {
+    cursor: not-allowed;
   }
 }

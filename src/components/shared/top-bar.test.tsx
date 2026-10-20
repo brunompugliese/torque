@@ -15,4 +15,9 @@ describe("TopBar", () => {
       "Torque×Taller Ejemplo",
     );
   });
+
+  it("renders actions on the right", () => {
+    render(<TopBar appName="Torque" actions={<button type="button">Cerrar sesión</button>} />);
+    expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();
+  });
 });

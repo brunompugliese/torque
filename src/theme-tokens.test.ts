@@ -62,11 +62,42 @@ describe("findColorViolations", () => {
   });
 });
 
+describe("token contrast", () => {
+  const css = readFileSync(join(__dirname, "app", "globals.css"), "utf8");
+
+  function token(name: string): string {
+    const match = new RegExp(String.raw`--${name}:\s*(#[0-9a-f]{6})`, "i").exec(css);
+    if (!match) throw new Error(`--${name} not found in globals.css`);
+    return match[1];
+  }
+
+  function luminance(hex: string): number {
+    const [r, g, b] = [1, 3, 5]
+      .map((start) => parseInt(hex.slice(start, start + 2), 16) / 255)
+      .map((value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function contrast(a: string, b: string): number {
+    const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+    return (light + 0.05) / (dark + 0.05);
+  }
+
+  it("keeps the WhatsApp icon at 3:1 (AA non-text) on the card surface", () => {
+    expect(contrast(token("whatsapp"), token("card"))).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps the plate characters at 4.5:1 on the plate", () => {
+    expect(contrast(token("plate-foreground"), token("plate"))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe("app source uses theme tokens only", () => {
   const root = join(__dirname, "..");
   const files = [
-    ...sourceFiles(join(root, "src/components")),
-    ...sourceFiles(join(root, "src/app")),
+    // All of src (components, app, features, lib); globals.css isn't a
+    // .ts/.tsx file, so the one place colors are defined stays exempt.
+    ...sourceFiles(join(root, "src")),
   ];
 
   it.each(files.map((file) => [relative(root, file), file]))(

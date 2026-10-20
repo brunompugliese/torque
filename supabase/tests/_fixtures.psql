@@ -1,0 +1,160 @@
+-- =============================================================================
+-- Shared setup for every pgTAP test file (spec 003).
+-- Included with \ir inside each file's transaction, so everything created here
+-- is rolled back with it. Not a test itself: `supabase test db` runs only *.sql.
+-- All data is fake.
+-- =============================================================================
+
+create extension if not exists pgtap with schema extensions;
+
+-- Throwaway encryption keys for this transaction only.
+do $$
+begin
+  perform vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'torque_data_key');
+  perform vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'torque_hash_key');
+end $$;
+
+-- -----------------------------------------------------------------------------
+-- Named ids, so tests read as tests.id('vehicle_a') instead of raw uuids.
+-- -----------------------------------------------------------------------------
+create schema tests;
+
+create table tests.fixture (
+  name text primary key,
+  id   uuid not null
+);
+
+insert into tests.fixture (name, id) values
+  ('shop_a',        '00000000-0000-0000-0000-00000000a000'),
+  ('shop_b',        '00000000-0000-0000-0000-00000000b000'),
+  ('user_a',        '00000000-0000-0000-0000-00000000a001'),
+  ('user_a_off',    '00000000-0000-0000-0000-00000000a002'),
+  ('user_b',        '00000000-0000-0000-0000-00000000b001'),
+  ('client_a',      '00000000-0000-0000-0000-00000000a101'),
+  ('client_b',      '00000000-0000-0000-0000-00000000b101'),
+  ('vehicle_a',     '00000000-0000-0000-0000-00000000a201'),
+  ('vehicle_b',     '00000000-0000-0000-0000-00000000b201'),
+  ('service_a',     '00000000-0000-0000-0000-00000000a301'),
+  ('service_b',     '00000000-0000-0000-0000-00000000b301'),
+  ('appointment_a', '00000000-0000-0000-0000-00000000a401'),
+  ('appointment_b', '00000000-0000-0000-0000-00000000b401'),
+  ('job_a',         '00000000-0000-0000-0000-00000000a501'),
+  ('job_b',         '00000000-0000-0000-0000-00000000b501'),
+  ('item_a',        '00000000-0000-0000-0000-00000000a601'),
+  ('item_b',        '00000000-0000-0000-0000-00000000b601');
+
+-- Global catalog rows come from the seed migrations.
+insert into tests.fixture (name, id)
+select 'model_cronos', m.id from public.model m join public.brand b on b.id = m.brand_id
+where b.name = 'Fiat' and m.name = 'Cronos';
+insert into tests.fixture (name, id)
+select 'model_gol', m.id from public.model m join public.brand b on b.id = m.brand_id
+where b.name = 'Volkswagen' and m.name = 'Gol';
+insert into tests.fixture (name, id)
+select 'brand_fiat', id from public.brand where name = 'Fiat';
+insert into tests.fixture (name, id)
+select 'brand_vw', id from public.brand where name = 'Volkswagen';
+
+create function tests.id(fixture_name text)
+returns uuid
+language sql
+stable
+as $$
+  select f.id from tests.fixture f where f.name = fixture_name;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- Acting as a user. RESET ROLE first, so switching works from any role.
+-- -----------------------------------------------------------------------------
+
+-- A logged-in user with the shop_id claim the access token hook would add.
+create function tests.act_as(user_name text)
+returns void
+language plpgsql
+as $$
+declare
+  user_id uuid;
+  user_shop uuid;
+begin
+  reset role;
+  user_id := tests.id(user_name);
+  select shop_id into user_shop from public.profile where id = user_id;
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', user_id, 'role', 'authenticated', 'shop_id', user_shop)::text, true);
+  perform set_config('role', 'authenticated', true);
+end;
+$$;
+
+create function tests.act_as_anon()
+returns void
+language plpgsql
+as $$
+begin
+  reset role;
+  perform set_config('request.jwt.claims', '{"role": "anon"}', true);
+  perform set_config('role', 'anon', true);
+end;
+$$;
+
+-- Back to the test runner's role (bypasses RLS), for setup and inspection.
+create function tests.act_as_admin()
+returns void
+language plpgsql
+as $$
+begin
+  reset role;
+  perform set_config('request.jwt.claims', '', true);
+end;
+$$;
+
+grant usage on schema tests to authenticated, anon;
+grant select on tests.fixture to authenticated, anon;
+grant execute on all functions in schema tests to authenticated, anon;
+
+-- -----------------------------------------------------------------------------
+-- Two shops, each with users and one row per tenant table.
+-- -----------------------------------------------------------------------------
+
+insert into public.shop (id, name) values
+  (tests.id('shop_a'), 'Taller A'),
+  (tests.id('shop_b'), 'Taller B');
+
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+                        created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+select '00000000-0000-0000-0000-000000000000', tests.id(u.name), 'authenticated', 'authenticated',
+       u.name || '@example.com', '', now(), now(), now(), '{}', '{}'
+from (values ('user_a'), ('user_a_off'), ('user_b')) as u(name);
+
+insert into public.profile (id, shop_id, role, full_name, enabled) values
+  (tests.id('user_a'),     tests.id('shop_a'), 'owner',    'Usuario A',            true),
+  (tests.id('user_a_off'), tests.id('shop_a'), 'mechanic', 'Usuario A deshabilitado', false),
+  (tests.id('user_b'),     tests.id('shop_b'), 'owner',    'Usuario B',            true);
+
+-- Same DNI in both shops on purpose: unique per shop, not globally.
+insert into public.client (id, shop_id, name, surname, dni, phone_number, email) values
+  (tests.id('client_a'), tests.id('shop_a'), 'Martín', 'Suárez', '28.456.123', '11 5555-0101', 'martin@example.com'),
+  (tests.id('client_b'), tests.id('shop_b'), 'Carla',  'Ríos',   '28456123',   '11 5555-0201', null);
+
+-- Same plate in both shops on purpose, typed in different formats.
+insert into public.vehicle (id, shop_id, client_id, plate, brand_id, model_id, year, vin) values
+  (tests.id('vehicle_a'), tests.id('shop_a'), tests.id('client_a'), 'ae 482-kd',
+   tests.id('brand_fiat'), tests.id('model_cronos'), 2021, '8ap359a1xmu123456'),
+  (tests.id('vehicle_b'), tests.id('shop_b'), tests.id('client_b'), 'AE482KD',
+   tests.id('brand_vw'), tests.id('model_gol'), 2015, null);
+
+insert into public.service (id, shop_id, name) values
+  (tests.id('service_a'), tests.id('shop_a'), 'Cambio de aceite'),
+  (tests.id('service_b'), tests.id('shop_b'), 'Cambio de aceite');
+
+insert into public.appointment (id, shop_id, vehicle_id, client_id, date, time, reason) values
+  (tests.id('appointment_a'), tests.id('shop_a'), tests.id('vehicle_a'), tests.id('client_a'), current_date, '09:00', 'Ruido al frenar'),
+  (tests.id('appointment_b'), tests.id('shop_b'), tests.id('vehicle_b'), tests.id('client_b'), current_date, '10:00', 'Cambio de aceite');
+
+-- job_a is the vehicle's previous job for the kilometers tests (100.000 km).
+insert into public.job (id, shop_id, vehicle_id, client_id, kilometers, observations, created_at) values
+  (tests.id('job_a'), tests.id('shop_a'), tests.id('vehicle_a'), tests.id('client_a'), 100000, 'Pidió aceite 5W30.', now() - interval '10 days'),
+  (tests.id('job_b'), tests.id('shop_b'), tests.id('vehicle_b'), tests.id('client_b'), 143000, null,                 now() - interval '10 days');
+
+insert into public.job_item (id, job_id, service_id, quantity, quoted_unit_price) values
+  (tests.id('item_a'), tests.id('job_a'), tests.id('service_a'), 1, 60000),
+  (tests.id('item_b'), tests.id('job_b'), tests.id('service_b'), 1, 55000);

@@ -28,7 +28,7 @@ export function FloatingNav({ items, ariaLabel }: FloatingNavProps) {
       aria-label={ariaLabel}
       className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--floating-nav-offset)+env(safe-area-inset-bottom,0px))] z-40 flex justify-center px-4"
     >
-      <ul className="pointer-events-auto flex h-(--floating-nav-height) w-full max-w-sm items-center gap-0.5 rounded-full border border-border bg-card p-1 shadow-lg shadow-foreground/10">
+      <ul className="pointer-events-auto flex h-(--floating-nav-height) w-full max-w-md items-center gap-0.5 rounded-full border border-border bg-card p-1 shadow-lg shadow-foreground/10">
         {items.map(({ href, label, icon: ItemIcon }) => {
           const active = isNavItemActive(pathname, href);
 
