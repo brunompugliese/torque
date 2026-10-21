@@ -55,7 +55,7 @@ Columns: "Servicio" (name in medium weight, description below in secondary text,
 - "Agregar servicio" opens the modal in create mode. On success, the modal switches to the new service (view mode), a toast confirms and the list refreshes via `revalidatePath`.
 - Edit replaces the modal content with the form; Cancel goes back to view.
 - Rename: the action answers `renameNeedsConfirmation` when the normalized name changed and the service is on a job item; the form shows the confirmation and resends with `confirmRename: true`.
-- Archive: confirmation, then action; Unarchive: action directly.
+- Archive: confirmation, then action; Unarchive: action directly. After either succeeds the modal closes (archive standard in design.md).
 - Uniqueness errors come back as field errors and land on Nombre with focus.
 
 ## Components and code
@@ -88,7 +88,7 @@ Columns: "Servicio" (name in medium weight, description below in secondary text,
 | `DATE_FORMAT`, `APP_TIME_ZONE` | `lib/format/date.ts` | New; `i18n/request.ts` sets the time zone |
 | `requiredTextField`, `optionalTextField` | `lib/validation/fields.ts` | Extended |
 | Service schema, queries, actions | `features/service/` | New |
-| `ServicesPanel` (modal provider), `ServicesTable`, `ServicesToolbar`, `ServiceModal`, `ServiceForm`, summary/count sections | `features/service/components/` | New |
+| `ServicesPanel` (modal provider), `ServicesTable`, `ServiceModal`, `ServiceForm`, summary/count sections | `features/service/components/` | New |
 
 Server data (`features/service/queries.ts`): `listServices(params)` and `getServiceCounts()`, wrapped in `cache()`, rows parsed with a Zod row schema (types aren't generated yet).
 

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { idSchema } from "@/lib/validation/fields";
+
 // Read through vehicle_decrypted (the table holds ciphertext). Rows are parsed
 // at runtime until database types are generated.
 export const VEHICLE_COLUMNS = "id, plate, brand_name, model_name, year, vin, enabled";
@@ -18,10 +20,10 @@ export const vehicleRowSchema = z
 
 export type Vehicle = z.output<typeof vehicleRowSchema>;
 
-export const clientIdSchema = z.uuid();
+export const clientIdSchema = idSchema;
 
 // The same vehicle twice counts once.
 export const vehicleIdsSchema = z
-  .array(z.uuid())
+  .array(idSchema)
   .min(1)
   .transform((ids) => [...new Set(ids)]);

@@ -5,14 +5,14 @@ import { useEffect } from "react";
 
 import { ArchivedBadge } from "@/components/shared/archived-badge";
 import { DataTable, DataTableSkeleton, type DataTableColumn } from "@/components/shared/data-table";
-import { ListEmpty, ListError } from "@/components/shared/list-states";
+import { ListError, ListNoRows } from "@/components/shared/list-states";
 import { TableDate } from "@/components/shared/table-date";
 import { PaginationBar } from "@/components/shared/pagination-bar";
-import { Button } from "@/components/ui/button";
 import { useListUrl } from "@/hooks/use-list-url";
 import { LIST_PAGE_SIZE } from "@/lib/list/params";
 
-import { SERVICE_SORT_COLUMNS, type Service } from "../schemas";
+import { SERVICE_SORT_COLUMNS } from "../list";
+import type { Service } from "../schemas";
 import { useServicesPanel } from "./services-panel";
 
 const SORT_IDS = Object.keys(SERVICE_SORT_COLUMNS);
@@ -25,7 +25,6 @@ type ServicesTableProps =
 
 export function ServicesTable(props: ServicesTableProps) {
   const t = useTranslations("services");
-  const tList = useTranslations("list");
   const { params, clearSearch, setShowArchived, toggleSort, setPage } = useListUrl();
   const { openService, openCreate } = useServicesPanel();
 
@@ -37,37 +36,22 @@ export function ServicesTable(props: ServicesTableProps) {
   if (!props.ok) return <ListError onRetry={props.onRetry} />;
 
   if (props.rows.length === 0) {
-    if (params.search) {
-      return (
-        <ListEmpty
-          title={t("empty.noResultsTitle")}
-          hint={t("empty.noResultsHint")}
-          action={
-            <Button variant="outline" onClick={clearSearch}>
-              {tList("clearSearch")}
-            </Button>
-          }
-        />
-      );
-    }
-    if (props.total === 0) {
-      return (
-        <ListEmpty
-          title={t("empty.noneTitle")}
-          hint={t("empty.noneHint")}
-          action={<Button onClick={openCreate}>{t("add")}</Button>}
-        />
-      );
-    }
     return (
-      <ListEmpty
-        title={t("empty.onlyArchivedTitle")}
-        hint={t("empty.onlyArchivedHint")}
-        action={
-          <Button variant="outline" onClick={() => setShowArchived(true)}>
-            {tList("showArchived")}
-          </Button>
-        }
+      <ListNoRows
+        hasSearch={Boolean(params.search)}
+        total={props.total}
+        texts={{
+          noResultsTitle: t("empty.noResultsTitle"),
+          noResultsHint: t("empty.noResultsHint"),
+          noneTitle: t("empty.noneTitle"),
+          noneHint: t("empty.noneHint"),
+          onlyArchivedTitle: t("empty.onlyArchivedTitle"),
+          onlyArchivedHint: t("empty.onlyArchivedHint"),
+        }}
+        addLabel={t("add")}
+        onAdd={openCreate}
+        onClearSearch={clearSearch}
+        onShowArchived={() => setShowArchived(true)}
       />
     );
   }

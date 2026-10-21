@@ -1,28 +1,34 @@
 import { WhatsappLogoIcon } from "@phosphor-icons/react/ssr";
 
-import { buttonVariants } from "@/components/ui/button";
 import { toWhatsappUrl } from "@/lib/format/whatsapp";
 import { cn } from "@/lib/utils";
 
 type WhatsappButtonProps = {
   phone: string;
-  // Accessible name: the button shows only the icon.
+  // Accessible name; it must contain the visible text.
   label: string;
+  // The visible word next to the icon.
+  text: string;
   className?: string;
 };
 
-// Icon-only link that opens a WhatsApp chat with the phone. It always renders,
+// Opens a WhatsApp chat with the phone. Green icon and text at rest; a light
+// green fill and border on hover and keyboard focus. It always renders,
 // whatever the phone is.
-export function WhatsappButton({ phone, label, className }: WhatsappButtonProps) {
+export function WhatsappButton({ phone, label, text, className }: WhatsappButtonProps) {
   return (
     <a
       href={toWhatsappUrl(phone)}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className={cn(buttonVariants({ variant: "ghost", size: "icon-sm" }), "text-whatsapp hover:text-whatsapp", className)}
+      className={cn(
+        "inline-flex h-7 items-center gap-1.5 rounded-lg border border-transparent px-2 text-sm font-medium text-whatsapp transition-colors outline-none hover:border-whatsapp/40 hover:bg-whatsapp/10 focus-visible:border-whatsapp/40 focus-visible:bg-whatsapp/10 focus-visible:ring-3 focus-visible:ring-ring/50",
+        className,
+      )}
     >
-      <WhatsappLogoIcon aria-hidden="true" weight="fill" className="size-5" />
+      <WhatsappLogoIcon aria-hidden="true" weight="fill" className="size-4" />
+      {text}
     </a>
   );
 }

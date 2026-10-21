@@ -2,11 +2,12 @@ import { z } from "zod";
 
 import {
   dniField,
+  idSchema,
   optionalEmailField,
   optionalLineField,
-  phoneField,
   requiredTextField,
 } from "@/lib/validation/fields";
+import { phoneField } from "@/lib/validation/phone";
 
 export const clientFormSchema = z.object({
   name: requiredTextField("nameRequired"),
@@ -19,15 +20,6 @@ export const clientFormSchema = z.object({
 export type ClientFormInput = z.input<typeof clientFormSchema>;
 export type ClientFormValues = z.output<typeof clientFormSchema>;
 export type ClientField = keyof ClientFormValues;
-
-export const CLIENT_SORT_COLUMNS = {
-  cliente: "name_key",
-  dni: "dni_number",
-  telefono: "phone_key",
-  email: "email_key",
-  creado: "created_at",
-} as const;
-export const CLIENT_DEFAULT_SORT = "cliente";
 
 // Read through client_decrypted (the table holds ciphertext). Rows are parsed
 // at runtime until database types are generated.
@@ -48,4 +40,4 @@ export const clientRowSchema = z
 
 export type Client = z.output<typeof clientRowSchema>;
 
-export const clientIdSchema = z.uuid();
+export const clientIdSchema = idSchema;

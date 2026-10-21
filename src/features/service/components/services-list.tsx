@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
+import { ListUrlToolbar } from "@/components/shared/list-url-toolbar";
 import { useListResults } from "@/hooks/use-list-results";
 import { useListUrl } from "@/hooks/use-list-url";
 import { toListSearch } from "@/lib/list/params";
@@ -7,7 +10,6 @@ import { toListSearch } from "@/lib/list/params";
 import { searchServices } from "../actions";
 import type { ServicePage } from "../queries";
 import { ServicesTable } from "./services-table";
-import { ServicesToolbar } from "./services-toolbar";
 
 type ServicesListProps = {
   initial: ServicePage;
@@ -20,12 +22,13 @@ function fetchPage(key: string): Promise<ServicePage> {
 }
 
 export function ServicesListView({ initial, initialKey, total }: ServicesListProps) {
+  const t = useTranslations("services");
   const { params } = useListUrl();
   const { result, retry } = useListResults(initial, initialKey, toListSearch(params), fetchPage);
 
   return (
     <>
-      <ServicesToolbar />
+      <ListUrlToolbar searchPlaceholder={t("searchPlaceholder")} />
       {result.ok ? (
         <ServicesTable ok rows={result.rows} matching={result.matching} total={total} />
       ) : (

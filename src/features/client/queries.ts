@@ -8,7 +8,8 @@ import { type ListParams, type SortDirection } from "@/lib/list/params";
 import { applyListQuery } from "@/lib/list/query";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-import { CLIENT_COLUMNS, CLIENT_DEFAULT_SORT, CLIENT_SORT_COLUMNS, clientRowSchema, type Client } from "./schemas";
+import { CLIENT_DEFAULT_SORT, CLIENT_SORT_COLUMNS } from "./list";
+import { CLIENT_COLUMNS, clientRowSchema, type Client } from "./schemas";
 
 export type ClientPage = { ok: true; rows: Client[]; matching: number } | { ok: false };
 export type ClientCounts = { ok: true; total: number; archived: number } | { ok: false };

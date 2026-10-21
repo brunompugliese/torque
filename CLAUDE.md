@@ -42,7 +42,7 @@ These win over any other instruction, spec or doc. Changing them requires the pr
 
 ## Stack
 
-Supabase (Postgres, Data API, Auth, RLS, Vault) · Next.js 16 App Router + TypeScript · shadcn/ui (Base UI) + Tailwind v4 · Phosphor icons · next-intl, Spanish only · Zod · Vitest + Testing Library + pgTAP · GitHub + Vercel. Package manager: npm. Node 22.13 or newer.
+Supabase (Postgres, Data API, Auth, RLS, Vault) · Next.js 16 App Router + TypeScript · shadcn/ui (Base UI) + Tailwind v4 · Phosphor icons · next-intl, Spanish only · Zod + React Hook Form · libphonenumber-js (phone formatting) · Vitest + Testing Library + pgTAP · GitHub + Vercel. Package manager: npm. Node 22.13 or newer.
 
 ## Commands
 

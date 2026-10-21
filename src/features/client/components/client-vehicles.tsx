@@ -7,7 +7,6 @@ import { ListError } from "@/components/shared/list-states";
 import { Button } from "@/components/ui/button";
 import { VehicleRow, VehicleRowsSkeleton } from "@/features/vehicle/components/vehicle-row";
 import { getClientVehicles } from "@/features/vehicle/actions";
-import type { VehicleList } from "@/features/vehicle/queries";
 import { useLoadedData } from "@/hooks/use-loaded-data";
 
 type ClientVehiclesProps = {
@@ -15,15 +14,11 @@ type ClientVehiclesProps = {
   onAddVehicle: () => void;
 };
 
-function loadVehicles(clientId: string): Promise<VehicleList> {
-  return getClientVehicles(clientId);
-}
-
 // The client's vehicles, loaded when the modal shows them. Rows aren't
 // clickable until the Vehículos page exists.
 export function ClientVehicles({ clientId, onAddVehicle }: ClientVehiclesProps) {
   const t = useTranslations("clients.vehicles");
-  const vehicles = useLoadedData(clientId, () => loadVehicles(clientId));
+  const vehicles = useLoadedData(clientId, () => getClientVehicles(clientId));
 
   let body;
   if (vehicles.status === "loading") {

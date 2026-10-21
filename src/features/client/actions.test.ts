@@ -105,7 +105,7 @@ describe("createClient", () => {
         name: "Ana",
         surname: "Gómez",
         dni: "28456123",
-        phone_number: "11 12345678",
+        phone_number: "11 1234-5678",
         email: "ana@example.com",
       },
     ]);
@@ -115,10 +115,10 @@ describe("createClient", () => {
 
   it("stores empty optional fields as null", async () => {
     const queries = setup();
-    await createClient({ name: "Zoe", surname: "", phoneNumber: "11 1", dni: "", email: "" });
+    await createClient({ name: "Zoe", surname: "", phoneNumber: "1112345678", dni: "", email: "" });
     expect(queries[0].calls[0]).toEqual([
       "insert",
-      { shop_id: "shop-a", name: "Zoe", surname: null, dni: null, phone_number: "11 1", email: null },
+      { shop_id: "shop-a", name: "Zoe", surname: null, dni: null, phone_number: "11 1234-5678", email: null },
     ]);
   });
 
@@ -162,7 +162,7 @@ describe("createClient", () => {
   it("never logs personal data", async () => {
     setup((query) => (query.operation === "insert" ? { error: { code: "XX000" } } : undefined));
     await createClient(INPUT);
-    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toMatch(/Ana|28456123|example\.com|12345678/);
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toMatch(/Ana|28456123|example\.com|1234-5678/);
   });
 });
 
@@ -192,7 +192,7 @@ describe("updateClient", () => {
     expect(update.table).toBe("client");
     expect(update.calls[0]).toEqual([
       "update",
-      { name: "Ana", surname: "Gómez", dni: "28456123", phone_number: "11 12345678", email: "ana@example.com" },
+      { name: "Ana", surname: "Gómez", dni: "28456123", phone_number: "11 1234-5678", email: "ana@example.com" },
     ]);
     expect(filterValue(update, "eq", "id")).toBe(ID);
     expect(readBack.table).toBe("client_decrypted");

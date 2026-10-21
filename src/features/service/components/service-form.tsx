@@ -59,7 +59,7 @@ export function ServiceForm({ id, defaultValues, onSubmit }: ServiceFormProps) {
   };
 
   return (
-    <form id={id} onSubmit={submit} noValidate className="flex flex-col gap-5">
+    <form id={id} onSubmit={submit} noValidate className="flex flex-col gap-5 pb-2">
       <FieldGroup>
         <Field data-invalid={Boolean(errors.name)}>
           <FieldLabel htmlFor={`${id}-name`}>{t("fields.name")} *</FieldLabel>

@@ -16,7 +16,7 @@ describe("clientFormSchema", () => {
     expect(clientFormSchema.parse(VALID)).toEqual({
       name: "Ana",
       surname: null,
-      phoneNumber: "11 12345678",
+      phoneNumber: "11 1234-5678",
       dni: null,
       email: null,
     });
@@ -34,7 +34,7 @@ describe("clientFormSchema", () => {
     ).toEqual({
       name: "Ana María",
       surname: "de la Cruz",
-      phoneNumber: "11 12345678",
+      phoneNumber: "11 1234-5678",
       dni: "28456123",
       email: "ana@example.com",
     });
@@ -45,6 +45,7 @@ describe("clientFormSchema", () => {
       name: "nameRequired",
       phoneNumber: "phoneRequired",
     });
+    expect(errors({ ...VALID, phoneNumber: "11 123" })).toEqual({ phoneNumber: "phoneInvalid" });
     expect(errors({ name: undefined, phoneNumber: undefined })).toEqual({
       name: "nameRequired",
       phoneNumber: "phoneRequired",

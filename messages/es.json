@@ -20,6 +20,7 @@
     "passwordTooLong": "La contraseña es demasiado larga.",
     "nameRequired": "Ingresá el nombre.",
     "phoneRequired": "Ingresá el teléfono.",
+    "phoneInvalid": "Revisá el teléfono: tiene que tener 10 dígitos.",
     "dniInvalid": "Revisá el DNI."
   },
   "auth": {
@@ -144,11 +145,13 @@
       "surname": "Apellido",
       "phone": "Teléfono",
       "phonePlaceholder": "11 1234-5678",
+      "phoneHint": "Código de área y número, sin 0 ni 15.",
       "dni": "DNI",
       "email": "Email"
     },
     "notLoaded": "Sin cargar",
     "whatsapp": "Escribir por WhatsApp",
+    "whatsappText": "WhatsApp",
     "archiveConfirm": {
       "title": "¿Archivar este cliente?",
       "body": "Sus vehículos no cambian y lo siguen mostrando como “(Archivado)”."
