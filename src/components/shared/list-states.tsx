@@ -21,6 +21,58 @@ export function ListEmpty({ title, hint, action }: ListEmptyProps) {
   );
 }
 
+type ListNoRowsProps = {
+  // Why the list has no rows: a search with no match, a page with no records at
+  // all, or only archived records while they are hidden.
+  hasSearch: boolean;
+  total: number;
+  texts: {
+    noResultsTitle: string;
+    noResultsHint: string;
+    noneTitle: string;
+    noneHint: string;
+    onlyArchivedTitle: string;
+    onlyArchivedHint: string;
+  };
+  addLabel: string;
+  onAdd: () => void;
+  onClearSearch: () => void;
+  onShowArchived: () => void;
+};
+
+// The three empty states every list page shares (docs/design.md#list-pages).
+export function ListNoRows({ hasSearch, total, texts, addLabel, onAdd, onClearSearch, onShowArchived }: ListNoRowsProps) {
+  const t = useTranslations("list");
+
+  if (hasSearch) {
+    return (
+      <ListEmpty
+        title={texts.noResultsTitle}
+        hint={texts.noResultsHint}
+        action={
+          <Button variant="outline" onClick={onClearSearch}>
+            {t("clearSearch")}
+          </Button>
+        }
+      />
+    );
+  }
+  if (total === 0) {
+    return <ListEmpty title={texts.noneTitle} hint={texts.noneHint} action={<Button onClick={onAdd}>{addLabel}</Button>} />;
+  }
+  return (
+    <ListEmpty
+      title={texts.onlyArchivedTitle}
+      hint={texts.onlyArchivedHint}
+      action={
+        <Button variant="outline" onClick={onShowArchived}>
+          {t("showArchived")}
+        </Button>
+      }
+    />
+  );
+}
+
 type ListErrorProps = {
   onRetry: () => void;
 };

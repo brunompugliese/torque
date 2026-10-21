@@ -6,8 +6,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { FormAlert } from "@/components/shared/form-alert";
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { dniDigits } from "@/lib/format/dni";
+import { formatPhone } from "@/lib/format/phone";
 import type { ValidationErrorKey } from "@/lib/validation/fields";
 
 import type { ClientActionResult } from "../actions";
@@ -66,8 +68,48 @@ export function ClientForm({ id, defaultValues, onSubmit }: ClientFormProps) {
     "aria-describedby": errors[name] ? `${id}-${name}-error` : undefined,
   });
 
+  // The phone is formatted as it is typed, before React Hook Form reads it.
+  // Registered where it appears so "focus the first error" follows the page order.
+  const phoneInput = () => {
+    const phone = form.register("phoneNumber");
+    return (
+      <Input
+        type="tel"
+        inputMode="tel"
+        autoComplete="off"
+        placeholder={t("fields.phonePlaceholder")}
+        {...fieldProps("phoneNumber")}
+        aria-describedby={[`${id}-phoneNumber-hint`, errors.phoneNumber ? `${id}-phoneNumber-error` : null]
+          .filter(Boolean)
+          .join(" ")}
+        {...phone}
+        onChange={(event) => {
+          event.target.value = formatPhone(event.target.value);
+          return phone.onChange(event);
+        }}
+      />
+    );
+  };
+
+  // Digits only, as they are typed. Registered where it appears (see phoneInput).
+  const dniInput = () => {
+    const dni = form.register("dni");
+    return (
+      <Input
+        inputMode="numeric"
+        autoComplete="off"
+        {...fieldProps("dni")}
+        {...dni}
+        onChange={(event) => {
+          event.target.value = dniDigits(event.target.value);
+          return dni.onChange(event);
+        }}
+      />
+    );
+  };
+
   return (
-    <form id={id} onSubmit={submit} noValidate className="flex flex-col gap-5">
+    <form id={id} onSubmit={submit} noValidate className="flex flex-col gap-5 pb-2">
       <FieldGroup>
         <Field data-invalid={Boolean(errors.name)}>
           <FieldLabel htmlFor={`${id}-name`}>{t("fields.name")} *</FieldLabel>
@@ -83,20 +125,14 @@ export function ClientForm({ id, defaultValues, onSubmit }: ClientFormProps) {
 
         <Field data-invalid={Boolean(errors.phoneNumber)}>
           <FieldLabel htmlFor={`${id}-phoneNumber`}>{t("fields.phone")} *</FieldLabel>
-          <Input
-            type="tel"
-            inputMode="tel"
-            autoComplete="off"
-            placeholder={t("fields.phonePlaceholder")}
-            {...fieldProps("phoneNumber")}
-            {...form.register("phoneNumber")}
-          />
+          {phoneInput()}
+          <FieldDescription id={`${id}-phoneNumber-hint`}>{t("fields.phoneHint")}</FieldDescription>
           <FieldError id={`${id}-phoneNumber-error`} errors={message(errors.phoneNumber?.message)} />
         </Field>
 
         <Field data-invalid={Boolean(errors.dni)}>
           <FieldLabel htmlFor={`${id}-dni`}>{t("fields.dni")}</FieldLabel>
-          <Input inputMode="numeric" autoComplete="off" {...fieldProps("dni")} {...form.register("dni")} />
+          {dniInput()}
           <FieldError id={`${id}-dni-error`} errors={message(errors.dni?.message)} />
         </Field>
 

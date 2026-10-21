@@ -92,10 +92,11 @@ Numbers (money, km, times, DNI) use tabular figures so columns align.
 | Time | 24 h | 08:30 ("08:30 hs" inside sentences) |
 | Money | pesos, dot thousands; optional decimals with a comma, up to 2, shown only when entered | $ 605.000 · $ 12.500,50 |
 | Kilometers | dot thousands + "km" | 112.500 km |
-| DNI | dot thousands | 28.456.123 |
+| DNI | up to 8 digits, dot thousands | 28.456.123 |
+| Phone | 10 digits, area code first, formatted as typed | 11 1234-5678 · 221 123-4567 |
 | Plate | uppercase, spaced | AB 123 CD, ABC 123 |
 
-**Stored values.** Plates are stored uppercase without spaces; DNI as digits only. The database normalizes both on write.
+**Stored values.** Plates are stored uppercase without spaces; DNI as digits only. The database normalizes both on write. Phones are stored already formatted ("11 1234-5678"): the app formats them as they are typed and on save.
 
 ## Accessibility
 
@@ -128,7 +129,7 @@ WCAG 2.1 AA on every page. In practice:
 ### List pages
 
 - Toolbar: search, filters, "Mostrar archivados" switch (off by default), active filters as removable chips. No result count in the toolbar: the pagination line under the table already says how many match.
-- Table: every column sortable by clicking its header (click again to reverse). Text left-aligned, numbers right-aligned, plate drawing centered in its own column; a header aligns like its column. Clicking a row opens its detail modal.
+- Table: every column sortable by clicking its header (click again to reverse). Text left-aligned, numbers right-aligned, plate drawing centered in its own column; a header aligns like its column. Clicking a row opens its detail modal. On narrow screens the table scrolls sideways, and the column that holds the record's name keeps a minimum width so the name stays readable.
 - Dates in table cells are dd/mm/aaaa in secondary text color, on one line.
 - Column headers look different from rows so nobody mistakes them for data: smaller, medium weight, secondary text color (see [Typography](#visual-identity)). Every sortable header always shows an up/down arrow icon after its label, so it reads as clickable in both directions. The sorted column's header switches to text color and its icon becomes a single arrow pointing the current direction (up A–Z / ascending, down Z–A / descending).
 - Lists open with no column sorted: every header is in secondary text with its up/down icon, and rows come in the page's default order (set in its spec). The first click on a header sorts by it ascending; clicking it again reverses it; clicking another header sorts by that one ascending.
@@ -183,6 +184,7 @@ Vehicles, clients, jobs and services are archived, never deleted. Archiving sets
 
 - "Archivar" is in the detail modal header, next to "Editar". It always asks for confirmation: "¿Archivar este vehículo?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras." + "Cancelar" / "Archivar".
 - Archived records show an "Archivado" badge and greyed rows; "Desarchivar" restores them immediately, without confirmation.
+- **Standard for every archivable entity:** once archiving (after its confirmation) or unarchiving succeeds, the detail modal closes and a toast confirms ("Cliente archivado" · name). The list refreshes behind it. If the action fails the modal stays open with an error toast. Cancelling the confirmation changes nothing and keeps the modal open.
 - New records always start active.
 
 ### Confirmations

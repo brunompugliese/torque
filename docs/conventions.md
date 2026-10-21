@@ -69,7 +69,7 @@ Current palette, *Neutral* (the visual identity in [design.md](design.md#visual-
 | `--warning`, `--warning-border`, `--warning-foreground` | `#FFFBEB`, `#FCD34D`, `#78350F` | Closing-a-job warning |
 | `--plate-band` | `#1E4FB8` | Top band of the plate drawing |
 | `--plate`, `--plate-foreground` | `#FFFFFF`, `#09090B` | Plate drawing background, border and characters (white with black characters in any theme) |
-| `--whatsapp` | `#128C7E` | WhatsApp button icon; darker than WhatsApp's own green to keep 3:1 non-text contrast (checked in `theme-tokens.test.ts`) |
+| `--whatsapp` | `#137A38` | WhatsApp button text and icon, and its 10% hover fill; dark enough for 4.5:1 text contrast on both (checked in `theme-tokens.test.ts`) |
 | `--status-<family>`, `-foreground`, `-dot` (`-border` for `done`, `cancelled`) | See [design.md](design.md#visual-identity) | Status badges and calendar cards |
 | `--chart-1` … `--chart-5` | `#18181B`, `#3B82F6`, `#8B5CF6`, `#22C55E`, `#F59E0B` | Chart series |
 | `--sidebar-*` | Same values as `card`, `foreground`, `primary`, `accent`, `border` and `ring` | shadcn sidebar component |
@@ -110,17 +110,21 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 - Never send `shop_id` from the UI when it can be derived; the database checks it anyway.
 - **Encrypted tables** ([how it works](architecture.md#sensitive-data)): write to the table, read through its `<table>_decrypted` view, including right after a write. Never send or select `*_hash` columns. Never put their values, or searches over them, in a URL. Normalize search terms with one shared helper that matches the database's `normalize_search`.
 - **Business-rule errors** from the database ([codes](architecture.md#automatic-behavior-triggers)) are mapped to UI messages in one place; the UI prevents them first.
-- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)): build them with `applyListQuery`, `useListUrl`, `useListResults` (plus a search Server Action per page) and the shared list components ([architecture.md](architecture.md#list-pages-exists)).
+- **Archivable entities** use the shared archive flow: `useArchiveFlow` (`hooks/use-archive-flow.ts`) runs the action, shows the toast and closes the modal per the [archive standard](design.md#archive), and `ArchiveToggleButton` and `ArchiveConfirmDialog` (`components/shared/archive-controls.tsx`) are the header button and the confirmation. A modal only supplies the action, the toast text and its entity sentence; never rewrite the flow per entity.
+- **Lists** paginate on the server (25 rows per page) with search, filters and sorting applied in the query ([design.md](design.md#list-pages)): build them with `applyListQuery`, `useListUrl`, `useListResults` (plus a search Server Action per page) and the shared list components, including `ListUrlToolbar` and `ListNoRows`, so a page only supplies its columns, texts and actions ([architecture.md](architecture.md#list-pages-exists)).
 - **Actions return `ActionResult`** (`lib/actions/result.ts`, with `ok()` / `fail()`); field errors are message keys.
 - **"Already exists" checks** use `findByKey` (`lib/data/lookups.ts`) on a normalized key column, comparing active and archived rows ([design.md](design.md#uniqueness-per-shop)); "is it used?" checks use `existsWhere`, never a count.
 - Until database types are generated, rows are parsed with a Zod row schema in the domain's `schemas.ts`.
 - Select only the columns you need.
+- **Data a modal loads when it opens** (a client's vehicles, the vehicles to assign) comes from a read Server Action in the owning domain (`features/<domain>/actions.ts`) through `useLoadedData`, and shows the shared skeleton while loading and `ListError` with "Reintentar" on failure.
 
 ## Forms and validation
 
 - One Zod schema per form in `features/<domain>/schemas.ts`, used both by the form (client) and by the Server Action (server).
 - Reusable field rules (plate, phone, email, DNI) live in `lib/validation/` and are composed into domain schemas.
 - Forms use shadcn/ui form components with `react-hook-form` and the Zod resolver.
+- **Inputs that clean or format as the user types** (phone, DNI) do it in their `onChange`, with a helper from `lib/format/`, before React Hook Form reads the value (`event.target.value = format(event.target.value)`). The Zod schema applies the same helper, so what the field shows is what the server stores, and stays strict for values that skip the form. Register such a field where it appears in the form, not earlier: "focus the first error" follows registration order.
+- Record ids are validated with `idSchema` (`lib/validation/fields.ts`), not by repeating `z.uuid()`.
 
 ## UI text and formatting
 

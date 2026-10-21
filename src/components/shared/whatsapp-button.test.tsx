@@ -3,29 +3,39 @@ import { describe, expect, it } from "vitest";
 
 import { WhatsappButton } from "./whatsapp-button";
 
+function renderButton(phone = "11 1234-5678") {
+  render(<WhatsappButton phone={phone} label="Escribir por WhatsApp" text="WhatsApp" />);
+  return screen.getByRole("link", { name: "Escribir por WhatsApp" });
+}
+
 describe("WhatsappButton", () => {
   it("links to the chat with the normalized number, in a new tab", () => {
-    render(<WhatsappButton phone="11 1234-5678" label="Escribir por WhatsApp" />);
-    const link = screen.getByRole("link", { name: "Escribir por WhatsApp" });
+    const link = renderButton();
     expect(link).toHaveAttribute("href", "https://wa.me/5491112345678");
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
-  it("shows only the icon: no visible text, the name comes from the label", () => {
-    render(<WhatsappButton phone="11 1234-5678" label="Escribir por WhatsApp" />);
-    const link = screen.getByRole("link", { name: "Escribir por WhatsApp" });
-    expect(link).toHaveTextContent("");
+  it("shows the icon and the visible word, and the accessible name contains that word", () => {
+    const link = renderButton();
+    expect(link).toHaveTextContent("WhatsApp");
     expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(link.getAttribute("aria-label")).toContain("WhatsApp");
   });
 
-  it("uses the WhatsApp color token", () => {
-    render(<WhatsappButton phone="11 1234-5678" label="Escribir por WhatsApp" />);
-    expect(screen.getByRole("link")).toHaveClass("text-whatsapp");
+  it("is green with no border or fill at rest", () => {
+    const link = renderButton();
+    expect(link).toHaveClass("text-whatsapp", "border-transparent");
+    expect(link).not.toHaveClass("bg-whatsapp/10");
+  });
+
+  it("gets a light green fill and border on hover and on keyboard focus", () => {
+    const link = renderButton();
+    expect(link).toHaveClass("hover:bg-whatsapp/10", "hover:border-whatsapp/40");
+    expect(link).toHaveClass("focus-visible:bg-whatsapp/10", "focus-visible:border-whatsapp/40", "focus-visible:ring-3");
   });
 
   it("always renders, whatever the phone is", () => {
-    render(<WhatsappButton phone="abc" label="Escribir por WhatsApp" />);
-    expect(screen.getByRole("link", { name: "Escribir por WhatsApp" })).toHaveAttribute("href", "https://wa.me/549");
+    expect(renderButton("abc")).toHaveAttribute("href", "https://wa.me/549");
   });
 });

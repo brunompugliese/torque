@@ -22,7 +22,7 @@ Each task is small, leaves the project working, and says how it is verified. Che
   - Do: `features/vehicle/schemas.ts`, `queries.ts`, `actions.ts` (`getClientVehicles`, `getUnassignedVehicles`, `assignVehiclesToClient`).
   - Verify: schema, query and action tests (all / partial / none assigned, archived client, invalid ids).
 - [x] **6. Clients page: list**
-  - Do: `app/(app)/clientes/page.tsx` + `loading.tsx`; `ClientsPanel`, `ClientsTable` (+ skeleton), `ClientsToolbar`, sections (list, summary), `AddClientButton`.
+  - Do: `app/(app)/clientes/page.tsx` + `loading.tsx`; `ClientsPanel`, `ClientsTable` (+ skeleton), sections (list, summary), `AddClientButton`.
   - Verify: component tests (columns and "—", sort headers, search, archived switch, list states, row opens the modal); `npm test`, `npm run lint`, `npm run build`.
 - [x] **7. Client modal, form and archive**
   - Do: `ClientModal` (view with WhatsApp button, edit, create), `ClientForm`, archive/unarchive confirmation, toasts.

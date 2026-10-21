@@ -28,6 +28,7 @@ Shared behavior follows [design.md](../../docs/design.md) (list pages, search, d
 Page and list
 
 - [ ] Given `/clientes`, when it loads, then it replaces the placeholder and shows the title "Clientes", the summary "N clientes en total, M archivados." (N counts active and archived; singular and plural agree, "0 archivados" is always shown, e.g. "1 cliente en total, 0 archivados.") and the "Agregar cliente" button.
+- [ ] Given a narrow screen, when the list shows, then the table scrolls sideways and the "Cliente" column keeps a minimum width, so the name is always readable (long names are cut with "…").
 - [ ] Given the list, when it loads, then it has five columns: "Cliente" (name + surname, and an "Archivado" badge on archived rows), "DNI" (dot thousands, tabular figures), "Teléfono" (as entered), "Email" and "Creado el" (styled per design.md's table date standard). An empty DNI, phone or email shows "—"; an empty surname shows only the name.
 - [ ] Given the list, when it loads, then no header is marked as sorted and rows come A–Z by name and then surname, ignoring case and accents.
 - [ ] Given any of the five headers, when clicked, then the list sorts by it ascending on the first click ("Creado el" oldest first), reverses on the second, and the header shows the sorted look and announces its direction, per design.md.
@@ -47,7 +48,8 @@ Client modal
 
 - [ ] Given a client, when its modal opens, then it shows instantly from the row already loaded with the list; the header shows name + surname (+ "Archivado" badge) and the actions "Archivar" / "Desarchivar" and "Editar cliente".
 - [ ] Given a client, when its modal opens, then the body shows "DNI" (dot thousands, or "Sin cargar"), "Teléfono" and "Email" (or "Sin cargar").
-- [ ] Given the phone, when shown, then it is plain text as entered (no call link), with an icon-only button next to it: the WhatsApp icon in a WhatsApp green token (AA non-text contrast in light and dark), no visible text, accessible name "Escribir por WhatsApp", that opens `https://wa.me/<number>` in a new tab (`rel="noopener noreferrer"`). The button always shows, whatever the phone is. The number is built from the phone like this: digits only, leading zeros dropped, and `549` added unless it already starts with `54`. This rule is a first version, to be adjusted from real use.
+- [ ] Given the phone, when shown, then it is plain text as stored (no call link), with a "WhatsApp" button next to it: the WhatsApp icon and the visible word "WhatsApp", both in the WhatsApp green token, with no border or fill at rest; on hover and keyboard focus a light green fill and a green border appear. Its accessible name is "Escribir por WhatsApp" (it contains the visible text). It opens `https://wa.me/<number>` in a new tab (`rel="noopener noreferrer"`) and always shows, whatever the phone is. The number is built from the phone like this: digits only, leading zeros dropped, and `549` added unless it already starts with `54`. This rule is a first version, to be adjusted from real use.
+- [ ] Given the WhatsApp green token, when used for text and for the hover fill, then the green on the card surface and on the hover fill meets 4.5:1 (AA for text).
 - [ ] Given a client, when its modal opens, then the footer shows "Creado el dd/mm/aaaa" (Argentina time).
 - [ ] Given the client modal, when it opens, then "Vehículos" loads the client's vehicles with the shared skeleton (`aria-busy`, one "Cargando…") in the final sizes, and shows them in the order the database returns, without pagination.
 - [ ] Given a vehicle row, when shown, then it has the plate drawn as a plate, brand + model, year (secondary color), VIN or "Sin VIN" (secondary color) and an "Archivado" badge if archived. Rows are not clickable and have no arrow until the Vehículos page exists.
@@ -74,7 +76,9 @@ Add vehicle from a client
 Add
 
 - [ ] Given "Agregar cliente", when clicked, then a modal titled "Agregar cliente" opens with the form, the subtitle "Los campos con * son obligatorios." and the footer "Cancelar" (closes) / "Agregar cliente".
-- [ ] Given the form, when it shows, then it has: "Nombre *" (text), "Apellido" (text), "Teléfono *" (phone keyboard, placeholder "11 1234-5678"), "DNI" (numeric keyboard) and "Email" (email keyboard).
+- [ ] Given the form, when it shows, then it has: "Nombre *" (text), "Apellido" (text), "Teléfono *" (phone keyboard, placeholder "11 1234-5678", hint "Código de área y número, sin 0 ni 15."), "DNI" (numeric keyboard, digits only) and "Email" (email keyboard).
+- [ ] Given the Teléfono field, when the user types or pastes, then it accepts only digits (any other character is dropped), a leading 0 is dropped, it holds at most 10 digits, and it is formatted as the user types with libphonenumber-js's Argentine formatter ("1112345678" → "11 1234-5678", "2211234567" → "221 123-4567", "2966123456" → "2966 12-3456"); an area code the formatter doesn't know stays as plain digits. The field stays a text input so the formatting can apply.
+- [ ] Given a form, when the last field is shown, then there is extra space between it and the modal footer (also in the service form).
 - [ ] Given a valid form, when saved, then the client is created active, its modal opens and a toast "Cliente agregado" · "<name surname>" confirms.
 
 Edit
@@ -86,9 +90,12 @@ Edit
 
 Validation and uniqueness
 
-- [ ] Given an empty or whitespace-only name, when saved, then "Ingresá el nombre." shows under Nombre and focus moves there. Same for the phone: "Ingresá el teléfono.".
-- [ ] Given the text fields, when saved, then name and surname are trimmed with inner runs of spaces collapsed to one, the phone is trimmed and loses hyphens (other characters stay as entered), and an empty surname, DNI or email is stored as null. No length limits.
-- [ ] Given a DNI, when saved, then dots and spaces are ignored and it is stored as digits; anything else that is not a digit shows "Revisá el DNI.".
+- [ ] Given an empty or whitespace-only name, when saved, then "Ingresá el nombre." shows under Nombre and focus moves there. Same for an empty phone: "Ingresá el teléfono.".
+- [ ] Given a phone with fewer than 10 digits, when saved, then "Revisá el teléfono: tiene que tener 10 dígitos." shows under Teléfono and focus moves there. A phone is always exactly 10 digits.
+- [ ] Given a valid phone, when saved, then it is stored formatted ("11 1234-5678"), the same formatting the field showed, so it comes back formatted from the database; the server applies the same formatter, so a value sent directly is stored the same way. Existing phones keep their stored text until the client is edited.
+- [ ] Given the text fields, when saved, then name and surname are trimmed with inner runs of spaces collapsed to one, and an empty surname, DNI or email is stored as null. No length limits (except the phone and the DNI).
+- [ ] Given the DNI field, when the user types or pastes, then it accepts only digits (dots, spaces, letters and any other character are dropped as they are typed), holds at most 8 digits, and stays a text input.
+- [ ] Given a DNI sent directly to the server, when saved, then dots and spaces are ignored and it is stored as digits; anything else that is not a digit, or more than 8 digits, shows "Revisá el DNI." (the form itself can no longer produce it).
 - [ ] Given an email, when saved, then it is trimmed and must have a valid format: "Revisá el formato del email.".
 - [ ] Given a DNI that another client of the shop already has, when saved, then "Ya hay un cliente con este DNI." shows under DNI; if that client is archived, "Ya hay un cliente archivado con este DNI.". An edit that keeps the client's own DNI doesn't clash with itself.
 - [ ] Given the same input sent directly to the server, when the server action runs, then it applies the same Zod schema and the DNI uniqueness (enforced by the database).
@@ -96,8 +103,8 @@ Validation and uniqueness
 Archive and unarchive
 
 - [ ] Given "Archivar", when clicked, then a confirmation asks "¿Archivar este cliente?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras. Sus vehículos no cambian y lo siguen mostrando como “(Archivado)”." + "Cancelar" / "Archivar".
-- [ ] Given the confirmation, when "Archivar" is confirmed, then the modal shows the "Archivado" badge and "Desarchivar", and a toast "Cliente archivado" · "<name surname>" confirms. The client's vehicles don't change.
-- [ ] Given an archived client, when "Desarchivar" is clicked, then it is restored immediately, without confirmation, with a toast "Cliente desarchivado" · "<name surname>".
+- [ ] Given the confirmation, when "Archivar" is confirmed, then the modal closes (the archive standard in design.md; the list refreshes and the client leaves it unless "Mostrar archivados" is on) and a toast "Cliente archivado" · "<name surname>" confirms. The client's vehicles don't change.
+- [ ] Given an archived client, when "Desarchivar" is clicked, then it is restored immediately, without confirmation, the modal closes and a toast "Cliente desarchivado" · "<name surname>" confirms.
 
 Loading
 
@@ -126,9 +133,9 @@ Isolation and database
 - The vehicle form, the vehicle modal, the Vehículos page, and therefore "Crear un vehículo nuevo" and opening a vehicle from a client (arrive with the Vehículos spec).
 - Jobs and appointments of a client in the modal.
 - Quick create of a client from other forms' dropdowns (belongs to their specs).
-- Length limits on any field and a phone format check.
+- Length limits on any field (the phone and the DNI are the exceptions: exactly 10 digits and at most 8), phone numbers from other countries, and the mobile "15" prefix.
 - Rename confirmations: changing a client's data never asks for one.
 
 ## Open questions
 
-- None. Decided with the owner: "Agregar vehículo" stays enabled and only "Crear un vehículo nuevo" is greyed out; "Revisá el DNI." for non-numeric DNI input; assigning supports several vehicles at once (checkboxes); the WhatsApp button always shows, icon only; no count in the first step.
+- None. Decided with the owner: "Agregar vehículo" stays enabled and only "Crear un vehículo nuevo" is greyed out; "Revisá el DNI." for non-numeric DNI input; assigning supports several vehicles at once (checkboxes); the WhatsApp button always shows; no count in the first step. Changed later (2026-10-20): the WhatsApp button shows the icon and the word "WhatsApp" in green, with a light green fill and border on hover (an icon alone wasn't clearly clickable); the phone is digits only, exactly 10, formatted as typed and stored formatted.

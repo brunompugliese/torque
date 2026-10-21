@@ -1,20 +1,19 @@
 "use client";
 
-import { useTranslations } from "next-intl";
-
-import { ListToolbar } from "@/components/shared/list-toolbar";
 import { useListUrl } from "@/hooks/use-list-url";
 
-// Outside the list's Suspense boundary so the search box keeps focus.
-export function ServicesToolbar() {
-  const t = useTranslations("services");
+import { ListToolbar } from "./list-toolbar";
+
+// The list toolbar wired to the URL state: search and "Mostrar archivados".
+// Render it outside the list's Suspense boundary so the search box keeps focus.
+export function ListUrlToolbar({ searchPlaceholder }: { searchPlaceholder: string }) {
   const { params, searchValue, setSearchValue, setShowArchived } = useListUrl();
 
   return (
     <ListToolbar
       searchValue={searchValue}
       onSearchChange={setSearchValue}
-      searchPlaceholder={t("searchPlaceholder")}
+      searchPlaceholder={searchPlaceholder}
       showArchived={params.showArchived}
       onShowArchivedChange={setShowArchived}
     />

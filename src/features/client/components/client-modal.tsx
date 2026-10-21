@@ -1,11 +1,11 @@
 "use client";
 
 import { useFormatter, useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { ArchivedBadge } from "@/components/shared/archived-badge";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { ArchiveConfirmDialog, ArchiveToggleButton } from "@/components/shared/archive-controls";
 import { DetailList } from "@/components/shared/detail-list";
 import { DetailModal, type DetailModalProps } from "@/components/shared/detail-modal";
 import { ListError } from "@/components/shared/list-states";
@@ -14,9 +14,12 @@ import { Button } from "@/components/ui/button";
 import { assignVehiclesToClient, getUnassignedVehicles } from "@/features/vehicle/actions";
 import type { VehicleList } from "@/features/vehicle/queries";
 import { VehicleRowsSkeleton } from "@/features/vehicle/components/vehicle-row";
+import { useArchiveFlow } from "@/hooks/use-archive-flow";
 import { useLoadedData } from "@/hooks/use-loaded-data";
+import { fail } from "@/lib/actions/result";
 import { DATE_FORMAT } from "@/lib/format/date";
 import { formatDni } from "@/lib/format/dni";
+import { formatPhone } from "@/lib/format/phone";
 import { formatPlate } from "@/lib/format/plate";
 
 import { createClient, setClientArchived, updateClient, type ClientActionResult } from "../actions";
@@ -61,8 +64,6 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
   const format = useFormatter();
 
   const [saving, setSaving] = useState(false);
-  const [archiving, startArchiving] = useTransition();
-  const [confirmArchive, setConfirmArchive] = useState(false);
 
   // The vehicles without a client load when "Agregar vehículo" opens and are
   // kept across its two steps; leaving the flow drops them.
@@ -97,19 +98,16 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
     }
   };
 
-  const setArchived = (archived: boolean) => {
-    if (!client) return;
-    startArchiving(async () => {
-      const result = await setClientArchived(client.id, archived);
-      setConfirmArchive(false);
-      if (!result.ok) {
-        toast.error(tCommon("unexpectedError"));
-        return;
-      }
-      toast(t(archived ? "toasts.archived" : "toasts.unarchived"), { description: formatClientName(result.data) });
-      onModeChange("view", result.data);
-    });
-  };
+  // Archive and unarchive: the standard flow, then the modal closes (docs/design.md#archive).
+  const archiveFlow = useArchiveFlow({
+    run: async (archived) => (client ? setClientArchived(client.id, archived) : fail("notFound")),
+    notify: (archived, saved) => ({
+      title: t(archived ? "toasts.archived" : "toasts.unarchived"),
+      description: formatClientName(saved),
+    }),
+    onDone: () => onOpenChange(false),
+    errorMessage: tCommon("unexpectedError"),
+  });
 
   const assign = async (vehicleIds: string[]): Promise<AssignOutcome> => {
     if (!client) return "error";
@@ -199,7 +197,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
           defaultValues={{
             name: client.name,
             surname: client.surname ?? "",
-            phoneNumber: client.phoneNumber,
+            phoneNumber: formatPhone(client.phoneNumber),
             dni: client.dni ?? "",
             email: client.email ?? "",
           }}
@@ -213,15 +211,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
       badge: client.enabled ? null : <ArchivedBadge />,
       actions: (
         <>
-          {client.enabled ? (
-            <Button variant="outline" onClick={() => setConfirmArchive(true)}>
-              {tCommon("archive")}
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => setArchived(false)} disabled={archiving}>
-              {tCommon("unarchive")}
-            </Button>
-          )}
+          <ArchiveToggleButton archived={!client.enabled} flow={archiveFlow} />
           <Button onClick={() => onModeChange("edit")}>{t("edit")}</Button>
         </>
       ),
@@ -236,7 +226,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
                 value: (
                   <span className="inline-flex items-center gap-1">
                     {client.phoneNumber}
-                    <WhatsappButton phone={client.phoneNumber} label={t("whatsapp")} />
+                    <WhatsappButton phone={client.phoneNumber} label={t("whatsapp")} text={t("whatsappText")} />
                   </span>
                 ),
               },
@@ -252,20 +242,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
   return (
     <>
       <DetailModal open={open} onOpenChange={onOpenChange} {...content} />
-      <ConfirmDialog
-        open={confirmArchive}
-        onOpenChange={setConfirmArchive}
-        title={t("archiveConfirm.title")}
-        description={
-          <>
-            <p>{tCommon("archiveConfirmBody")}</p>
-            <p>{t("archiveConfirm.body")}</p>
-          </>
-        }
-        confirmLabel={tCommon("archive")}
-        onConfirm={() => setArchived(true)}
-        pending={archiving}
-      />
+      <ArchiveConfirmDialog flow={archiveFlow} title={t("archiveConfirm.title")} detail={t("archiveConfirm.body")} />
     </>
   );
 }
