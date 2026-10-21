@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test/render";
 
@@ -25,6 +25,12 @@ import { AddServiceButton } from "./add-service-button";
 import { ServicesPanel } from "./services-panel";
 import { ServicesTable, ServicesTableSkeleton } from "./services-table";
 import { ServicesListView } from "./services-list";
+
+// The panel loads its modal lazily; loading it up front keeps the first
+// "opens the modal" test from racing the import.
+beforeAll(async () => {
+  await import("./service-modal");
+});
 
 const ACTIVE: Service = {
   id: "s1",

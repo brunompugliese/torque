@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test/render";
 
@@ -30,6 +30,12 @@ import { AddClientButton } from "./add-client-button";
 import { ClientsPanel } from "./clients-panel";
 import { ClientsTable, ClientsTableSkeleton } from "./clients-table";
 import { ClientsListView } from "./clients-list";
+
+// The panel loads its modal lazily; loading it up front keeps the first
+// "opens the modal" test from racing the import.
+beforeAll(async () => {
+  await import("./client-modal");
+});
 
 const ACTIVE: Client = {
   id: "c1",

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { DNI_MAX_DIGITS } from "@/lib/format/dni";
-import { PHONE_DIGITS, formatPhone, phoneDigits } from "@/lib/format/phone";
 
 // Reusable field rules. Error messages are keys under `validation` in
 // messages/es.json; forms translate them.
@@ -53,19 +52,6 @@ export const optionalTextField = z
     const trimmed = value?.trim() ?? "";
     return trimmed === "" ? null : trimmed;
   });
-
-// Exactly 10 digits (area code + number; a leading 0 is dropped), stored the way
-// the field shows it: "11 1234-5678".
-export const phoneField = z
-  .string({ error: "phoneRequired" })
-  .transform(phoneDigits)
-  .pipe(
-    z
-      .string()
-      .min(1, { error: "phoneRequired" })
-      .length(PHONE_DIGITS, { error: "phoneInvalid" }),
-  )
-  .transform(formatPhone);
 
 // Dots and spaces are ignored; what's left must be 1 to 8 digits (that's how it's stored).
 export const dniField = z

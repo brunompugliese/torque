@@ -13,7 +13,8 @@ import { formatDni } from "@/lib/format/dni";
 import { LIST_PAGE_SIZE } from "@/lib/list/params";
 
 import { formatClientName } from "../format";
-import { CLIENT_SORT_COLUMNS, type Client } from "../schemas";
+import { CLIENT_SORT_COLUMNS } from "../list";
+import type { Client } from "../schemas";
 import { useClientsPanel } from "./clients-panel";
 
 const SORT_IDS = Object.keys(CLIENT_SORT_COLUMNS);

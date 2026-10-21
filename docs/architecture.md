@@ -242,6 +242,7 @@ src/
     actions.ts          # Server Actions
     queries.ts          # Data access (Supabase queries)
     schemas.ts          # Zod schemas
+    list.ts             # List constants the browser needs (sort columns), kept out of schemas.ts so list pages don't load Zod
   hooks/                # Client hooks (useListUrl, useListResults, useLoadedData)
   lib/
     actions/            # ActionResult, ok(), fail()

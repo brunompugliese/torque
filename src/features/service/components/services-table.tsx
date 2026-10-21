@@ -11,7 +11,8 @@ import { PaginationBar } from "@/components/shared/pagination-bar";
 import { useListUrl } from "@/hooks/use-list-url";
 import { LIST_PAGE_SIZE } from "@/lib/list/params";
 
-import { SERVICE_SORT_COLUMNS, type Service } from "../schemas";
+import { SERVICE_SORT_COLUMNS } from "../list";
+import type { Service } from "../schemas";
 import { useServicesPanel } from "./services-panel";
 
 const SORT_IDS = Object.keys(SERVICE_SORT_COLUMNS);
