@@ -12,8 +12,10 @@ import { ListError } from "@/components/shared/list-states";
 import { WhatsappButton } from "@/components/shared/whatsapp-button";
 import { Button } from "@/components/ui/button";
 import { assignVehiclesToClient, getUnassignedVehicles } from "@/features/vehicle/actions";
+import { useVehicleModal } from "@/features/vehicle/components/use-vehicle-modal";
 import type { VehicleList } from "@/features/vehicle/queries";
 import { VehicleRowsSkeleton } from "@/features/vehicle/components/vehicle-row";
+import type { VehicleListItem } from "@/features/vehicle/schemas";
 import { useArchiveFlow } from "@/hooks/use-archive-flow";
 import { useLoadedData } from "@/hooks/use-loaded-data";
 import { fail } from "@/lib/actions/result";
@@ -30,8 +32,17 @@ import { AssignVehicles, type AssignOutcome } from "./assign-vehicles";
 import { ClientForm } from "./client-form";
 import { ClientVehicles } from "./client-vehicles";
 
-// create / view / edit, and the two steps of "Agregar vehículo".
-export type ClientModalMode = "view" | "edit" | "create" | "add-vehicle" | "assign";
+// create / view / edit, the two steps of "Agregar vehículo", and a vehicle of the
+// client (view, edit, or the creation of a new one) as one more step of the chain.
+export type ClientModalMode =
+  | "view"
+  | "edit"
+  | "create"
+  | "add-vehicle"
+  | "assign"
+  | "vehicle-view"
+  | "vehicle-edit"
+  | "vehicle-create";
 
 const FORM_ID = "client-form";
 
@@ -39,7 +50,9 @@ type ClientModalProps = {
   open: boolean;
   mode: ClientModalMode;
   client: Client | null;
-  onModeChange: (mode: ClientModalMode, client?: Client) => void;
+  // The vehicle of the vehicle-* modes.
+  vehicle?: VehicleListItem | null;
+  onModeChange: (mode: ClientModalMode, client?: Client, vehicle?: VehicleListItem) => void;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -58,12 +71,14 @@ function isUnchanged(values: ClientFormValues, client: Client): boolean {
   );
 }
 
-export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: ClientModalProps) {
+export function ClientModal({ open, mode, client, vehicle = null, onModeChange, onOpenChange }: ClientModalProps) {
   const t = useTranslations("clients");
   const tCommon = useTranslations("common");
   const format = useFormatter();
 
   const [saving, setSaving] = useState(false);
+  // The vehicle the user came back from: its row gets the focus.
+  const [focusVehicleId, setFocusVehicleId] = useState<string | null>(null);
 
   // The vehicles without a client load when "Agregar vehículo" opens and are
   // kept across its two steps; leaving the flow drops them.
@@ -72,9 +87,10 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
     adding ? getUnassignedVehicles() : Promise.resolve(null),
   );
 
+  // Every action closes the modal and confirms with a toast (docs/design.md#modals).
   const showSaved = (saved: Client, toastKey: "created" | "updated") => {
     toast(t(`toasts.${toastKey}`), { description: formatClientName(saved) });
-    onModeChange("view", saved);
+    onOpenChange(false);
   };
 
   const submit = async (values: ClientFormValues): Promise<ClientActionResult | void> => {
@@ -109,6 +125,30 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
     errorMessage: tCommon("unexpectedError"),
   });
 
+  // A vehicle of this client is one more step of the chain: the same content the
+  // Vehículos page shows, with "Volver" to here.
+  const vehicleMode =
+    mode === "vehicle-view" ? "view" : mode === "vehicle-edit" ? "edit" : mode === "vehicle-create" ? "create" : null;
+  const vehicleModal = useVehicleModal({
+    mode: vehicleMode ?? "view",
+    vehicle: vehicleMode ? vehicle : null,
+    onModeChange: (next, saved) => onModeChange(`vehicle-${next}`, undefined, saved),
+    onClose: () => onOpenChange(false),
+    fromClient: client
+      ? {
+          client: { id: client.id, name: formatClientName(client) },
+          // Creating goes back to the choice; viewing, to the client.
+          onBack:
+            vehicleMode === "create"
+              ? () => onModeChange("add-vehicle")
+              : () => {
+                  setFocusVehicleId(vehicle?.id ?? null);
+                  onModeChange("view");
+                },
+        }
+      : undefined,
+  });
+
   const assign = async (vehicleIds: string[]): Promise<AssignOutcome> => {
     if (!client) return "error";
     const result = await assignVehiclesToClient(client.id, vehicleIds);
@@ -124,11 +164,12 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
     if (single) toast(t("toasts.vehicleAssigned"), { description: formatPlate(single.plate) });
     else toast(t("toasts.vehiclesAssigned"), { description: t("toasts.vehiclesCount", { count: assigned.length }) });
 
+    // Some were taken meanwhile: the step stays open to say so. Otherwise it's done.
     if (skipped > 0) {
       unassigned.retry();
       return "partial";
     }
-    onModeChange("view");
+    onOpenChange(false);
     return "done";
   };
 
@@ -156,12 +197,21 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
     };
   } else if (!client) {
     return null;
+  } else if (vehicleMode) {
+    if (!vehicleModal.content) return null;
+    content = vehicleModal.content;
   } else if (mode === "add-vehicle") {
     content = {
       title: t("addVehicle.title"),
       subtitle: formatClientName(client),
       onBack: () => onModeChange("view"),
-      children: <AddVehicleChoice unassigned={unassigned} onAssignExisting={() => onModeChange("assign")} />,
+      children: (
+        <AddVehicleChoice
+          unassigned={unassigned}
+          onAssignExisting={() => onModeChange("assign")}
+          onCreateNew={() => onModeChange("vehicle-create")}
+        />
+      ),
     };
   } else if (mode === "assign") {
     // While it reloads after a partial assignment, keep the step (and its
@@ -226,14 +276,26 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
                 value: (
                   <span className="inline-flex items-center gap-1">
                     {client.phoneNumber}
-                    <WhatsappButton phone={client.phoneNumber} label={t("whatsapp")} text={t("whatsappText")} />
+                    <WhatsappButton phone={client.phoneNumber} label={tCommon("whatsapp")} text={tCommon("whatsappText")} />
                   </span>
                 ),
               },
               { label: t("fields.email"), value: client.email ?? notLoaded },
             ]}
           />
-          <ClientVehicles key={client.id} clientId={client.id} onAddVehicle={() => onModeChange("add-vehicle")} />
+          <ClientVehicles
+            key={client.id}
+            clientId={client.id}
+            focusVehicleId={focusVehicleId}
+            onAddVehicle={() => {
+              setFocusVehicleId(null);
+              onModeChange("add-vehicle");
+            }}
+            onOpenVehicle={(opened) => {
+              setFocusVehicleId(null);
+              onModeChange("vehicle-view", undefined, opened);
+            }}
+          />
         </>
       ),
     };
@@ -243,6 +305,7 @@ export function ClientModal({ open, mode, client, onModeChange, onOpenChange }: 
     <>
       <DetailModal open={open} onOpenChange={onOpenChange} {...content} />
       <ArchiveConfirmDialog flow={archiveFlow} title={t("archiveConfirm.title")} detail={t("archiveConfirm.body")} />
+      {vehicleModal.confirmDialog}
     </>
   );
 }

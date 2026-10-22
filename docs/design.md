@@ -10,6 +10,7 @@ How the app looks and behaves. Every page follows these conventions; each page's
 - **Spanish only.** All UI text in Spanish (Argentina).
 - **Time zone:** fixed to Argentina (UTC−3) for every date and time, including which day counts as today.
 - **Nothing is deleted.** Records are archived instead (see [Archive](#archive)).
+- **Four rules every screen follows**, new ones included (set by the owner, 2026-10-21): every action closes its modal and toasts ([Modals](#modals)); forms use two columns, each field as wide as its values need ([Forms](#forms)); every plate is drawn the same and takes the same room ([Plates](#visual-identity)); a list shows its skeleton on every search, sort and page, not only the first load ([Loading](#loading)).
 
 ## Visual identity
 
@@ -69,7 +70,7 @@ Numbers (money, km, times, DNI) use tabular figures so columns align.
 
 **Shape and spacing.** Panels and modals 10–12px corner radius; buttons and inputs 34–36px tall, 8px radius; badges fully rounded. Page padding 32px (16px on small screens), 24px between panels. Shadows only on floating elements: navbar, modals, popovers, dropdown lists, toasts.
 
-**Plates.** In tables and modal titles the plate is drawn as an Argentine Mercosur plate: white, black border, blue top band, bold spaced characters ("AB 123 CD"). Old-format plates ("ABC 123") use the same drawing. In calendar cards, dropdowns and running text the plate is plain text.
+**Plates.** In tables and modal titles the plate is drawn as an Argentine Mercosur plate: white, black border, blue top band, bold spaced characters ("AB 123 CD"). Old-format plates ("ABC 123") use the same drawing. **Every plate is drawn identically and takes the same room on screen** (a fixed width that fits the longest, "AB 123 CD", with the characters centered), whatever its format: only the characters differ, so a column of plates lines up. In calendar cards, dropdowns and running text the plate is plain text.
 
 **Logo.** The shop's logo (white on black) in a 40px rounded square, followed by the shop's name in 17px bold.
 
@@ -134,7 +135,7 @@ WCAG 2.1 AA on every page. In practice:
 - Column headers look different from rows so nobody mistakes them for data: smaller, medium weight, secondary text color (see [Typography](#visual-identity)). Every sortable header always shows an up/down arrow icon after its label, so it reads as clickable in both directions. The sorted column's header switches to text color and its icon becomes a single arrow pointing the current direction (up A–Z / ascending, down Z–A / descending).
 - Lists open with no column sorted: every header is in secondary text with its up/down icon, and rows come in the page's default order (set in its spec). The first click on a header sorts by it ascending; clicking it again reverses it; clicking another header sorts by that one ascending.
 - Lists and tables over cards.
-- States: a loading skeleton while data loads (see [Loading](#loading)); an error message with "Reintentar" if it fails; an empty state with a title, a hint and a way out ("No encontramos vehículos" · "Probá con otra patente…" · "Borrar búsqueda").
+- States: a loading skeleton whenever data loads, including every search, sort and page change (see [Loading](#loading)); an error message with "Reintentar" if it fails; an empty state with a title, a hint and a way out ("No encontramos vehículos" · "Probá con otra patente…" · "Borrar búsqueda").
 - Pagination is standard on every list: 25 rows per page, loaded from the server one page at a time, never the whole table. Controls under the table: "Mostrando 1–25 de 140" on the left; "Anterior", page numbers and "Siguiente" on the right. Search, filters and sorting apply to the full data set on the server; changing any of them returns to page 1.
 
 ### Loading
@@ -142,6 +143,7 @@ WCAG 2.1 AA on every page. In practice:
 Mandatory on every page, modal and component that loads data.
 
 - While data loads, a **skeleton** shows the shape of what's coming: grey blocks (muted fill) in the place and size of the final content, so nothing jumps when it arrives. A list shows its toolbar and table header plus placeholder rows; a modal shows its header and label/value placeholders.
+- **A list shows its skeleton every time it loads, not only the first.** Searching, sorting, paging, toggling "Mostrar archivados" and "Reintentar" all replace the table's rows with placeholder rows until the new ones arrive, so the user sees that something is happening; the old rows never linger as if nothing had changed. The toolbar (with the text being typed) and the table header (with its sort buttons, so the keyboard focus isn't lost) stay in place, and the pagination line returns with the results. Applies to every list page, present and future.
 - Static parts that need no data (page title, buttons, labels) render right away; only the data is a skeleton.
 - The blocks pulse gently; with reduced motion they stay still.
 - Screen readers hear one "Cargando…" for the region (`aria-busy`), not each block.
@@ -160,14 +162,25 @@ Filters as you type. Ignores case and accents, and also matches with spaces, dot
 
 ### Modal to modal
 
-A modal opened from another modal (client → vehicle, vehicle → job, day list → appointment) has "Volver", which returns to the previous modal with focus on the item you came from. It stays available after editing.
+A modal opened from another modal (client → vehicle, vehicle → job, day list → appointment) has "Volver", which returns to the previous modal with focus on the item you came from. Once an action succeeds the whole chain closes (see [Modals](#modals)).
+
+### Modals
+
+**Every action closes the modal.** Creating, editing, archiving, unarchiving and assigning one record to another (a vehicle to a client, a client to a vehicle) all end the same way, on every page and in every modal, present and future:
+
+- When the action succeeds the modal closes (the whole chain, if it was opened from another modal), a toast confirms ("Cliente agregado" · name) and the list behind refreshes. The detail modal does not open afterwards.
+- When it fails the modal stays open: field errors under their fields, or an error message for the whole form.
+- Only moving around doesn't close: "Cancelar" and "Volver" go back one step (or close, for a form opened from a list), and an edit that changed nothing goes back to the detail without a request or a toast.
+- A result that needs the user's attention keeps the modal open to say so: assigning several vehicles when some already had a client assigns the rest, toasts, and stays on the step with "Algunos vehículos ya tenían un cliente."
 
 ### Forms
 
 - Open inside the same modal. Subtitle "Los campos con \* son obligatorios."; in edit mode the record name goes above it.
-- Errors inline under each field on save; focus moves to the first error.
+- **Two columns.** From the `sm` breakpoint up, fields sit two to a row (Nombre next to Apellido, Teléfono next to DNI, Patente next to Año, Marca next to Modelo); below it they stack. A field that takes a long value (an email, a free text, a searchable dropdown with long options) is alone in its row, full width. The modal keeps its width; the rows do the work.
+- **Each field is only as wide as its longest value.** A four-digit year is not as wide as an email: year, plate, DNI, phone and VIN get a width that fits their maximum length, and names stay at half a row. Use the shared widths (`FIELD_WIDTH` in `components/shared/form-layout.tsx`) and add one there for a new kind of value, never an ad hoc width in a form.
+- Errors inline under each field on save; focus moves to the first error (in the order you see them, row by row).
 - Footer: "Cancelar" + primary action ("Agregar …" / "Guardar cambios"). Cancel in edit mode returns to the detail modal; in add mode it closes or returns to the step that opened it.
-- After saving: the record's detail modal opens and a toast confirms.
+- After saving the modal closes and a toast confirms (see [Modals](#modals)).
 - No "enabled" switch in forms; archiving is an action (below).
 
 ### Searchable dropdowns
@@ -184,7 +197,7 @@ Vehicles, clients, jobs and services are archived, never deleted. Archiving sets
 
 - "Archivar" is in the detail modal header, next to "Editar". It always asks for confirmation: "¿Archivar este vehículo?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras." + "Cancelar" / "Archivar".
 - Archived records show an "Archivado" badge and greyed rows; "Desarchivar" restores them immediately, without confirmation.
-- **Standard for every archivable entity:** once archiving (after its confirmation) or unarchiving succeeds, the detail modal closes and a toast confirms ("Cliente archivado" · name). The list refreshes behind it. If the action fails the modal stays open with an error toast. Cancelling the confirmation changes nothing and keeps the modal open.
+- **Standard for every archivable entity** (the archive case of [Modals](#modals)): once archiving (after its confirmation) or unarchiving succeeds, the detail modal closes and a toast confirms ("Cliente archivado" · name). The list refreshes behind it. If the action fails the modal stays open with an error toast. Cancelling the confirmation changes nothing and keeps the modal open.
 - New records always start active.
 
 ### Confirmations

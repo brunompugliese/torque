@@ -39,6 +39,10 @@ Generic means: it takes data and callbacks through props, knows nothing about a 
 - Components never call Supabase directly. They receive data from a page or call a Server Action.
 - **Hand pointer on everything clickable.** A base rule in `src/app/globals.css` gives every enabled button, link, `[role="button"]`, `summary`, `select`, `label[for]` and clickable input `cursor: pointer`, and disabled buttons `cursor: not-allowed`. Don't add `cursor-*` classes to components; if a new kind of clickable element isn't covered, extend that rule.
 - **Every data-loading page and component ships its skeleton** ([behavior](design.md#loading)). A route that fetches data has a `loading.tsx`, or a `<Suspense>` boundary with a skeleton fallback around the part that waits (preferred when the static parts can render first). A shared component that loads or displays fetched data exports its skeleton beside it (`DataTable` → `DataTableSkeleton`) with the same layout and sizes. Skeletons are built from shadcn's `Skeleton` (`components/ui/`) and shared composites in `components/shared/`, never ad hoc grey `div`s. Each skeleton has a test (renders, `aria-busy`, one "Cargando…" announcement). A page or component without its skeleton is not done.
+- **Lists show the skeleton on every load, not only the first** ([behavior](design.md#loading)). A list view takes `pending` from `useListResults` and passes it to its table; the table renders `DataTable` with `loading` (header and sort buttons stay, the body becomes placeholder rows) instead of its rows, whether the load is a search, a sort, a page, the archived switch or a retry. A new list page does the same: `pending` in its props, the columns defined before any early return, `skeletonLines` on a column that has more than one line. Never leave the old rows on screen while new ones load.
+- **Every action closes the modal** ([behavior](design.md#modals)). After a successful create, edit, assign or archive, a modal shows its toast and calls `onOpenChange(false)` (a modal that is a step of another calls the host's `onClose`, which closes the whole chain); it never switches itself to a detail view of the saved record. Failures stay in the modal. `onModeChange` is for moving around (view ⇄ edit, steps, "Volver"), not for finishing an action.
+- **Forms lay out in two columns** ([behavior](design.md#forms)): wrap pairs of fields in `FormRow` and give each short field its width from `FIELD_WIDTH` (`components/shared/form-layout.tsx`); a long field goes alone in its row. Don't write widths or grids in a form; add a width to `FIELD_WIDTH` when a new kind of value needs one.
+- **Plates are drawn with `PlateDisplay`** and nothing else: it has one fixed size for every format (`PLATE_WIDTH_CLASS`), so tables and skeletons that hold a plate use that class for its column too.
 - **Forms use shadcn `Field`** (`Field`, `FieldLabel`, `FieldError`) for every field, with `aria-invalid` and `aria-describedby` pointing at the error. Field errors are plain text under the field, without a box.
 - **Messages about a whole form go in `FormAlert`** (`src/components/shared/form-alert.tsx`): a box with a translucent tint of its color as background (`bg-destructive/10`) and a matching border. Any message shown inside a container follows this pattern; add variants to `FormAlert` (with their own semantic tokens) instead of styling alerts ad hoc.
 
@@ -74,7 +78,7 @@ Current palette, *Neutral* (the visual identity in [design.md](design.md#visual-
 | `--chart-1` … `--chart-5` | `#18181B`, `#3B82F6`, `#8B5CF6`, `#22C55E`, `#F59E0B` | Chart series |
 | `--sidebar-*` | Same values as `card`, `foreground`, `primary`, `accent`, `border` and `ring` | shadcn sidebar component |
 
-Status families map to database values in one shared helper, never per component:
+Status families map to database values in one shared helper (`lib/status.ts`, drawn by `StatusBadge`), never per component:
 
 | Family | Job status | Appointment status |
 |---|---|---|
@@ -123,7 +127,8 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 - One Zod schema per form in `features/<domain>/schemas.ts`, used both by the form (client) and by the Server Action (server).
 - Reusable field rules (plate, phone, email, DNI) live in `lib/validation/` and are composed into domain schemas.
 - Forms use shadcn/ui form components with `react-hook-form` and the Zod resolver.
-- **Inputs that clean or format as the user types** (phone, DNI) do it in their `onChange`, with a helper from `lib/format/`, before React Hook Form reads the value (`event.target.value = format(event.target.value)`). The Zod schema applies the same helper, so what the field shows is what the server stores, and stays strict for values that skip the form. Register such a field where it appears in the form, not earlier: "focus the first error" follows registration order.
+- **Inputs that clean or format as the user types** (phone, DNI) do it in their `onChange`, with a helper from `lib/format/`, before React Hook Form reads the value (`event.target.value = format(event.target.value)`). The Zod schema applies the same helper, so what the field shows is what the server stores, and stays strict for values that skip the form. Register such a field where it appears in the form, not earlier: "focus the first error" follows registration order. Use `FormattedInput` (`components/shared/formatted-input.tsx`) and its ready-made versions (`PhoneInput`, `DniInput`, `PlateInput`, `VinInput`) instead of writing that `onChange` again; a new kind of field is a new `format` helper plus a one-line wrapper there.
+- **Picking from a list** (brand, model, client, and later vehicle and service) always uses `SearchableSelect`, as [design.md](design.md#searchable-dropdowns) describes. The form owns the chosen id and the text in the box apart, so text that matches nothing is told from an empty field and rejected on save ("Elegí … de la lista."). Short, fixed lists filter locally; lists of personal data are searched on the server as the user types (`useRemoteOptions`), a few matches at a time.
 - Record ids are validated with `idSchema` (`lib/validation/fields.ts`), not by repeating `z.uuid()`.
 
 ## UI text and formatting
@@ -131,6 +136,7 @@ Layout sizes that must stay in sync also live in `:root` (for example `--floatin
 - All UI text lives in `messages/es.json`, namespaced by domain (`vehicle.form.plateLabel`). No hardcoded strings in components.
 - Database status values map to labels in the messages file (`status.job.en_progreso` → "En progreso").
 - Dates, numbers and currency are formatted through shared helpers built on `next-intl`, never by hand. Dates always use `DATE_FORMAT` (`lib/format/date.ts`): `format.dateTime(value, DATE_FORMAT)` → dd/mm/aaaa in Argentina time. In table cells use `TableDate` (`components/shared/table-date.tsx`).
+- Kilometers and money use `formatKm` and `formatMoney` (`lib/format/`), dot thousands built on `formatThousands`: the fixed `es` locale doesn't group four-digit numbers, and the design wants "9.500 km". Like `formatDni`, they are the exception to "never by hand".
 - Shared UI text (buttons, list chrome, loading) lives under `common.*` and `list.*`; reuse those keys instead of repeating them per domain.
 
 ## Errors and logging

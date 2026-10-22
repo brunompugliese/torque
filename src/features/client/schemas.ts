@@ -41,3 +41,18 @@ export const clientRowSchema = z
 export type Client = z.output<typeof clientRowSchema>;
 
 export const clientIdSchema = idSchema;
+
+// A client in a dropdown (the vehicle form's owner): just what tells clients apart.
+export const CLIENT_OPTION_COLUMNS = "id, name, surname, phone_number, enabled";
+
+export const clientOptionSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    surname: z.string().nullable(),
+    phone_number: z.string(),
+    enabled: z.boolean(),
+  })
+  .transform(({ phone_number, ...row }) => ({ ...row, phoneNumber: phone_number }));
+
+export type ClientOption = z.output<typeof clientOptionSchema>;

@@ -24,15 +24,15 @@ function fetchPage(key: string): Promise<ClientPage> {
 export function ClientsListView({ initial, initialKey, total }: ClientsListProps) {
   const t = useTranslations("clients");
   const { params } = useListUrl();
-  const { result, retry } = useListResults(initial, initialKey, toListSearch(params), fetchPage);
+  const { result, pending, retry } = useListResults(initial, initialKey, toListSearch(params), fetchPage);
 
   return (
     <>
       <ListUrlToolbar searchPlaceholder={t("searchPlaceholder")} />
       {result.ok ? (
-        <ClientsTable ok rows={result.rows} matching={result.matching} total={total} />
+        <ClientsTable ok rows={result.rows} matching={result.matching} total={total} pending={pending} />
       ) : (
-        <ClientsTable ok={false} onRetry={retry} />
+        <ClientsTable ok={false} onRetry={retry} pending={pending} />
       )}
     </>
   );

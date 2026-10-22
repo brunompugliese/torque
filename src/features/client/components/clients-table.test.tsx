@@ -230,6 +230,29 @@ function renderListView() {
   );
 }
 
+describe("ClientsListView while a search, sort or page loads", () => {
+  it("shows placeholder rows instead of the old ones, keeping the toolbar and the header, then the new results", async () => {
+    const { searchClients } = await import("../actions");
+    let resolve: (page: Awaited<ReturnType<typeof searchClients>>) => void = () => {};
+    vi.mocked(searchClients).mockReturnValue(new Promise((done) => (resolve = done)));
+    nav.search = "buscar=zoe";
+    renderListView();
+
+    expect(searchClients).toHaveBeenCalledWith("buscar=zoe");
+    expect(screen.queryByText("Ana Gómez")).toBeNull();
+    expect(screen.getAllByTestId("skeleton-block").length).toBeGreaterThan(0);
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
+    expect(screen.getByRole("searchbox")).toHaveValue("zoe");
+    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+    expect(screen.queryByText(/Mostrando/)).toBeNull();
+
+    await act(async () => resolve({ ok: true, rows: [ARCHIVED], matching: 1 }));
+    expect(screen.getByText("Zoe")).toBeInTheDocument();
+    expect(screen.queryByTestId("skeleton-block")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});
+
 describe("ClientsListView toolbar", () => {
   it("has the clients placeholder and drives the URL", async () => {
     vi.useFakeTimers();

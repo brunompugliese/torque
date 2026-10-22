@@ -1,3 +1,5 @@
+import { formatThousands } from "./number";
+
 // A DNI has at most 8 digits.
 export const DNI_MAX_DIGITS = 8;
 
@@ -8,5 +10,5 @@ export function dniDigits(input: string): string {
 
 // DNI is stored as digits only; shown with dot thousands (docs/design.md#copy-and-naming).
 export function formatDni(dni: string): string {
-  return dni.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return formatThousands(dni.replace(/\D/g, ""));
 }

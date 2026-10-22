@@ -667,15 +667,97 @@ select
   v.enabled, v.created_at, v.updated_at,
   private.normalize_search(concat_ws('|', d.plate, d.vin, concat(b.name, m.name))) as search_text,
   b.name as brand_name,
-  m.name as model_name
+  m.name as model_name,
+  -- List columns (spec 006), computed only when a query selects or sorts by them and never stored.
+  -- last_km: highest km among the non-archived jobs, the same rule as check_job_kilometers.
+  (select max(j.kilometers) from public.job j where j.vehicle_id = v.id and j.enabled) as last_km,
+  cd.name         as client_name,
+  cd.surname      as client_surname,
+  cd.phone_number as client_phone_number,
+  c.enabled       as client_enabled,
+  nullif(private.normalize_search(concat_ws(' ', cd.name, cd.surname)), '') as client_name_key, -- "Cliente" sort; null without a client (sorts last)
+  private.normalize_search(concat_ws(' ', b.name, m.name))      as vehicle_key      -- "Vehículo" sort
 from public.vehicle v
 join public.brand b on b.id = v.brand_id
 join public.model m on m.id = v.model_id
+left join public.client c on c.id = v.client_id and c.shop_id = v.shop_id
 cross join lateral (
   select
     private.decrypt_text(v.plate) as plate,
     private.decrypt_text(v.vin)   as vin
-) d;
+) d
+left join lateral (
+  select
+    private.decrypt_text(c.name)         as name,
+    private.decrypt_text(c.surname)      as surname,
+    private.decrypt_text(c.phone_number) as phone_number
+) cd on true;
+
+-- Creates a client and a vehicle (or updates a vehicle) in one transaction, for the vehicle
+-- form's "+ Crear cliente nuevo": a failed vehicle (taken plate) leaves no orphan client.
+-- p_vehicle_id null creates, otherwise updates that vehicle. Returns the vehicle's id.
+-- security invoker (the default): RLS, composite FKs and the encryption triggers apply as the
+-- caller. The shop comes from the JWT claim; the app never sends it.
+-- Errors: 23505 vehicle_plate_taken | client_dni_taken, P0002 vehicle_not_found.
+create or replace function public.save_vehicle_with_new_client(
+  p_vehicle_id   uuid,
+  p_plate        text,
+  p_brand_id     uuid,
+  p_model_id     uuid,
+  p_year         integer,
+  p_vin          text,
+  p_name         text,
+  p_surname      text,
+  p_phone_number text,
+  p_dni          text
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_shop       uuid := ((select auth.jwt()) ->> 'shop_id')::uuid;
+  v_client     uuid;
+  v_vehicle    uuid;
+  v_constraint text;
+begin
+  insert into public.client (shop_id, name, surname, phone_number, dni)
+  values (v_shop, p_name, p_surname, p_phone_number, p_dni)
+  returning id into v_client;
+
+  if p_vehicle_id is null then
+    insert into public.vehicle (shop_id, client_id, plate, brand_id, model_id, year, vin)
+    values (v_shop, v_client, p_plate, p_brand_id, p_model_id, p_year, p_vin)
+    returning id into v_vehicle;
+  else
+    update public.vehicle
+    set client_id = v_client, plate = p_plate, brand_id = p_brand_id, model_id = p_model_id,
+        year = p_year, vin = p_vin
+    where id = p_vehicle_id
+    returning id into v_vehicle;
+
+    if v_vehicle is null then
+      raise exception using errcode = 'P0002', message = 'vehicle_not_found';
+    end if;
+  end if;
+
+  return v_vehicle;
+exception
+  when unique_violation then
+    get stacked diagnostics v_constraint = constraint_name;
+    raise exception using errcode = '23505', message = case
+      when v_constraint like '%plate_hash%' then 'vehicle_plate_taken'
+      when v_constraint like '%dni_hash%'   then 'client_dni_taken'
+      else 'unique_violation'
+    end;
+end;
+$$;
+
+revoke execute on function public.save_vehicle_with_new_client(uuid, text, uuid, uuid, integer, text, text, text, text, text)
+  from public, anon;
+grant execute on function public.save_vehicle_with_new_client(uuid, text, uuid, uuid, integer, text, text, text, text, text)
+  to authenticated;
 
 create or replace view public.appointment_decrypted
 with (security_invoker = true) as

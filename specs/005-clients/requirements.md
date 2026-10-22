@@ -52,7 +52,7 @@ Client modal
 - [ ] Given the WhatsApp green token, when used for text and for the hover fill, then the green on the card surface and on the hover fill meets 4.5:1 (AA for text).
 - [ ] Given a client, when its modal opens, then the footer shows "Creado el dd/mm/aaaa" (Argentina time).
 - [ ] Given the client modal, when it opens, then "Vehículos" loads the client's vehicles with the shared skeleton (`aria-busy`, one "Cargando…") in the final sizes, and shows them in the order the database returns, without pagination.
-- [ ] Given a vehicle row, when shown, then it has the plate drawn as a plate, brand + model, year (secondary color), VIN or "Sin VIN" (secondary color) and an "Archivado" badge if archived. Rows are not clickable and have no arrow until the Vehículos page exists.
+- [ ] Given a vehicle row, when shown, then it has the plate drawn as a plate, brand + model, year (secondary color), VIN or "Sin VIN" (secondary color) and an "Archivado" badge if archived. Rows are not clickable and have no arrow until the Vehículos page exists. *(Superseded by [spec 006](../006-vehicles/requirements.md): rows now open the vehicle, with an arrow and "Volver".)*
 - [ ] Given a client with no vehicles, when the modal shows, then the list says "Este cliente todavía no tiene vehículos."
 
 Plate drawing
@@ -62,7 +62,7 @@ Plate drawing
 Add vehicle from a client
 
 - [ ] Given "Agregar vehículo" in the client modal, when clicked, then a first step shows two large rows: "Asignar un vehículo existente" and "Crear un vehículo nuevo". Only one flow is shown at a time.
-- [ ] Given the first step, when it shows, then "Crear un vehículo nuevo" is greyed out and not actionable, with the subtitle "Próximamente", until the Vehículos spec builds the vehicle form.
+- [ ] Given the first step, when it shows, then "Crear un vehículo nuevo" is greyed out and not actionable, with the subtitle "Próximamente", until the Vehículos spec builds the vehicle form. *(Superseded by [spec 006](../006-vehicles/requirements.md): it is enabled and opens the vehicle form with this client.)*
 - [ ] Given the first step, when it opens, then it loads the vehicles with no client once, with the shared skeleton (`aria-busy`, one "Cargando…"), and "Asignar un vehículo existente" shows the subtitle "Vehículos sin cliente" (no count). With none, the row is greyed out with "No hay vehículos sin cliente".
 - [ ] Given "Asignar un vehículo existente", when clicked, then it lists the vehicles with no client (archived ones included with their badge) in the order they came, five per page, each with a checkbox, the plate drawing, brand + model, year and VIN, plus "Anterior" / "Siguiente" and a "Mostrando 1–5 de N" line. Each checkbox has an accessible name (the plate and the brand + model) and the whole row toggles it.
 - [ ] Given that list, when it shows, then it has a search box ("Buscar por patente, marca, modelo o VIN") that filters it in memory, ignoring case, accents, spaces, dots and dashes, and returns to page 1; it makes no request. No matches: "No encontramos vehículos" and "Borrar búsqueda".
@@ -139,3 +139,5 @@ Isolation and database
 ## Open questions
 
 - None. Decided with the owner: "Agregar vehículo" stays enabled and only "Crear un vehículo nuevo" is greyed out; "Revisá el DNI." for non-numeric DNI input; assigning supports several vehicles at once (checkboxes); the WhatsApp button always shows; no count in the first step. Changed later (2026-10-20): the WhatsApp button shows the icon and the word "WhatsApp" in green, with a light green fill and border on hover (an icon alone wasn't clearly clickable); the phone is digits only, exactly 10, formatted as typed and stored formatted.
+
+- Changed later (2026-10-21, spec 006, rules for every screen in design.md): a successful create, edit or assign now closes the modal and toasts instead of opening the detail; forms lay out in two columns with each field as wide as its values need; every plate is drawn with the same fixed size; and the table shows placeholder rows on every search, sort and page, not only the first load. This spec's criteria that say otherwise are superseded.

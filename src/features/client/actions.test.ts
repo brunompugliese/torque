@@ -14,7 +14,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/auth/session", () => ({ requireSession: mocks.requireSession }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
-import { createClient, searchClients, setClientArchived, updateClient } from "./actions";
+import { createClient, searchClientOptions, searchClients, setClientArchived, updateClient } from "./actions";
 
 const ID = "6f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 const OTHER_ID = "7a1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
@@ -288,5 +288,34 @@ describe("searchClients", () => {
     await searchClients({ not: "a string" });
     expect(queries[0].calls).toContainEqual(["order", "name_key", { ascending: true, nullsFirst: false }]);
     expect(filterValue(queries[0], "eq", "enabled")).toBe(true);
+  });
+});
+
+describe("searchClientOptions", () => {
+  const OPTION = { id: ID, name: "Ana", surname: null, phone_number: "11 1234-5678", enabled: false };
+
+  it("looks the typed term up for the dropdown, archived clients included", async () => {
+    const queries = setup(() => ({ data: [OPTION] }));
+    const result = await searchClientOptions("  gomez ");
+
+    expect(result).toEqual({
+      ok: true,
+      rows: [{ id: ID, name: "Ana", surname: null, phoneNumber: "11 1234-5678", enabled: false }],
+    });
+    expect(filterValue(queries[0], "like", "search_text")).toBe("%gomez%");
+    expect(filterValue(queries[0], "eq", "enabled")).toBeUndefined();
+  });
+
+  it("keeps the term short before it reaches the database", async () => {
+    const queries = setup(() => ({ data: [] }));
+    await searchClientOptions("a".repeat(500));
+    expect(filterValue(queries[0], "like", "search_text")).toBe(`%${"a".repeat(100)}%`);
+  });
+
+  it("fails without querying when the term isn't text", async () => {
+    const queries = setup(() => ({ data: [] }));
+    expect(await searchClientOptions(undefined)).toEqual({ ok: false });
+    expect(await searchClientOptions({ term: "a" })).toEqual({ ok: false });
+    expect(queries).toHaveLength(0);
   });
 });

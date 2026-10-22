@@ -3,39 +3,58 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useListSearch } from "@/components/shared/list-search-provider";
 import { parseListParams, toListSearch, type ListParams } from "@/lib/list/params";
 
 export const SEARCH_DEBOUNCE_MS = 200;
 
+// The list state: search, archived switch, sort and page. It lives in the URL,
+// except the search on pages wrapped in a ListSearchProvider: there it stays in
+// state and never reaches the address bar.
 export function useListUrl() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const params = useMemo(() => parseListParams(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const shared = useListSearch();
+  const urlParams = useMemo(() => parseListParams(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const params = useMemo(() => (shared ? { ...urlParams, search: shared.search } : urlParams), [shared, urlParams]);
 
   const navigate = useCallback(
     (next: ListParams) => {
-      const query = toListSearch(next);
+      const query = toListSearch(shared ? { ...next, search: "" } : next);
       // Shallow: the list fetches its own results (useListResults).
       window.history.replaceState(null, "", query ? `${pathname}?${query}` : pathname);
     },
-    [pathname],
+    [pathname, shared],
   );
 
-  const [searchValue, setSearchValueState] = useState(params.search);
+  const [ownSearchValue, setOwnSearchValue] = useState(params.search);
+  const searchValue = shared ? shared.searchValue : ownSearchValue;
+  const setSearchValueState = shared ? shared.setSearchValue : setOwnSearchValue;
+  const setSharedSearch = shared?.setSearch;
+
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const latestParams = useRef(params);
   useEffect(() => {
     latestParams.current = params;
   }, [params]);
 
-  // Sync when the URL changes elsewhere (Back, "Borrar búsqueda").
+  // Sync when the URL changes elsewhere (Back, "Borrar búsqueda"). Not needed
+  // when the search lives in state: the URL never holds it.
   const [syncedSearch, setSyncedSearch] = useState(params.search);
-  if (params.search !== syncedSearch) {
+  if (!shared && params.search !== syncedSearch) {
     setSyncedSearch(params.search);
-    setSearchValueState(params.search);
+    setOwnSearchValue(params.search);
   }
 
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  const commitSearch = useCallback(
+    (search: string) => {
+      setSharedSearch?.(search);
+      navigate({ ...latestParams.current, search, page: 1 });
+    },
+    [navigate, setSharedSearch],
+  );
 
   const setSearchValue = useCallback(
     (value: string) => {
@@ -43,17 +62,17 @@ export function useListUrl() {
       clearTimeout(timer.current);
       timer.current = setTimeout(() => {
         if (value.trim() === latestParams.current.search) return;
-        navigate({ ...latestParams.current, search: value.trim(), page: 1 });
+        commitSearch(value.trim());
       }, SEARCH_DEBOUNCE_MS);
     },
-    [navigate],
+    [commitSearch, setSearchValueState],
   );
 
   const clearSearch = useCallback(() => {
     clearTimeout(timer.current);
     setSearchValueState("");
-    navigate({ ...params, search: "", page: 1 });
-  }, [navigate, params]);
+    commitSearch("");
+  }, [commitSearch, setSearchValueState]);
 
   const setShowArchived = useCallback(
     (showArchived: boolean) => navigate({ ...params, showArchived, page: 1 }),

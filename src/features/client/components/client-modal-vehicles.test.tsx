@@ -99,12 +99,23 @@ describe("ClientModal: vehicles", () => {
     expect(within(second).getByText("Archivado")).toBeInTheDocument();
   });
 
-  it("doesn't make the vehicle rows clickable yet", async () => {
+  it("opens a vehicle from its row, handing it to the modal chain", async () => {
+    mocks.getClientVehicles.mockResolvedValue({ ok: true, rows: [CRONOS, GOL] });
+    const { onModeChange } = renderModal("view");
+    const row = (await screen.findByText("ABC 123")).closest("li")!;
+    fireEvent.click(within(row).getByRole("button"));
+    expect(onModeChange).toHaveBeenCalledWith("vehicle-view", undefined, GOL);
+  });
+
+  it("opens a vehicle from the keyboard", async () => {
     mocks.getClientVehicles.mockResolvedValue({ ok: true, rows: [CRONOS] });
-    renderModal("view");
+    const { onModeChange } = renderModal("view");
     const row = (await screen.findByText("AB 123 CD")).closest("li")!;
-    expect(within(row).queryByRole("button")).toBeNull();
-    expect(within(row).queryByRole("link")).toBeNull();
+    const rowButton = within(row).getByRole("button");
+    rowButton.focus();
+    expect(rowButton).toHaveFocus();
+    fireEvent.click(rowButton);
+    expect(onModeChange).toHaveBeenCalledWith("vehicle-view", undefined, CRONOS);
   });
 
   it("says when the client has no vehicles", async () => {
@@ -148,12 +159,27 @@ describe("ClientModal: add vehicle", () => {
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
 
-  it("greys out Crear un vehículo nuevo as Próximamente", async () => {
+  it("enables Crear un vehículo nuevo, whatever the vehicles without a client are, and opens the form", async () => {
     mocks.getUnassignedVehicles.mockResolvedValue({ ok: true, rows: [CRONOS] });
-    renderModal("add-vehicle");
+    const { onModeChange } = renderModal("add-vehicle");
     const create = await screen.findByRole("button", { name: /Crear un vehículo nuevo/ });
-    expect(create).toBeDisabled();
-    expect(create).toHaveTextContent("Próximamente");
+    expect(create).toBeEnabled();
+    expect(create).not.toHaveTextContent("Próximamente");
+    fireEvent.click(create);
+    expect(onModeChange).toHaveBeenCalledWith("vehicle-create");
+  });
+
+  it("keeps Crear un vehículo nuevo available while the other list loads or fails", async () => {
+    mocks.getUnassignedVehicles.mockReturnValue(new Promise(() => {}));
+    renderModal("add-vehicle");
+    expect(await screen.findByRole("button", { name: /Crear un vehículo nuevo/ })).toBeEnabled();
+  });
+
+  it("keeps Crear un vehículo nuevo next to the error when the list can't load", async () => {
+    mocks.getUnassignedVehicles.mockResolvedValue({ ok: false });
+    renderModal("add-vehicle");
+    expect(await screen.findByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Crear un vehículo nuevo/ })).toBeEnabled();
   });
 
   it("greys out the assign flow when there are no vehicles without a client", async () => {
@@ -206,10 +232,10 @@ describe("ClientModal: assign vehicles", () => {
     expect(mocks.assignVehiclesToClient).not.toHaveBeenCalled();
   });
 
-  it("assigns one vehicle, toasts its plate and returns to the client", async () => {
+  it("assigns one vehicle, toasts its plate and closes the modal", async () => {
     mocks.getUnassignedVehicles.mockResolvedValue({ ok: true, rows: [CRONOS, GOL] });
     mocks.assignVehiclesToClient.mockResolvedValue({ ok: true, data: { assigned: ["v1"], skipped: 0 } });
-    const { onModeChange } = renderModal("assign");
+    const { onModeChange, onOpenChange } = renderModal("assign");
 
     await screen.findByRole("checkbox", { name: /AB 123 CD Fiat Cronos/ });
     pick("AB 123 CD Fiat Cronos");
@@ -217,13 +243,14 @@ describe("ClientModal: assign vehicles", () => {
 
     expect(mocks.assignVehiclesToClient).toHaveBeenCalledWith(CLIENT.id, ["v1"]);
     expect(mocks.toast).toHaveBeenCalledWith("Vehículo asignado", { description: "AB 123 CD" });
-    expect(onModeChange).toHaveBeenCalledWith("view");
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
-  it("assigns several vehicles in one request and counts them in the button and the toast", async () => {
+  it("assigns several vehicles in one request, counts them in the button and the toast, and closes the modal", async () => {
     mocks.getUnassignedVehicles.mockResolvedValue({ ok: true, rows: [CRONOS, GOL, SANDERO] });
     mocks.assignVehiclesToClient.mockResolvedValue({ ok: true, data: { assigned: ["v1", "v3"], skipped: 0 } });
-    const { onModeChange } = renderModal("assign");
+    const { onModeChange, onOpenChange } = renderModal("assign");
 
     await screen.findByRole("checkbox", { name: /AB 123 CD Fiat Cronos/ });
     pick("AB 123 CD Fiat Cronos");
@@ -233,7 +260,8 @@ describe("ClientModal: assign vehicles", () => {
     expect(mocks.assignVehiclesToClient).toHaveBeenCalledTimes(1);
     expect(mocks.assignVehiclesToClient).toHaveBeenCalledWith(CLIENT.id, ["v1", "v3"]);
     expect(mocks.toast).toHaveBeenCalledWith("Vehículos asignados", { description: "2 vehículos" });
-    expect(onModeChange).toHaveBeenCalledWith("view");
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
   it("assigns to an archived client like to an active one", async () => {

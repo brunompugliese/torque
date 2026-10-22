@@ -6,10 +6,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { FormAlert } from "@/components/shared/form-alert";
+import { FIELD_WIDTH, FormRow } from "@/components/shared/form-layout";
+import { DniInput, PhoneInput } from "@/components/shared/formatted-input";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { dniDigits } from "@/lib/format/dni";
-import { formatPhone } from "@/lib/format/phone";
 import type { ValidationErrorKey } from "@/lib/validation/fields";
 
 import type { ClientActionResult } from "../actions";
@@ -68,73 +68,44 @@ export function ClientForm({ id, defaultValues, onSubmit }: ClientFormProps) {
     "aria-describedby": errors[name] ? `${id}-${name}-error` : undefined,
   });
 
-  // The phone is formatted as it is typed, before React Hook Form reads it.
-  // Registered where it appears so "focus the first error" follows the page order.
-  const phoneInput = () => {
-    const phone = form.register("phoneNumber");
-    return (
-      <Input
-        type="tel"
-        inputMode="tel"
-        autoComplete="off"
-        placeholder={t("fields.phonePlaceholder")}
-        {...fieldProps("phoneNumber")}
-        aria-describedby={[`${id}-phoneNumber-hint`, errors.phoneNumber ? `${id}-phoneNumber-error` : null]
-          .filter(Boolean)
-          .join(" ")}
-        {...phone}
-        onChange={(event) => {
-          event.target.value = formatPhone(event.target.value);
-          return phone.onChange(event);
-        }}
-      />
-    );
-  };
-
-  // Digits only, as they are typed. Registered where it appears (see phoneInput).
-  const dniInput = () => {
-    const dni = form.register("dni");
-    return (
-      <Input
-        inputMode="numeric"
-        autoComplete="off"
-        {...fieldProps("dni")}
-        {...dni}
-        onChange={(event) => {
-          event.target.value = dniDigits(event.target.value);
-          return dni.onChange(event);
-        }}
-      />
-    );
-  };
-
   return (
     <form id={id} onSubmit={submit} noValidate className="flex flex-col gap-5 pb-2">
       <FieldGroup>
-        <Field data-invalid={Boolean(errors.name)}>
-          <FieldLabel htmlFor={`${id}-name`}>{t("fields.name")} *</FieldLabel>
-          <Input autoComplete="off" autoFocus {...fieldProps("name")} {...form.register("name")} />
-          <FieldError id={`${id}-name-error`} errors={message(errors.name?.message)} />
-        </Field>
+        <FormRow>
+          <Field data-invalid={Boolean(errors.name)}>
+            <FieldLabel htmlFor={`${id}-name`}>{t("fields.name")} *</FieldLabel>
+            <Input autoComplete="off" autoFocus {...fieldProps("name")} {...form.register("name")} />
+            <FieldError id={`${id}-name-error`} errors={message(errors.name?.message)} />
+          </Field>
 
-        <Field data-invalid={Boolean(errors.surname)}>
-          <FieldLabel htmlFor={`${id}-surname`}>{t("fields.surname")}</FieldLabel>
-          <Input autoComplete="off" {...fieldProps("surname")} {...form.register("surname")} />
-          <FieldError id={`${id}-surname-error`} errors={message(errors.surname?.message)} />
-        </Field>
+          <Field data-invalid={Boolean(errors.surname)}>
+            <FieldLabel htmlFor={`${id}-surname`}>{t("fields.surname")}</FieldLabel>
+            <Input autoComplete="off" {...fieldProps("surname")} {...form.register("surname")} />
+            <FieldError id={`${id}-surname-error`} errors={message(errors.surname?.message)} />
+          </Field>
+        </FormRow>
 
-        <Field data-invalid={Boolean(errors.phoneNumber)}>
-          <FieldLabel htmlFor={`${id}-phoneNumber`}>{t("fields.phone")} *</FieldLabel>
-          {phoneInput()}
-          <FieldDescription id={`${id}-phoneNumber-hint`}>{t("fields.phoneHint")}</FieldDescription>
-          <FieldError id={`${id}-phoneNumber-error`} errors={message(errors.phoneNumber?.message)} />
-        </Field>
+        <FormRow>
+          <Field data-invalid={Boolean(errors.phoneNumber)} className={FIELD_WIDTH.phone}>
+            <FieldLabel htmlFor={`${id}-phoneNumber`}>{t("fields.phone")} *</FieldLabel>
+            <PhoneInput
+              placeholder={t("fields.phonePlaceholder")}
+              {...fieldProps("phoneNumber")}
+              aria-describedby={[`${id}-phoneNumber-hint`, errors.phoneNumber ? `${id}-phoneNumber-error` : null]
+                .filter(Boolean)
+                .join(" ")}
+              registration={form.register("phoneNumber")}
+            />
+            <FieldDescription id={`${id}-phoneNumber-hint`}>{t("fields.phoneHint")}</FieldDescription>
+            <FieldError id={`${id}-phoneNumber-error`} errors={message(errors.phoneNumber?.message)} />
+          </Field>
 
-        <Field data-invalid={Boolean(errors.dni)}>
-          <FieldLabel htmlFor={`${id}-dni`}>{t("fields.dni")}</FieldLabel>
-          {dniInput()}
-          <FieldError id={`${id}-dni-error`} errors={message(errors.dni?.message)} />
-        </Field>
+          <Field data-invalid={Boolean(errors.dni)} className={FIELD_WIDTH.dni}>
+            <FieldLabel htmlFor={`${id}-dni`}>{t("fields.dni")}</FieldLabel>
+            <DniInput {...fieldProps("dni")} registration={form.register("dni")} />
+            <FieldError id={`${id}-dni-error`} errors={message(errors.dni?.message)} />
+          </Field>
+        </FormRow>
 
         <Field data-invalid={Boolean(errors.email)}>
           <FieldLabel htmlFor={`${id}-email`}>{t("fields.email")}</FieldLabel>

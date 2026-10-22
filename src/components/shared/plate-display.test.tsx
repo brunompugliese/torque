@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { PlateDisplay } from "./plate-display";
+import { PLATE_WIDTH_CLASS, PlateDisplay } from "./plate-display";
 
 describe("PlateDisplay", () => {
   it.each([
@@ -26,6 +26,19 @@ describe("PlateDisplay", () => {
     expect(container.querySelector('[data-slot="plate-band"]')).toHaveAttribute("aria-hidden", "true");
     expect(container).toHaveTextContent("AB 123 CD");
   });
+
+  it.each(["AB123CD", "ABC123", "A123BCD", "123ABC", "ZZ9"])(
+    "draws %s with the same box as every other plate, only the characters differ",
+    (plate) => {
+      const { container } = render(<PlateDisplay plate={plate} />);
+      const drawn = container.querySelector('[data-slot="plate"]')!;
+      expect(drawn).toHaveClass(PLATE_WIDTH_CLASS, "shrink-0");
+      expect(drawn.className).toBe(
+        render(<PlateDisplay plate="AB123CD" />).container.querySelector('[data-slot="plate"]')!.className,
+      );
+      expect(drawn.querySelectorAll("span")).toHaveLength(2);
+    },
+  );
 
   it("accepts extra classes", () => {
     const { container } = render(<PlateDisplay plate="AB123CD" className="mx-auto" />);

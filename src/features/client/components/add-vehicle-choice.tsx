@@ -13,6 +13,7 @@ import type { LoadedData } from "@/hooks/use-loaded-data";
 type AddVehicleChoiceProps = {
   unassigned: LoadedData<VehicleList | null>;
   onAssignExisting: () => void;
+  onCreateNew: () => void;
 };
 
 function ChoiceRow({
@@ -42,37 +43,40 @@ function ChoiceRow({
   );
 }
 
-// First step of "Agregar vehículo": two flows, never shown together.
-export function AddVehicleChoice({ unassigned, onAssignExisting }: AddVehicleChoiceProps) {
+// First step of "Agregar vehículo": two flows, never shown together. Creating a
+// vehicle doesn't depend on the list of vehicles without a client, so that row is
+// always there; the assign row waits for its list.
+export function AddVehicleChoice({ unassigned, onAssignExisting, onCreateNew }: AddVehicleChoiceProps) {
   const t = useTranslations("clients.addVehicle");
 
+  let assign;
   if (unassigned.status === "loading") {
-    return (
+    assign = (
       <LoadingRegion>
-        <div className="flex flex-col gap-3">
-          {[0, 1].map((row) => (
-            <div key={row} className="flex flex-col gap-1.5 rounded-xl border px-4 py-4">
-              <Skeleton data-testid="skeleton-block" className="h-4 w-2/5" />
-              <Skeleton data-testid="skeleton-block" className="h-3 w-1/4" />
-            </div>
-          ))}
+        <div className="flex flex-col gap-1.5 rounded-xl border px-4 py-4">
+          <Skeleton data-testid="skeleton-block" className="h-4 w-2/5" />
+          <Skeleton data-testid="skeleton-block" className="h-3 w-1/4" />
         </div>
       </LoadingRegion>
     );
-  }
-  if (unassigned.status === "error" || !unassigned.data?.ok) return <ListError onRetry={unassigned.retry} />;
-
-  const none = unassigned.data.rows.length === 0;
-
-  return (
-    <div className="flex flex-col gap-3">
+  } else if (unassigned.status === "error" || !unassigned.data?.ok) {
+    assign = <ListError onRetry={unassigned.retry} />;
+  } else {
+    const none = unassigned.data.rows.length === 0;
+    assign = (
       <ChoiceRow
         title={t("assignTitle")}
         subtitle={none ? t("assignNone") : t("assignSubtitle")}
         disabled={none}
         onClick={onAssignExisting}
       />
-      <ChoiceRow title={t("createTitle")} subtitle={t("createSoon")} disabled />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {assign}
+      <ChoiceRow title={t("createTitle")} subtitle={t("createSubtitle")} onClick={onCreateNew} />
     </div>
   );
 }
