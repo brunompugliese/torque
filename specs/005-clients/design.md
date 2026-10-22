@@ -76,7 +76,7 @@ view → add-vehicle (choose) → assign        create (from "Agregar cliente")
 
 - **view:** header, `DetailList` (DNI, Teléfono + WhatsApp button, Email), the vehicles section, footer "Creado el". The phone value is `<span>{phone}</span>` plus `WhatsappButton`.
 - **Vehicles section:** `ClientVehicles` loads with `useLoadedData` (below) through the `getClientVehicles(clientId)` action: skeleton while loading, `ListError` with "Reintentar" on failure, the empty text, or the rows. "Agregar vehículo" sits on the section title line.
-- **choose:** two large rows. "Asignar un vehículo existente" loads the unassigned vehicles when the step opens (`getUnassignedVehicles()`, skeleton while loading) and is greyed out with "No hay vehículos sin cliente" when empty. "Crear un vehículo nuevo" is greyed out with "Próximamente" (a disabled button with `aria-disabled` and its subtitle).
+- **choose:** two large rows. "Asignar un vehículo existente" loads the unassigned vehicles when the step opens (`getUnassignedVehicles()`, skeleton while loading) and is greyed out with "No hay vehículos sin cliente" when empty. "Crear un vehículo nuevo" is greyed out with "Próximamente" (a disabled button with `aria-disabled` and its subtitle). *(Superseded by [spec 006](../006-vehicles/design.md): enabled, and always there, independent of the list.)*
 - **assign:** `AssignVehicles`: search box, five checkbox rows, `PaginationBar`, footer "Volver" / "Asignar vehículo(s)". Details below.
 - **edit / create:** `ClientForm`, same pattern as `ServiceForm`.
 - After assigning, the mode returns to `view` and the vehicles section reloads (its `key` changes), so the new vehicles appear without a page revalidation.

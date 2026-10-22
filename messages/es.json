@@ -21,7 +21,16 @@
     "nameRequired": "Ingresá el nombre.",
     "phoneRequired": "Ingresá el teléfono.",
     "phoneInvalid": "Revisá el teléfono: tiene que tener 10 dígitos.",
-    "dniInvalid": "Revisá el DNI."
+    "dniInvalid": "Revisá el DNI.",
+    "plateRequired": "Ingresá la patente.",
+    "plateInvalid": "Revisá la patente: tiene que tener 6 o 7 caracteres.",
+    "yearInvalid": "Ingresá un año entre 1886 y {max}.",
+    "vinInvalid": "El VIN debe tener 17 caracteres (Sin \"I\", \"O\", \"Q\" ni guiones).",
+    "brandRequired": "Elegí la marca.",
+    "brandInvalid": "Elegí una marca de la lista.",
+    "modelRequired": "Elegí el modelo.",
+    "modelInvalid": "Elegí un modelo de la lista.",
+    "clientInvalid": "Elegí un cliente de la lista."
   },
   "auth": {
     "login": {
@@ -55,7 +64,9 @@
     "loading": "Cargando…",
     "saving": "Guardando…",
     "unexpectedError": "Algo salió mal. Probá de nuevo.",
-    "archiveConfirmBody": "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras."
+    "archiveConfirmBody": "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras.",
+    "whatsapp": "Escribir por WhatsApp",
+    "whatsappText": "WhatsApp"
   },
   "list": {
     "showArchived": "Mostrar archivados",
@@ -150,8 +161,6 @@
       "email": "Email"
     },
     "notLoaded": "Sin cargar",
-    "whatsapp": "Escribir por WhatsApp",
-    "whatsappText": "WhatsApp",
     "archiveConfirm": {
       "title": "¿Archivar este cliente?",
       "body": "Sus vehículos no cambian y lo siguen mostrando como “(Archivado)”."
@@ -172,7 +181,7 @@
       "assignSubtitle": "Vehículos sin cliente",
       "assignNone": "No hay vehículos sin cliente",
       "createTitle": "Crear un vehículo nuevo",
-      "createSoon": "Próximamente"
+      "createSubtitle": "Con este cliente"
     },
     "assign": {
       "title": "Asignar un vehículo existente",
@@ -194,7 +203,93 @@
       "vehiclesCount": "{count, plural, one {# vehículo} other {# vehículos}}"
     }
   },
+  "status": {
+    "job": {
+      "pendiente": "Pendiente",
+      "presupuesto_enviado": "Presupuesto enviado",
+      "presupuesto_aceptado": "Presupuesto aceptado",
+      "en_progreso": "En progreso",
+      "completado": "Completado",
+      "entregado": "Entregado",
+      "cancelado": "Cancelado"
+    }
+  },
   "vehicles": {
-    "noVin": "Sin VIN"
+    "noVin": "Sin VIN",
+    "title": "Vehículos",
+    "summary": "{total, plural, one {# vehículo} other {# vehículos}} en total, {archived, plural, one {# archivado} other {# archivados}}.",
+    "add": "Agregar vehículo",
+    "edit": "Editar vehículo",
+    "save": "Guardar cambios",
+    "columns": {
+      "plate": "Patente",
+      "vehicle": "Vehículo",
+      "year": "Año",
+      "vin": "VIN",
+      "client": "Cliente",
+      "lastKm": "Último km",
+      "createdOn": "Creado el"
+    },
+    "searchPlaceholder": "Buscar por patente, marca, modelo o VIN",
+    "empty": {
+      "noResultsTitle": "No encontramos vehículos",
+      "noResultsHint": "Probá con otra patente, marca, modelo o VIN.",
+      "noneTitle": "Todavía no hay vehículos",
+      "noneHint": "Agregá el primero para registrar sus trabajos.",
+      "onlyArchivedTitle": "No hay vehículos activos",
+      "onlyArchivedHint": "Activá Mostrar archivados para ver los archivados."
+    },
+    "noClient": "Sin cliente",
+    "clientArchived": "{name} (Archivado)",
+    "notLoaded": "Sin cargar",
+    "details": {
+      "client": "Cliente",
+      "vin": "VIN",
+      "lastKm": "Último km"
+    },
+    "fields": {
+      "plate": "Patente",
+      "platePlaceholder": "AB 123 CD",
+      "year": "Año",
+      "brand": "Marca",
+      "brandPlaceholder": "Buscá la marca",
+      "model": "Modelo",
+      "modelPlaceholder": "Buscá el modelo",
+      "modelDisabled": "Primero elegí la marca",
+      "vin": "VIN",
+      "client": "Cliente",
+      "clientPlaceholder": "Buscá por nombre o teléfono",
+      "clientHint": "Dejalo vacío si el vehículo no tiene cliente.",
+      "noOptions": "No encontramos resultados"
+    },
+    "newClient": {
+      "title": "Cliente nuevo",
+      "create": "Crear cliente nuevo",
+      "hint": "Se crea junto con el vehículo. El resto de los datos se completa después desde Clientes.",
+      "discard": "Descartar cliente nuevo"
+    },
+    "archiveConfirm": {
+      "title": "¿Archivar este vehículo?",
+      "body": "No se le pueden crear turnos ni trabajos mientras esté archivado."
+    },
+    "errors": {
+      "plateTaken": "Ya hay un vehículo con esta patente.",
+      "plateTakenArchived": "Ya hay un vehículo archivado con esta patente.",
+      "notFound": "Este vehículo ya no existe. Actualizá la página."
+    },
+    "toasts": {
+      "created": "Vehículo agregado",
+      "createdWithClient": "Vehículo y cliente agregados",
+      "updated": "Cambios guardados",
+      "archived": "Vehículo archivado",
+      "unarchived": "Vehículo desarchivado"
+    },
+    "history": {
+      "title": "Historial de trabajos",
+      "empty": "Este vehículo todavía no tiene trabajos.",
+      "seeAll": "Ver todos ({count})",
+      "final": "Final",
+      "quoted": "Presupuestado"
+    }
   }
 }

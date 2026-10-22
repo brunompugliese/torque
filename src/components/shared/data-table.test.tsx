@@ -120,6 +120,77 @@ describe("DataTable", () => {
   });
 });
 
+describe("DataTable while loading", () => {
+  it("keeps the header, with its sort buttons, and replaces the rows with placeholders", () => {
+    const onSortChange = vi.fn();
+    renderTable({ loading: true, onSortChange });
+    const table = screen.getByRole("table", { name: "Servicios" });
+    const headers = within(table).getAllByRole("columnheader");
+    expect(headers[0]).toHaveTextContent("Servicio");
+    expect(headers[0]).toHaveAttribute("aria-sort", "ascending");
+    expect(headers[1]).toHaveTextContent("Km");
+    fireEvent.click(within(headers[0]).getByRole("button"));
+    expect(onSortChange).toHaveBeenCalledWith("name");
+
+    expect(screen.queryByText("Alineación")).toBeNull();
+    expect(screen.queryByText("Lavado")).toBeNull();
+    expect(screen.getAllByTestId("skeleton-block").length).toBeGreaterThan(0);
+  });
+
+  it("shows about as many placeholder rows as there were rows, so little moves", () => {
+    renderTable({ loading: true });
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(1 + ROWS.length);
+  });
+
+  it("shows a few placeholder rows when there were none, and at most eight", () => {
+    const { unmount } = renderTable({ loading: true, rows: [] });
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(1 + 5);
+    unmount();
+
+    const many = Array.from({ length: 25 }, (_, index) => ({ ...ROWS[0], id: String(index) }));
+    renderTable({ loading: true, rows: many });
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(1 + 8);
+  });
+
+  it("is a busy region announced once", () => {
+    const { container } = renderTable({ loading: true });
+    expect(container.firstChild).toHaveAttribute("aria-busy", "true");
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
+  });
+
+  it("doesn't open anything from a placeholder row", () => {
+    const onRowClick = vi.fn();
+    renderTable({ loading: true, onRowClick });
+    const rows = within(screen.getByRole("table")).getAllByRole("row");
+    fireEvent.click(rows[1]);
+    expect(onRowClick).not.toHaveBeenCalled();
+    expect(rows[1]).not.toHaveAttribute("data-clickable");
+  });
+
+  it("lays the placeholders out like the cells: right-aligned columns keep their side", () => {
+    renderTable({ loading: true });
+    const cell = within(screen.getByRole("table")).getAllByRole("row")[1].querySelectorAll("td")[1];
+    expect(cell.firstElementChild).toHaveClass("items-end");
+  });
+
+  it("uses a column's own number of placeholder lines", () => {
+    renderTable({
+      loading: true,
+      rows: [],
+      columns: [{ id: "name", header: "Servicio", skeletonLines: 2, cell: (row: Row) => row.name }],
+    });
+    expect(screen.getAllByTestId("skeleton-block")).toHaveLength(5 * 2);
+  });
+
+  it("is not busy once it has its rows", () => {
+    const { container } = renderTable();
+    expect(container.firstChild).not.toHaveAttribute("aria-busy");
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByText("Alineación")).toBeInTheDocument();
+  });
+});
+
 describe("DataTableSkeleton", () => {
   it("shows the real headers and placeholder rows inside a busy region", () => {
     const { container } = renderWithIntl(

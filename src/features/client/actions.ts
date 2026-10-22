@@ -9,7 +9,7 @@ import { parseListParams } from "@/lib/list/params";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { toFieldErrors } from "@/lib/validation/fields";
 
-import { listClients, type ClientPage } from "./queries";
+import { listClientOptions, listClients, type ClientOptionList, type ClientPage } from "./queries";
 import {
   CLIENT_COLUMNS,
   clientFormSchema,
@@ -128,4 +128,13 @@ export async function setClientArchived(id: unknown, archived: boolean): Promise
 export async function searchClients(listSearch: unknown): Promise<ClientPage> {
   const params = parseListParams(new URLSearchParams(typeof listSearch === "string" ? listSearch : ""));
   return listClients(params);
+}
+
+const OPTION_TERM_MAX_LENGTH = 100;
+
+// Read action for the vehicle form's client dropdown. The term travels in the
+// request body, never in a URL.
+export async function searchClientOptions(term: unknown): Promise<ClientOptionList> {
+  if (typeof term !== "string") return { ok: false };
+  return listClientOptions(term.slice(0, OPTION_TERM_MAX_LENGTH));
 }
