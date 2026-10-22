@@ -191,7 +191,10 @@ export function useVehicleModal({
                 label: t("details.client"),
                 value: client ? (
                   <span className="flex flex-col gap-1">
-                    <span>{client.enabled ? formatClientName(client) : t("clientArchived", { name: formatClientName(client) })}</span>
+                    <span className="flex items-center gap-2">
+                      <span className={client.enabled ? undefined : "text-muted-foreground"}>{formatClientName(client)}</span>
+                      {client.enabled ? null : <ArchivedBadge />}
+                    </span>
                     <span className="inline-flex items-center gap-1">
                       {client.phoneNumber}
                       <WhatsappButton

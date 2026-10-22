@@ -20,7 +20,7 @@ export function VehicleRow({ vehicle, className }: VehicleRowProps) {
   const details = [vehicle.year, vehicle.vin ?? t("noVin")].filter((part) => part !== null).join(" · ");
 
   return (
-    <div className={cn("flex min-w-0 items-center gap-3", className)}>
+    <div className={cn("flex min-w-0 items-center gap-3", !vehicle.enabled && "opacity-60", className)}>
       <PlateDisplay plate={vehicle.plate} className="shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-sm font-medium">

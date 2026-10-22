@@ -82,9 +82,10 @@ export function VehiclesTable(props: VehiclesTableProps) {
       className: CLIENT_CELL_CLASS,
       cell: ({ client }) =>
         client ? (
-          <span className="block truncate">
-            {client.enabled ? formatClientName(client) : t("clientArchived", { name: formatClientName(client) })}
-          </span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className={client.enabled ? "truncate" : "truncate text-muted-foreground"}>{formatClientName(client)}</span>
+            {client.enabled ? null : <ArchivedBadge />}
+          </div>
         ) : (
           <span className="text-muted-foreground">{t("noClient")}</span>
         ),
