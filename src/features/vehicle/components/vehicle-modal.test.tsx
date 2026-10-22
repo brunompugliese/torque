@@ -152,7 +152,8 @@ describe("vehicle view", () => {
 
   it("marks an archived client", () => {
     renderModal("view", { ...VEHICLE, client: { ...ANA, enabled: false } });
-    expect(screen.getByText("Ana Gómez (Archivado)")).toBeInTheDocument();
+    expect(screen.getByText("Ana Gómez")).toHaveClass("text-muted-foreground");
+    expect(screen.getByText("Archivado")).toBeInTheDocument();
   });
 
   it("says Sin cliente and Sin cargar when there is nothing to show", () => {

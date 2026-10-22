@@ -148,7 +148,8 @@ describe("VehiclesTable", () => {
       matching: 2,
       total: 2,
     });
-    expect(screen.getByText("Ana Gómez (Archivado)")).toBeInTheDocument();
+    expect(screen.getByText("Ana Gómez")).toHaveClass("text-muted-foreground");
+    expect(screen.getAllByText("Archivado")).toHaveLength(1);
     expect(screen.getByText("Zoe")).toBeInTheDocument();
   });
 
