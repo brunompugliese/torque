@@ -13,16 +13,16 @@ import { jobTotal } from "../total";
 const EMPTY = "—";
 
 // One visit in a vehicle's history, on two lines so it fits the modal: date,
-// km and status, then the services and the total. Not clickable until the
-// Trabajos page exists.
-export function VehicleJobRow({ job }: { job: VehicleJob }) {
+// km and status, then the services and the total. The list around it makes it
+// clickable.
+export function VehicleJobRow({ job, className }: { job: VehicleJob; className?: string }) {
   const t = useTranslations("vehicles.history");
   const format = useFormatter();
   const total = jobTotal(job);
   const services = job.services.join(", ");
 
   return (
-    <div className={cn("flex flex-col gap-1", !job.enabled && "opacity-60")}>
+    <div className={cn("flex flex-col gap-1", !job.enabled && "opacity-60", className)}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2 text-sm">
           <span className="whitespace-nowrap tabular-nums">{format.dateTime(new Date(job.createdAt), DATE_FORMAT)}</span>

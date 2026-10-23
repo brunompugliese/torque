@@ -23,14 +23,14 @@ export function useVehiclesPanel(): VehiclesPanelContext {
   return context;
 }
 
-type ModalState = { open: boolean; mode: VehicleModalMode; vehicle: VehicleListItem | null };
+type ModalState = { open: boolean; mode: VehicleModalMode; vehicle: VehicleListItem | null; jobId: string | null };
 
 // The modal opens from the loaded row: no request per click.
 export function VehiclesPanel({ children }: { children: ReactNode }) {
-  const [modal, setModal] = useState<ModalState>({ open: false, mode: "view", vehicle: null });
+  const [modal, setModal] = useState<ModalState>({ open: false, mode: "view", vehicle: null, jobId: null });
 
-  const openVehicle = useCallback((vehicle: VehicleListItem) => setModal({ open: true, mode: "view", vehicle }), []);
-  const openCreate = useCallback(() => setModal({ open: true, mode: "create", vehicle: null }), []);
+  const openVehicle = useCallback((vehicle: VehicleListItem) => setModal({ open: true, mode: "view", vehicle, jobId: null }), []);
+  const openCreate = useCallback(() => setModal({ open: true, mode: "create", vehicle: null, jobId: null }), []);
 
   // Fetched once the page is interactive, so the first click doesn't wait.
   useEffect(() => {
@@ -48,7 +48,15 @@ export function VehiclesPanel({ children }: { children: ReactNode }) {
           open={modal.open}
           mode={modal.mode}
           vehicle={modal.vehicle}
-          onModeChange={(mode, vehicle) => setModal((current) => ({ ...current, mode, vehicle: vehicle ?? current.vehicle }))}
+          jobId={modal.jobId}
+          onModeChange={(mode, vehicle, jobId) =>
+            setModal((current) => ({
+              ...current,
+              mode,
+              vehicle: vehicle ?? current.vehicle,
+              jobId: jobId ?? current.jobId,
+            }))
+          }
           onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
         />
       ) : null}

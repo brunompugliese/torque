@@ -7,13 +7,17 @@ import { toast } from "sonner";
 import { ArchivedBadge } from "@/components/shared/archived-badge";
 import { ArchiveConfirmDialog, ArchiveToggleButton } from "@/components/shared/archive-controls";
 import { DetailList } from "@/components/shared/detail-list";
-import type { DetailModalProps } from "@/components/shared/detail-modal";
+import { DetailModalBodySkeleton, type DetailModalProps } from "@/components/shared/detail-modal";
+import { ListError } from "@/components/shared/list-states";
 import { PlateDisplay } from "@/components/shared/plate-display";
 import { WhatsappButton } from "@/components/shared/whatsapp-button";
 import { Button } from "@/components/ui/button";
 import { formatClientName } from "@/features/client/format";
+import { getJobRow } from "@/features/job/actions";
+import { useJobModal } from "@/features/job/components/use-job-modal";
 import { VehicleJobs } from "@/features/job/components/vehicle-jobs";
 import { useArchiveFlow } from "@/hooks/use-archive-flow";
+import { useLoadedData } from "@/hooks/use-loaded-data";
 import { fail } from "@/lib/actions/result";
 import { DATE_FORMAT } from "@/lib/format/date";
 import { formatKm } from "@/lib/format/km";
@@ -23,7 +27,8 @@ import { createVehicle, setVehicleArchived, updateVehicle, type VehicleActionRes
 import type { VehicleFormValues, VehicleListItem } from "../schemas";
 import { VehicleForm } from "./vehicle-form";
 
-export type VehicleModalMode = "view" | "edit" | "create";
+// A job of the vehicle history is one more step of the chain: viewing it or editing it.
+export type VehicleModalMode = "view" | "edit" | "create" | "job-view" | "job-edit";
 
 // When the vehicle modal is a step inside the client modal (client → vehicle).
 export type VehicleFromClient = {
@@ -35,7 +40,9 @@ export type VehicleFromClient = {
 type UseVehicleModalOptions = {
   mode: VehicleModalMode;
   vehicle: VehicleListItem | null;
-  onModeChange: (mode: VehicleModalMode, vehicle?: VehicleListItem) => void;
+  // The job of the job-* modes.
+  jobId?: string | null;
+  onModeChange: (mode: VehicleModalMode, vehicle?: VehicleListItem, jobId?: string) => void;
   // Closes the whole modal (the X, and after archiving).
   onClose: () => void;
   fromClient?: VehicleFromClient;
@@ -43,7 +50,7 @@ type UseVehicleModalOptions = {
 
 export type VehicleModalContent = Pick<
   DetailModalProps,
-  "title" | "badge" | "subtitle" | "actions" | "createdOn" | "footer" | "onBack" | "children"
+  "title" | "badge" | "wide" | "subtitle" | "actions" | "createdOn" | "footer" | "onBack" | "children"
 >;
 
 const FORM_ID = "vehicle-form";
@@ -66,14 +73,40 @@ function isUnchanged(values: VehicleFormValues, vehicle: VehicleListItem): boole
 export function useVehicleModal({
   mode,
   vehicle,
+  jobId = null,
   onModeChange,
   onClose,
   fromClient,
 }: UseVehicleModalOptions): { content: VehicleModalContent | null; confirmDialog: ReactNode } {
   const t = useTranslations("vehicles");
+  const tJobs = useTranslations("jobs");
   const tCommon = useTranslations("common");
   const format = useFormatter();
   const [saving, setSaving] = useState(false);
+  // The job the user came back from: its row gets the focus.
+  const [focusJobId, setFocusJobId] = useState<string | null>(null);
+
+  // A job of the history opens as a step: the same content the Trabajos page shows, with
+  // "Volver" to the vehicle. Only its list row is loaded here; the modal loads the rest.
+  const jobMode = mode === "job-view" ? "view" : mode === "job-edit" ? "edit" : null;
+  const jobRow = useLoadedData(jobMode && jobId ? `job:${jobId}` : "job:none", async () => {
+    if (!jobMode || !jobId) return null;
+    const result = await getJobRow(jobId);
+    if (!result.ok) throw new Error("job");
+    return result.row;
+  });
+  const job = jobMode && jobRow.status === "ready" ? jobRow.data : null;
+  const backToVehicle = () => {
+    setFocusJobId(jobId);
+    onModeChange("view");
+  };
+  const jobModal = useJobModal({
+    mode: jobMode ?? "view",
+    job,
+    onModeChange: (next) => onModeChange(next === "edit" ? "job-edit" : "job-view", undefined, jobId ?? undefined),
+    onClose,
+    fromHost: { onBack: backToVehicle },
+  });
 
   const archiveFlow = useArchiveFlow({
     run: async (archived) => (vehicle ? setVehicleArchived(vehicle.id, archived) : fail("notFound")),
@@ -128,6 +161,20 @@ export function useVehicleModal({
       </Button>
     </div>
   );
+
+  if (jobMode) {
+    if (job) return jobModal;
+    return {
+      confirmDialog: null,
+      content: {
+        wide: true,
+        title: tJobs("modalTitle"),
+        onBack: backToVehicle,
+        children:
+          jobRow.status === "error" ? <ListError onRetry={jobRow.retry} /> : <DetailModalBodySkeleton rows={4} />,
+      },
+    };
+  }
 
   if (mode === "create") {
     return {
@@ -212,7 +259,15 @@ export function useVehicleModal({
               { label: t("details.lastKm"), value: vehicle.lastKm === null ? notLoaded : formatKm(vehicle.lastKm) },
             ]}
           />
-          <VehicleJobs key={vehicle.id} vehicleId={vehicle.id} />
+          <VehicleJobs
+            key={vehicle.id}
+            vehicleId={vehicle.id}
+            focusJobId={focusJobId}
+            onOpenJob={(opened) => {
+              setFocusJobId(null);
+              onModeChange("job-view", undefined, opened);
+            }}
+          />
         </>
       ),
     },
