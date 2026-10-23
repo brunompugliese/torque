@@ -28,3 +28,11 @@ export const FIELD_WIDTH = {
   // Exactly 17 characters.
   vin: "sm:max-w-56",
 } as const;
+
+// The columns of a repeated line inside a form (the services of a job): the main field takes what is
+// left, then fixed columns for a quantity, a price (two with a final one), a subtotal and the remove
+// button. From `sm` up the line is one row; below it the cells stack. Written whole so Tailwind sees them.
+export const LINE_ITEM_COLUMNS = {
+  withPrice: "sm:grid-cols-[minmax(0,1fr)_4rem_7.5rem_7rem_2rem]",
+  withTwoPrices: "sm:grid-cols-[minmax(0,1fr)_4rem_7.5rem_7.5rem_7rem_2rem]",
+} as const;

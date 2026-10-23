@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { formatKm } from "./km";
+import { formatKm, formatKmInput } from "./km";
+
+describe("formatKmInput", () => {
+  it.each([
+    ["", ""],
+    ["68400", "68.400"],
+    ["68.400", "68.400"],
+    ["68 400 km", "68.400"],
+    ["12,5", "125"],
+    ["abc", ""],
+    ["123456789012", "1.234.567.890"],
+  ])("cleans %j to %j", (input, expected) => {
+    expect(formatKmInput(input)).toBe(expected);
+  });
+});
 
 describe("formatKm", () => {
   it.each([

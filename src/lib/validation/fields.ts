@@ -106,7 +106,15 @@ export type ValidationErrorKey =
   | "brandInvalid"
   | "modelRequired"
   | "modelInvalid"
-  | "clientInvalid";
+  | "clientInvalid"
+  | "priceRequired"
+  | "priceInvalid"
+  | "quantityInvalid"
+  | "kilometersInvalid"
+  | "vehicleRequired"
+  | "vehicleInvalid"
+  | "serviceRequired"
+  | "serviceInvalid";
 
 // First issue per field, as the key the form translates.
 export function toFieldErrors<Field extends string>(

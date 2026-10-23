@@ -42,7 +42,7 @@ const listVehiclesCached = cache(
     const query = supabase.from("vehicle_decrypted").select(VEHICLE_LIST_COLUMNS, { count: "exact" });
     const { data, error, count } = await applyListQuery(
       query,
-      { search, showArchived, sortBy, sort, page },
+      { search, showArchived, sortBy, sort, page, filters: {} },
       { searchColumn: "search_text", sortColumns: VEHICLE_SORT_COLUMNS, defaultSortBy: VEHICLE_DEFAULT_SORT },
     );
     if (error) {

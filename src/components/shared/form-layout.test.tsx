@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { FIELD_WIDTH, FormRow } from "./form-layout";
+import { FIELD_WIDTH, FormRow, LINE_ITEM_COLUMNS } from "./form-layout";
 
 describe("FormRow", () => {
   it("puts its fields two to a row from sm up and stacks them below", () => {
@@ -24,6 +24,18 @@ describe("FormRow", () => {
       </FormRow>,
     );
     expect(screen.getByText("Nombre").parentElement).toHaveClass("items-start", "grid");
+  });
+});
+
+describe("LINE_ITEM_COLUMNS", () => {
+  it("is one row from sm up, with one more column when there are two prices", () => {
+    const count = (template: string) => template.replace(/^sm:grid-cols-\[|\]$/g, "").split("_").length;
+    for (const template of Object.values(LINE_ITEM_COLUMNS)) expect(template).toMatch(/^sm:grid-cols-\[/);
+    expect(count(LINE_ITEM_COLUMNS.withTwoPrices)).toBe(count(LINE_ITEM_COLUMNS.withPrice) + 1);
+  });
+
+  it("lets the first column take what is left", () => {
+    for (const template of Object.values(LINE_ITEM_COLUMNS)) expect(template).toContain("[minmax(0,1fr)_");
   });
 });
 

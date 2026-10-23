@@ -38,7 +38,7 @@ const listClientsCached = cache(
     const query = supabase.from("client_decrypted").select(CLIENT_COLUMNS, { count: "exact" });
     const { data, error, count } = await applyListQuery(
       query,
-      { search, showArchived, sortBy, sort, page },
+      { search, showArchived, sortBy, sort, page, filters: {} },
       { searchColumn: "search_text", sortColumns: CLIENT_SORT_COLUMNS, defaultSortBy: CLIENT_DEFAULT_SORT },
     );
     if (error) {

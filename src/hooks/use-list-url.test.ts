@@ -34,6 +34,7 @@ describe("useListUrl", () => {
       sortBy: "creado",
       sort: "desc",
       page: 2,
+      filters: {},
     });
     expect(result.current.searchValue).toBe("aceite");
   });
@@ -101,6 +102,69 @@ describe("useListUrl", () => {
     expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?sentido=desc&pagina=2");
     act(() => result.current.setPage(1));
     expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?sentido=desc");
+  });
+});
+
+describe("useListUrl filters", () => {
+  const FILTERS = ["estado", "desde"] as const;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    replace.mockReset();
+    currentSearch = "";
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("reads the whitelisted filters from the URL", () => {
+    currentSearch = "estado=entregado&desde=2026-09-01&otro=x";
+    const { result } = renderHook(() => useListUrl(FILTERS));
+    expect(result.current.params.filters).toEqual({ estado: "entregado", desde: "2026-09-01" });
+  });
+
+  it("sets a filter back to page 1, keeping the rest", () => {
+    currentSearch = "pagina=3&archivados=1";
+    const { result } = renderHook(() => useListUrl(FILTERS));
+    act(() => result.current.setFilters({ estado: "entregado,cancelado" }));
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?archivados=1&estado=entregado%2Ccancelado");
+  });
+
+  it("removes a filter set to undefined", () => {
+    currentSearch = "estado=entregado&desde=2026-09-01";
+    const { result } = renderHook(() => useListUrl(FILTERS));
+    act(() => result.current.setFilters({ estado: undefined }));
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?desde=2026-09-01");
+  });
+
+  it("clears every filter, keeping the rest", () => {
+    currentSearch = "estado=entregado&desde=2026-09-01&archivados=1&pagina=2";
+    const { result } = renderHook(() => useListUrl(FILTERS));
+    act(() => result.current.clearFilters());
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?archivados=1");
+  });
+
+  it("clears the search and the filters together", () => {
+    currentSearch = "buscar=aceite&estado=entregado&archivados=1";
+    const { result } = renderHook(() => useListUrl(FILTERS));
+    act(() => result.current.clearAll());
+    expect(result.current.searchValue).toBe("");
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios?archivados=1");
+  });
+
+  it("clears everything inside a provider without putting the search in the URL", () => {
+    currentSearch = "estado=entregado";
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(ListSearchProvider, null, children);
+    const { result } = renderHook(() => useListUrl(FILTERS), { wrapper });
+    act(() => result.current.setSearchValue("ae482"));
+    act(() => vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS));
+    expect(result.current.params.search).toBe("ae482");
+
+    act(() => result.current.clearAll());
+    expect(result.current.params.search).toBe("");
+    expect(result.current.searchValue).toBe("");
+    expect(replace).toHaveBeenLastCalledWith(null, "", "/servicios");
   });
 });
 

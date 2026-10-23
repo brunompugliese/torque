@@ -18,6 +18,9 @@ export type SelectOption = {
   label: string;
   // Grey text that tells similar options apart (a phone, a plate).
   secondary?: string;
+  // What the box shows once the option is chosen, when that is more than the
+  // name ("Fiat Cronos (AD 915 TB)"). Defaults to the label.
+  inputLabel?: string;
 };
 
 // The last option of a quick-create dropdown ("+ Crear cliente nuevo"). Choosing
@@ -51,6 +54,8 @@ type SearchableSelectProps = {
 
 type Item = SelectOption & { isAction?: boolean };
 
+const boxText = (option: SelectOption) => option.inputLabel ?? option.label;
+
 const ACTION_VALUE = "__action__";
 
 export function SearchableSelect({
@@ -83,7 +88,7 @@ export function SearchableSelect({
   // everything, not just that option.
   const matches = useMemo(
     () => (item: Item, query: string) => {
-      if (item.isAction || !query || (selected && query === selected.label)) return true;
+      if (item.isAction || !query || (selected && query === boxText(selected))) return true;
       return normalizeSearch(`${item.label} ${item.secondary ?? ""}`).includes(normalizeSearch(query));
     },
     [selected],
@@ -99,7 +104,7 @@ export function SearchableSelect({
       filter={filter === "remote" ? null : matches}
       disabled={disabled}
       autoHighlight
-      itemToStringLabel={(item) => item.label}
+      itemToStringLabel={(item) => boxText(item)}
       isItemEqualToValue={(item, other) => item.value === other.value}
       onValueChange={(item) => {
         if (item?.isAction) {
@@ -113,7 +118,7 @@ export function SearchableSelect({
         // must not erase text that matched nothing.
         if (details.reason === "input-change") {
           onInputValueChange(text);
-          if (selected && text !== selected.label) onValueChange("");
+          if (selected && text !== boxText(selected)) onValueChange("");
         } else if (details.reason === "item-press" && text !== action?.label) {
           onInputValueChange(text);
         }
