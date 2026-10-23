@@ -7,25 +7,37 @@ import { renderWithIntl } from "@/test/render";
 import { JobStatusBadge, StatusBadge } from "./status-badge";
 
 describe("StatusBadge", () => {
-  it("shows its text with the family's tokens and a decorative dot", () => {
+  it("shows its text with the family's tokens and no dot", () => {
     renderWithIntl(<StatusBadge family="in-progress">En curso</StatusBadge>);
     const badge = screen.getByText("En curso");
     expect(badge).toHaveClass("bg-status-in-progress", "text-status-in-progress-foreground");
-    const dot = badge.querySelector("[aria-hidden='true']");
-    expect(dot).toHaveClass("bg-status-in-progress-dot");
+    expect(badge.querySelector("span")).toBeNull();
   });
 
-  it("gives the done and cancelled families their border", () => {
+  it.each(["pending", "quote-sent", "quote-accepted", "in-progress", "done", "delivered", "cancelled"] as const)(
+    "gives the %s family a border in its own text color, like every other family",
+    (family) => {
+      renderWithIntl(<StatusBadge family={family}>Estado</StatusBadge>);
+      expect(screen.getByText("Estado")).toHaveClass(`border-status-${family}-foreground/20`);
+    },
+  );
+});
+
+describe("StatusBadge trailing icon", () => {
+  it("puts the icon inside the pill, after the text", () => {
     renderWithIntl(
-      <>
-        <StatusBadge family="done">Hecho</StatusBadge>
-        <StatusBadge family="cancelled">Anulado</StatusBadge>
-        <StatusBadge family="pending">Espera</StatusBadge>
-      </>,
+      <StatusBadge family="done" trailing={<svg data-testid="arrow" aria-hidden="true" />}>
+        Hecho
+      </StatusBadge>,
     );
-    expect(screen.getByText("Hecho")).toHaveClass("border-status-done-border");
-    expect(screen.getByText("Anulado")).toHaveClass("border-status-cancelled-border");
-    expect(screen.getByText("Espera")).toHaveClass("border-transparent");
+    const badge = screen.getByText("Hecho");
+    expect(badge).toContainElement(screen.getByTestId("arrow"));
+    expect(badge.lastElementChild).toBe(screen.getByTestId("arrow"));
+  });
+
+  it("has nothing after the text without it", () => {
+    renderWithIntl(<StatusBadge family="done">Hecho</StatusBadge>);
+    expect(screen.getByText("Hecho").children).toHaveLength(0);
   });
 });
 
