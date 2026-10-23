@@ -60,7 +60,7 @@ Job history
 - [ ] Given a job's total, when shown, then it is the final total labelled "Final" when the job has one, otherwise the quoted total labelled "Presupuestado".
 - [ ] Given more than five jobs, when the history shows, then the five most recent are listed and a full-width "Ver todos (N)" button (N = all jobs) expands the rest in place, without a request.
 - [ ] Given a vehicle with no jobs, when the history shows, then it says "Este vehículo todavía no tiene trabajos."
-- [ ] Given a job row, when shown, then it is not clickable and has no arrow until the Trabajos page exists.
+- [ ] Given a job row, when shown, then it is not clickable and has no arrow until the Trabajos page exists. *(Superseded by [spec 007](../007-jobs/requirements.md): rows open the job modal, with "Volver".)*
 
 Add and edit
 
