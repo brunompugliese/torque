@@ -1,0 +1,350 @@
+import "server-only";
+
+import { cache } from "react";
+import { z } from "zod";
+
+import { requireSession } from "@/lib/auth/session";
+import { argentinaDayStart, argentinaNextDayStart } from "@/lib/format/date";
+import { type ListParams, type SortDirection } from "@/lib/list/params";
+import { applyListQuery } from "@/lib/list/query";
+import { toSearchPattern } from "@/lib/search/normalize";
+import { JOB_STATUSES, type JobStatus } from "@/lib/status";
+import { createServerSupabase } from "@/lib/supabase/server";
+
+import { JOB_DEFAULT_DIRECTION, JOB_DEFAULT_SORT, JOB_FILTER, JOB_SORT_COLUMNS, parseJobFilters } from "./list";
+import {
+  JOB_HISTORY_COLUMNS,
+  JOB_HISTORY_ENTRY_COLUMNS,
+  JOB_ITEM_COLUMNS,
+  JOB_LIST_COLUMNS,
+  jobHistoryEntrySchema,
+  jobItemRowSchema,
+  jobListRowSchema,
+  jobRowSchema,
+  type JobHistoryEntry,
+  type JobItem,
+  type JobListItem,
+  type VehicleJob,
+} from "./schemas";
+
+export type VehicleJobList = { ok: true; rows: VehicleJob[] } | { ok: false };
+export type JobPage = { ok: true; rows: JobListItem[]; matching: number } | { ok: false };
+export type JobCounts = { ok: true; total: number; archived: number } | { ok: false };
+export type JobRowResult = { ok: true; row: JobListItem } | { ok: false };
+export type JobDetail = { ok: true; items: JobItem[]; history: JobHistoryEntry[] } | { ok: false };
+export type JobStatusCounts = { ok: true; counts: Record<JobStatus, number> } | { ok: false };
+
+// Every job of the vehicle, archived ones included, newest first. No page: the
+// vehicle modal shows five and expands the rest in place.
+export async function listVehicleJobs(vehicleId: string): Promise<VehicleJobList> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const { data, error } = await supabase
+    .from("job")
+    .select(JOB_HISTORY_COLUMNS)
+    .eq("vehicle_id", vehicleId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+  if (error) {
+    console.error("[job] vehicle jobs query failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, rows: z.array(jobRowSchema).parse(data ?? []) };
+}
+
+// The list's filters as database bounds: the statuses to keep and the instants
+// the last update must fall between (the end excluded), Argentina days.
+function filterBounds(filters: Record<string, string>) {
+  const { statuses, from, to } = parseJobFilters(filters);
+  return {
+    statuses,
+    from: from ? argentinaDayStart(from) : null,
+    to: to ? argentinaNextDayStart(to) : null,
+  };
+}
+
+// cache() compares arguments by identity, so params go in as primitives.
+const listJobsCached = cache(
+  async (
+    search: string,
+    showArchived: boolean,
+    sortBy: string,
+    sort: SortDirection,
+    page: number,
+    status: string,
+    from: string,
+    to: string,
+  ): Promise<JobPage> => {
+    await requireSession();
+    const { supabase } = await createServerSupabase();
+
+    const filters = { [JOB_FILTER.status]: status, [JOB_FILTER.from]: from, [JOB_FILTER.to]: to };
+    const bounds = filterBounds(filters);
+
+    // The plate and the client are encrypted: read through the list view.
+    let query = supabase.from("job_list").select(JOB_LIST_COLUMNS, { count: "exact" });
+    if (bounds.statuses.length > 0) query = query.in("status", bounds.statuses);
+    if (bounds.from) query = query.gte("updated_at", bounds.from);
+    if (bounds.to) query = query.lt("updated_at", bounds.to);
+
+    const { data, error, count } = await applyListQuery(
+      query,
+      { search, showArchived, sortBy, sort, page, filters: {} },
+      {
+        searchColumn: "search_text",
+        sortColumns: JOB_SORT_COLUMNS,
+        defaultSortBy: JOB_DEFAULT_SORT,
+        defaultDirection: JOB_DEFAULT_DIRECTION,
+      },
+    );
+    if (error) {
+      console.error("[job] list query failed", { code: error.code });
+      return { ok: false };
+    }
+    return { ok: true, rows: z.array(jobListRowSchema).parse(data ?? []), matching: count ?? 0 };
+  },
+);
+
+export function listJobs(params: ListParams): Promise<JobPage> {
+  const { filters } = params;
+  return listJobsCached(
+    params.search,
+    params.showArchived,
+    params.sortBy,
+    params.sort,
+    params.page,
+    filters[JOB_FILTER.status] ?? "",
+    filters[JOB_FILTER.from] ?? "",
+    filters[JOB_FILTER.to] ?? "",
+  );
+}
+
+// Counts read the table, not the view: nothing to decrypt.
+export const getJobCounts = cache(async (): Promise<JobCounts> => {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const [all, archived] = await Promise.all([
+    supabase.from("job").select("id", { count: "exact", head: true }),
+    supabase.from("job").select("id", { count: "exact", head: true }).eq("enabled", false),
+  ]);
+  const error = all.error ?? archived.error;
+  if (error) {
+    console.error("[job] count query failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, total: all.count ?? 0, archived: archived.count ?? 0 };
+});
+
+const statusCountRowSchema = z.object({
+  status: z.enum(JOB_STATUSES),
+  total: z.union([z.number(), z.string().transform(Number)]),
+});
+
+// The Estado filter's numbers: jobs per status for the current search, archived
+// switch and dates, ignoring the Estado selection itself. One request.
+export async function getJobStatusCounts(params: ListParams): Promise<JobStatusCounts> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const bounds = filterBounds(params.filters);
+  const { data, error } = await supabase.rpc("job_status_counts", {
+    p_pattern: toSearchPattern(params.search),
+    p_show_archived: params.showArchived,
+    p_from: bounds.from,
+    p_to: bounds.to,
+  });
+  if (error) {
+    console.error("[job] status counts failed", { code: error.code });
+    return { ok: false };
+  }
+
+  const counts = Object.fromEntries(JOB_STATUSES.map((status) => [status, 0])) as Record<JobStatus, number>;
+  for (const row of z.array(statusCountRowSchema).parse(data ?? [])) counts[row.status] = row.total;
+  return { ok: true, counts };
+}
+
+// One job as the list shows it, for a modal opened from somewhere else (a
+// vehicle's history).
+export async function getJobListRow(id: string): Promise<JobRowResult> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const { data, error } = await supabase.from("job_list").select(JOB_LIST_COLUMNS).eq("id", id).maybeSingle();
+  if (error || !data) {
+    if (error) console.error("[job] row query failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, row: jobListRowSchema.parse(data) };
+}
+
+// What the job modal loads when it opens: the services and the status history.
+export async function getJobDetail(id: string): Promise<JobDetail> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const [items, history] = await Promise.all([
+    supabase.from("job_item").select(JOB_ITEM_COLUMNS).eq("job_id", id).order("created_at").order("id"),
+    supabase
+      .from("job_status_history")
+      .select(JOB_HISTORY_ENTRY_COLUMNS)
+      .eq("job_id", id)
+      .order("changed_at", { ascending: false })
+      .order("id", { ascending: false }),
+  ]);
+  const error = items.error ?? history.error;
+  if (error) {
+    console.error("[job] detail query failed", { code: error.code });
+    return { ok: false };
+  }
+  return {
+    ok: true,
+    items: z.array(jobItemRowSchema).parse(items.data ?? []),
+    history: z.array(jobHistoryEntrySchema).parse(history.data ?? []),
+  };
+}
+
+// -----------------------------------------------------------------------------
+// The job form's dropdowns and hints
+// -----------------------------------------------------------------------------
+
+export type KmFloor = { ok: true; floor: number | null } | { ok: false };
+
+// The highest km among the vehicle's non-archived jobs: the same rule as
+// check_job_kilometers. For a job being edited only the jobs created before it
+// count (correcting an old job isn't blocked by later ones).
+export async function getKmFloor(vehicleId: string, jobId?: string): Promise<KmFloor> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  let before: string | null = null;
+  if (jobId) {
+    const own = await supabase.from("job").select("created_at").eq("id", jobId).maybeSingle();
+    if (own.error) {
+      console.error("[job] km floor failed", { code: own.error.code });
+      return { ok: false };
+    }
+    before = own.data ? String(own.data.created_at) : null;
+  }
+
+  let query = supabase
+    .from("job")
+    .select("kilometers")
+    .eq("vehicle_id", vehicleId)
+    .eq("enabled", true)
+    .not("kilometers", "is", null);
+  if (jobId) query = query.neq("id", jobId);
+  if (before) query = query.lt("created_at", before);
+
+  const { data, error } = await query.order("kilometers", { ascending: false }).limit(1);
+  if (error) {
+    console.error("[job] km floor failed", { code: error.code });
+    return { ok: false };
+  }
+  const km = data?.[0]?.kilometers;
+  return { ok: true, floor: typeof km === "number" ? km : null };
+}
+
+const ownerSchema = z.object({
+  client_id: z.string().nullable(),
+  client_name: z.string().nullable(),
+  client_surname: z.string().nullable(),
+  client_phone_number: z.string().nullable(),
+  client_enabled: z.boolean().nullable(),
+});
+
+export type VehicleOwner = {
+  id: string;
+  name: string;
+  surname: string | null;
+  phoneNumber: string;
+  enabled: boolean;
+};
+
+export type VehicleOwnerResult = { ok: true; owner: VehicleOwner | null } | { ok: false };
+
+// The vehicle's owner: the job's client. It comes with its state, because an archived
+// owner can't be put on a new job (see jobClientId).
+export async function getVehicleOwner(vehicleId: string): Promise<VehicleOwnerResult> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const { data, error } = await supabase
+    .from("vehicle_decrypted")
+    .select("client_id, client_name, client_surname, client_phone_number, client_enabled")
+    .eq("id", vehicleId)
+    .maybeSingle();
+  if (error) {
+    console.error("[job] vehicle owner failed", { code: error.code });
+    return { ok: false };
+  }
+  if (!data) return { ok: true, owner: null };
+  const row = ownerSchema.parse(data);
+  if (row.client_id === null || row.client_name === null) {
+    return { ok: true, owner: null };
+  }
+  return {
+    ok: true,
+    owner: {
+      id: row.client_id,
+      name: row.client_name,
+      surname: row.client_surname,
+      phoneNumber: row.client_phone_number ?? "",
+      enabled: row.client_enabled ?? true,
+    },
+  };
+}
+
+const serviceOptionSchema = z.object({ id: z.string(), name: z.string(), enabled: z.boolean() });
+
+export type ServiceOption = z.output<typeof serviceOptionSchema>;
+export type ServiceOptionList = { ok: true; rows: ServiceOption[] } | { ok: false };
+
+// The catalog's active services, plus the ones already on the job even if they
+// were archived since. `currentIds` must already be validated uuids.
+export async function listServiceOptions(currentIds: string[] = []): Promise<ServiceOptionList> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const query = supabase.from("service").select("id, name, enabled");
+  const { data, error } = await (currentIds.length > 0
+    ? query.or(`enabled.eq.true,id.in.(${currentIds.join(",")})`)
+    : query.eq("enabled", true)
+  )
+    .order("name_key")
+    .order("id");
+  if (error) {
+    console.error("[job] service options failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, rows: z.array(serviceOptionSchema).parse(data ?? []) };
+}
+
+export const VEHICLE_OPTIONS_LIMIT = 10;
+
+const vehicleOptionSchema = z
+  .object({ id: z.string(), plate: z.string(), brand_name: z.string(), model_name: z.string(), enabled: z.boolean() })
+  .transform(({ brand_name, model_name, ...row }) => ({ ...row, brandName: brand_name, modelName: model_name }));
+
+export type VehicleOption = z.output<typeof vehicleOptionSchema>;
+export type VehicleOptionList = { ok: true; rows: VehicleOption[] } | { ok: false };
+
+// The active vehicles a job can be created for, as the user types; the job's own
+// vehicle (`currentId`, a validated uuid) stays listed even if archived.
+export async function listVehicleOptions(term: string, currentId?: string): Promise<VehicleOptionList> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const pattern = toSearchPattern(term);
+  let query = supabase.from("vehicle_decrypted").select("id, plate, brand_name, model_name, enabled");
+  if (pattern) query = query.like("search_text", pattern);
+  query = currentId ? query.or(`enabled.eq.true,id.eq.${currentId}`) : query.eq("enabled", true);
+
+  const { data, error } = await query.order("plate").order("id").limit(VEHICLE_OPTIONS_LIMIT);
+  if (error) {
+    console.error("[job] vehicle options failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, rows: z.array(vehicleOptionSchema).parse(data ?? []) };
+}

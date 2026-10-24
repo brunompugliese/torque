@@ -44,9 +44,10 @@ export function ServiceModal({ open, mode, service, onModeChange, onOpenChange }
   const [pendingRename, setPendingRename] = useState<ServiceFormValues | null>(null);
   const [renaming, setRenaming] = useState(false);
 
+  // Every action closes the modal and confirms with a toast (docs/design.md#modals).
   const showSaved = (saved: Service, toastKey: "created" | "updated") => {
     toast(t(`toasts.${toastKey}`), { description: saved.name });
-    onModeChange("view", saved);
+    onOpenChange(false);
   };
 
   const submit = async (values: ServiceFormValues): Promise<ServiceActionResult | void> => {

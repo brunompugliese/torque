@@ -164,6 +164,54 @@ describe("ServicesTableSkeleton", () => {
   });
 });
 
+describe("ServicesListView while a search, sort or page loads", () => {
+  it("shows placeholder rows instead of the old ones, keeping the toolbar and the header, then the new results", async () => {
+    const { searchServices } = await import("../actions");
+    let resolve: (page: Awaited<ReturnType<typeof searchServices>>) => void = () => {};
+    vi.mocked(searchServices).mockReturnValue(new Promise((done) => (resolve = done)));
+    nav.search = "buscar=lavado";
+    renderWithIntl(
+      <ServicesPanel>
+        <ServicesListView initial={{ ok: true, rows: [ACTIVE], matching: 1 }} initialKey="" total={2} />
+      </ServicesPanel>,
+    );
+
+    expect(searchServices).toHaveBeenCalledWith("buscar=lavado");
+    expect(screen.queryByText("Alineación")).toBeNull();
+    expect(screen.getAllByTestId("skeleton-block").length).toBeGreaterThan(0);
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
+    expect(screen.getByRole("searchbox")).toHaveValue("lavado");
+    expect(within(screen.getAllByRole("columnheader")[0]).getByRole("button")).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrando/)).toBeNull();
+
+    await act(async () => resolve({ ok: true, rows: [ARCHIVED], matching: 1 }));
+    expect(screen.getByText("Lavado de motor")).toBeInTheDocument();
+    expect(screen.queryByTestId("skeleton-block")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByText("Mostrando 1–1 de 1")).toBeInTheDocument();
+  });
+
+  it("shows the placeholders again when Reintentar is pressed after a failure", async () => {
+    const { searchServices } = await import("../actions");
+    let resolve: (page: Awaited<ReturnType<typeof searchServices>>) => void = () => {};
+    vi.mocked(searchServices)
+      .mockResolvedValueOnce({ ok: false })
+      .mockReturnValueOnce(new Promise((done) => (resolve = done)));
+    nav.search = "buscar=x";
+    renderWithIntl(
+      <ServicesPanel>
+        <ServicesListView initial={{ ok: true, rows: [ACTIVE], matching: 1 }} initialKey="" total={2} />
+      </ServicesPanel>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Reintentar" }));
+    expect(screen.queryByRole("button", { name: "Reintentar" })).toBeNull();
+    expect(screen.getAllByTestId("skeleton-block").length).toBeGreaterThan(0);
+    await act(async () => resolve({ ok: true, rows: [ACTIVE], matching: 1 }));
+    expect(screen.getByText("Alineación")).toBeInTheDocument();
+  });
+});
+
 describe("ServicesListView toolbar", () => {
   it("has the services placeholder and drives the URL", async () => {
     vi.useFakeTimers();

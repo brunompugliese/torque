@@ -69,6 +69,22 @@ describe("applyListQuery", () => {
     expect(query.nullsFirst.get("name_key")).toBe(false);
   });
 
+  it("uses the default direction while no column is chosen", () => {
+    const options = { ...OPTIONS, defaultSortBy: "creado", defaultDirection: "desc" as const };
+    const none = applyListQuery(new FakeQuery(), DEFAULT_LIST_PARAMS, options).calls;
+    expect(none).toContainEqual(["order", "created_at", false]);
+    expect(none).toContainEqual(["order", "id", false]);
+
+    const chosen = applyListQuery(new FakeQuery(), { ...DEFAULT_LIST_PARAMS, sortBy: "creado" }, options).calls;
+    expect(chosen).toContainEqual(["order", "created_at", true]);
+    const reversed = applyListQuery(
+      new FakeQuery(),
+      { ...DEFAULT_LIST_PARAMS, sortBy: "creado", sort: "desc" },
+      options,
+    ).calls;
+    expect(reversed).toContainEqual(["order", "created_at", false]);
+  });
+
   it("sorts Z–A and pages", () => {
     const calls = run({ sort: "desc", page: 3 });
     expect(calls).toContainEqual(["order", "name_key", false]);

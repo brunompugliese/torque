@@ -7,6 +7,11 @@ type PlateDisplayProps = {
   className?: string;
 };
 
+// Every plate is drawn the same and takes the same room, whatever its format
+// (Mercosur, old, motorcycle…): only the characters change. The width fits the
+// longest one ("AB 123 CD") and the characters are centered.
+export const PLATE_WIDTH_CLASS = "w-32";
+
 // Argentine plate for tables and modal titles (docs/design.md#visual-identity):
 // white, black border, blue top band, bold spaced characters. In running text
 // and dropdowns use formatPlate as plain text instead.
@@ -15,7 +20,8 @@ export function PlateDisplay({ plate, className }: PlateDisplayProps) {
     <span
       data-slot="plate"
       className={cn(
-        "inline-flex flex-col overflow-hidden rounded-[5px] border border-plate-foreground bg-plate text-plate-foreground",
+        "inline-flex shrink-0 flex-col overflow-hidden rounded-[5px] border border-plate-foreground bg-plate text-plate-foreground",
+        PLATE_WIDTH_CLASS,
         className,
       )}
     >

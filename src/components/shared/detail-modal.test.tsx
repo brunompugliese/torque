@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test/render";
@@ -27,6 +27,47 @@ describe("DetailModal", () => {
     expect(screen.getByRole("button", { name: "Editar servicio" })).toBeInTheDocument();
     expect(screen.getByText("Cuerpo")).toBeInTheDocument();
     expect(screen.getByText("Creado el 13/10/2026")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Volver" })).toBeNull();
+  });
+
+  it("puts the actions in the footer, after Volver, and keeps the header for the title and badges", async () => {
+    renderWithIntl(
+      <DetailModal
+        open
+        onOpenChange={() => {}}
+        title="Servicio"
+        badge={<span>Archivado</span>}
+        onBack={() => {}}
+        actions={
+          <>
+            <button type="button">Archivar</button>
+            <button type="button">Editar servicio</button>
+          </>
+        }
+        createdOn="13/10/2026"
+      >
+        <p>Cuerpo</p>
+      </DetailModal>,
+    );
+
+    const footer = (await screen.findByText("Creado el 13/10/2026")).parentElement!.parentElement!;
+    expect(within(footer).getAllByRole("button").map((button) => button.textContent)).toEqual([
+      "Volver",
+      "Archivar",
+      "Editar servicio",
+    ]);
+    const header = screen.getByRole("dialog").querySelector('[data-slot="dialog-title"]')!.closest<HTMLElement>(".border-b")!;
+    expect(within(header).queryByRole("button", { name: "Archivar" })).toBeNull();
+    expect(within(header).getByRole("button", { name: "Cerrar" })).toBeInTheDocument();
+  });
+
+  it("shows the footer for actions alone, without Creado el or Volver", async () => {
+    renderWithIntl(
+      <DetailModal open onOpenChange={() => {}} title="Servicio" actions={<button type="button">Editar servicio</button>}>
+        <p>Cuerpo</p>
+      </DetailModal>,
+    );
+    expect(await screen.findByRole("button", { name: "Editar servicio" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Volver" })).toBeNull();
   });
 
@@ -69,6 +110,20 @@ describe("DetailList", () => {
     renderWithIntl(<DetailList items={[{ label: "Descripción", value: "Sin descripción" }]} />);
     expect(screen.getByText("Descripción").tagName).toBe("DT");
     expect(screen.getByText("Sin descripción").tagName).toBe("DD");
+  });
+
+  it("is one column by default and two from sm up when asked, a wide item taking the whole row", () => {
+    const items = [
+      { label: "Estado", value: "En progreso" },
+      { label: "Observaciones", value: "Ruido", wide: true },
+    ];
+    const { rerender } = renderWithIntl(<DetailList items={items} />);
+    expect(screen.getByText("Estado").closest("dl")).not.toHaveClass("sm:grid-cols-2");
+
+    rerender(<DetailList items={items} twoColumns />);
+    expect(screen.getByText("Estado").closest("dl")).toHaveClass("sm:grid", "sm:grid-cols-2");
+    expect(screen.getByText("Observaciones").parentElement).toHaveClass("sm:col-span-2");
+    expect(screen.getByText("Estado").parentElement).not.toHaveClass("sm:col-span-2");
   });
 });
 

@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
+import type { VehicleListItem } from "@/features/vehicle/schemas";
+
 import type { Client } from "../schemas";
 import type { ClientModalMode } from "./client-modal";
 
@@ -23,14 +25,23 @@ export function useClientsPanel(): ClientsPanelContext {
   return context;
 }
 
-type ModalState = { open: boolean; mode: ClientModalMode; client: Client | null };
+type ModalState = {
+  open: boolean;
+  mode: ClientModalMode;
+  client: Client | null;
+  vehicle: VehicleListItem | null;
+  jobId: string | null;
+};
 
 // The modal opens from the loaded row: no request per click.
 export function ClientsPanel({ children }: { children: ReactNode }) {
-  const [modal, setModal] = useState<ModalState>({ open: false, mode: "view", client: null });
+  const [modal, setModal] = useState<ModalState>({ open: false, mode: "view", client: null, vehicle: null, jobId: null });
 
-  const openClient = useCallback((client: Client) => setModal({ open: true, mode: "view", client }), []);
-  const openCreate = useCallback(() => setModal({ open: true, mode: "create", client: null }), []);
+  const openClient = useCallback(
+    (client: Client) => setModal({ open: true, mode: "view", client, vehicle: null, jobId: null }),
+    [],
+  );
+  const openCreate = useCallback(() => setModal({ open: true, mode: "create", client: null, vehicle: null, jobId: null }), []);
 
   // Fetched once the page is interactive, so the first click doesn't wait.
   useEffect(() => {
@@ -48,7 +59,17 @@ export function ClientsPanel({ children }: { children: ReactNode }) {
           open={modal.open}
           mode={modal.mode}
           client={modal.client}
-          onModeChange={(mode, client) => setModal((current) => ({ ...current, mode, client: client ?? current.client }))}
+          vehicle={modal.vehicle}
+          jobId={modal.jobId}
+          onModeChange={(mode, client, vehicle, jobId) =>
+            setModal((current) => ({
+              ...current,
+              mode,
+              client: client ?? current.client,
+              vehicle: vehicle ?? current.vehicle,
+              jobId: jobId ?? current.jobId,
+            }))
+          }
           onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
         />
       ) : null}

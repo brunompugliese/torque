@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { LoadingRegion } from "./loading-region";
 
@@ -15,6 +16,8 @@ export type DetailModalProps = {
   onOpenChange: (open: boolean) => void;
   title: ReactNode;
   badge?: ReactNode;
+  // A modal with a form that needs the room (a job): the same dialog, wider.
+  wide?: boolean;
   subtitle?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
@@ -28,6 +31,7 @@ export function DetailModal({
   onOpenChange,
   title,
   badge,
+  wide = false,
   subtitle,
   actions,
   children,
@@ -37,21 +41,31 @@ export function DetailModal({
 }: DetailModalProps) {
   const t = useTranslations("common");
 
+  // "Creado el" on the left; on the right "Volver" and the modal's actions (Archivar, Editar).
   const defaultFooter =
-    createdOn || onBack ? (
-      <div className="flex items-center justify-between gap-3">
+    createdOn || onBack || actions ? (
+      <div className="flex flex-wrap items-center justify-between gap-3">
         {createdOn ? <p className="text-xs text-muted-foreground">{t("createdOn", { date: createdOn })}</p> : <span />}
-        {onBack ? (
-          <Button variant="outline" onClick={onBack}>
-            {t("back")}
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {onBack ? (
+            <Button variant="outline" onClick={onBack}>
+              {t("back")}
+            </Button>
+          ) : null}
+          {actions}
+        </div>
       </div>
     ) : null;
 
   return (
     <Dialog open={open} onOpenChange={(next) => onOpenChange(next)}>
-      <DialogContent showCloseButton={false} className="gap-0 p-0 sm:max-w-lg">
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          "max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 p-0 sm:max-w-lg",
+          wide && "sm:max-w-2xl",
+        )}
+      >
         <div className="flex items-start gap-3 border-b px-5 py-4">
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -61,13 +75,12 @@ export function DetailModal({
             {subtitle ? <DialogDescription>{subtitle}</DialogDescription> : null}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {actions}
             <DialogClose render={<Button variant="ghost" size="icon-sm" aria-label={t("close")} />}>
               <XIcon aria-hidden="true" />
             </DialogClose>
           </div>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className="overflow-y-auto px-5 py-4">{children}</div>
         {(footer ?? defaultFooter) ? <div className="border-t px-5 py-3">{footer ?? defaultFooter}</div> : null}
       </DialogContent>
     </Dialog>

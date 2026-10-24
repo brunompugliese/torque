@@ -17,6 +17,8 @@ export type ListParams = {
   sortBy: string;
   sort: SortDirection;
   page: number;
+  // Page-specific filters (jobs: status, dates), keyed by the URL param each page whitelists.
+  filters: Record<string, string>;
 };
 
 export const DEFAULT_LIST_PARAMS: ListParams = {
@@ -25,6 +27,7 @@ export const DEFAULT_LIST_PARAMS: ListParams = {
   sortBy: "",
   sort: "asc",
   page: 1,
+  filters: {},
 };
 
 type RawParams = Record<string, string | string[] | undefined> | URLSearchParams;
@@ -35,15 +38,24 @@ function read(raw: RawParams, key: string): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function parseListParams(raw: RawParams): ListParams {
+// A filter value is a short token list (statuses, an ISO date); anything else is dropped.
+const FILTER_VALUE = /^[a-z0-9_,-]+$/;
+
+export function parseListParams(raw: RawParams, filterKeys: readonly string[] = []): ListParams {
   const page = Number(read(raw, LIST_PARAM.page));
   const sortBy = read(raw, LIST_PARAM.sortBy) ?? "";
+  const filters: Record<string, string> = {};
+  for (const key of filterKeys) {
+    const value = read(raw, key)?.trim() ?? "";
+    if (FILTER_VALUE.test(value)) filters[key] = value;
+  }
   return {
     search: read(raw, LIST_PARAM.search)?.trim() ?? "",
     showArchived: read(raw, LIST_PARAM.archived) === "1",
     sortBy: /^[a-z]+$/.test(sortBy) ? sortBy : "",
     sort: read(raw, LIST_PARAM.sort) === "desc" ? "desc" : "asc",
     page: Number.isInteger(page) && page > 1 ? page : 1,
+    filters,
   };
 }
 
@@ -54,6 +66,9 @@ export function toListSearch(params: ListParams): string {
   if (params.sortBy) search.set(LIST_PARAM.sortBy, params.sortBy);
   if (params.sort === "desc") search.set(LIST_PARAM.sort, "desc");
   if (params.page > 1) search.set(LIST_PARAM.page, String(params.page));
+  for (const key of Object.keys(params.filters).sort()) {
+    if (params.filters[key]) search.set(key, params.filters[key]);
+  }
   return search.toString();
 }
 

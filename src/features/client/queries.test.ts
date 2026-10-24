@@ -13,7 +13,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/lib/auth/session", () => ({ requireSession: mocks.requireSession }));
 
-import { getClientCounts, listClients } from "./queries";
+import { getClientCounts, listClientOptions, listClients } from "./queries";
 
 const ROW = {
   id: "c1",
@@ -92,6 +92,46 @@ describe("listClients", () => {
   it("reports a failure without throwing", async () => {
     setup(() => ({ error: { code: "XX000" } }));
     expect(await listClients(DEFAULT_LIST_PARAMS)).toEqual({ ok: false });
+  });
+});
+
+describe("listClientOptions", () => {
+  const OPTION = { id: "c1", name: "Ana", surname: "Gómez", phone_number: "11 1234-5678", enabled: true };
+
+  it("reads the few matches of a term from the decrypted view, by name", async () => {
+    const queries = setup(() => ({ data: [OPTION] }));
+    const result = await listClientOptions("35.123");
+
+    expect(mocks.requireSession).toHaveBeenCalled();
+    expect(result).toEqual({
+      ok: true,
+      rows: [{ id: "c1", name: "Ana", surname: "Gómez", phoneNumber: "11 1234-5678", enabled: true }],
+    });
+    const [query] = queries;
+    expect(queries).toHaveLength(1);
+    expect(query.table).toBe("client_decrypted");
+    expect(query.calls[0]).toEqual(["select", "id, name, surname, phone_number, enabled"]);
+    expect(filterValue(query, "like", "search_text")).toBe("%35123%");
+    expect(query.calls).toContainEqual(["order", "name_key", { ascending: true, nullsFirst: false }]);
+    expect(query.calls).toContainEqual(["limit", 10]);
+  });
+
+  it("includes archived clients, which stay valid owners", async () => {
+    const queries = setup(() => ({ data: [] }));
+    await listClientOptions("ana");
+    expect(filterValue(queries[0], "eq", "enabled")).toBeUndefined();
+  });
+
+  it("lists the first clients when nothing is typed", async () => {
+    const queries = setup(() => ({ data: [] }));
+    await listClientOptions("  ");
+    expect(queries[0].calls.map(([name]) => name)).not.toContain("like");
+    expect(queries[0].calls).toContainEqual(["limit", 10]);
+  });
+
+  it("reports a failure without throwing", async () => {
+    setup(() => ({ error: { code: "XX000" } }));
+    expect(await listClientOptions("ana")).toEqual({ ok: false });
   });
 });
 

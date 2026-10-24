@@ -29,7 +29,7 @@ const listServicesCached = cache(
     const query = supabase.from("service").select(SERVICE_COLUMNS, { count: "exact" });
     const { data, error, count } = await applyListQuery(
       query,
-      { search, showArchived, sortBy, sort, page },
+      { search, showArchived, sortBy, sort, page, filters: {} },
       { searchColumn: "search_text", sortColumns: SERVICE_SORT_COLUMNS, defaultSortBy: SERVICE_DEFAULT_SORT },
     );
     if (error) {
