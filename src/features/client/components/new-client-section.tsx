@@ -2,7 +2,7 @@
 
 import { XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
-import type { UseFormReturn } from "react-hook-form";
+import type { UseFormRegisterReturn } from "react-hook-form";
 
 import { FIELD_WIDTH, FormRow } from "@/components/shared/form-layout";
 import { DniInput, PhoneInput } from "@/components/shared/formatted-input";
@@ -10,25 +10,37 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-import type { VehicleFormInput, VehicleFormValues } from "../schemas";
-
-type NewClientFieldName = "name" | "surname" | "phoneNumber" | "dni";
+export type NewClientFieldName = "name" | "surname" | "phoneNumber" | "dni";
 
 type NewClientSectionProps = {
-  // The vehicle form's id: field ids and the hints are built from it.
+  // The host form's id: field ids are built from it.
   id: string;
-  form: UseFormReturn<VehicleFormInput, unknown, VehicleFormValues>;
+  // "Cliente nuevo", the hint under it and the X's accessible name come from the host form.
+  title: string;
+  hint: string;
+  discardLabel: string;
+  // `form.register("newClient.<name>")` of the host form.
+  register: (name: NewClientFieldName) => UseFormRegisterReturn;
+  errors: Partial<Record<NewClientFieldName, { message?: string }>> | undefined;
   // Translates a field's error key.
   errorText: (key: string | undefined) => { message: string }[] | undefined;
   onDiscard: () => void;
 };
 
-// The owner created together with the vehicle: the client form's fields without
-// the email, inline in the vehicle form (docs/design.md#quick-create-inside-a-dropdown).
-export function NewClientSection({ id, form, errorText, onDiscard }: NewClientSectionProps) {
-  const t = useTranslations("vehicles");
+// The client created together with another record (a vehicle, a job): the client form's
+// fields without the email, inline in the host form
+// (docs/design.md#quick-create-inside-a-dropdown).
+export function NewClientSection({
+  id,
+  title,
+  hint,
+  discardLabel,
+  register,
+  errors,
+  errorText,
+  onDiscard,
+}: NewClientSectionProps) {
   const tClients = useTranslations("clients");
-  const errors = form.formState.errors.newClient;
 
   const fieldId = (name: NewClientFieldName) => `${id}-newClient-${name}`;
   const fieldProps = (name: NewClientFieldName) => ({
@@ -44,9 +56,9 @@ export function NewClientSection({ id, form, errorText, onDiscard }: NewClientSe
     >
       <div className="flex items-center justify-between gap-3">
         <h3 id={`${id}-newClient-title`} className="text-base font-semibold">
-          {t("newClient.title")}
+          {title}
         </h3>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={t("newClient.discard")} onClick={onDiscard}>
+        <Button type="button" variant="ghost" size="icon-sm" aria-label={discardLabel} onClick={onDiscard}>
           <XIcon aria-hidden="true" />
         </Button>
       </div>
@@ -55,13 +67,13 @@ export function NewClientSection({ id, form, errorText, onDiscard }: NewClientSe
         <FormRow>
           <Field data-invalid={Boolean(errors?.name)}>
             <FieldLabel htmlFor={fieldId("name")}>{tClients("fields.name")} *</FieldLabel>
-            <Input autoComplete="off" autoFocus {...fieldProps("name")} {...form.register("newClient.name")} />
+            <Input autoComplete="off" autoFocus {...fieldProps("name")} {...register("name")} />
             <FieldError id={`${fieldId("name")}-error`} errors={errorText(errors?.name?.message)} />
           </Field>
 
           <Field data-invalid={Boolean(errors?.surname)}>
             <FieldLabel htmlFor={fieldId("surname")}>{tClients("fields.surname")}</FieldLabel>
-            <Input autoComplete="off" {...fieldProps("surname")} {...form.register("newClient.surname")} />
+            <Input autoComplete="off" {...fieldProps("surname")} {...register("surname")} />
             <FieldError id={`${fieldId("surname")}-error`} errors={errorText(errors?.surname?.message)} />
           </Field>
         </FormRow>
@@ -78,7 +90,7 @@ export function NewClientSection({ id, form, errorText, onDiscard }: NewClientSe
               ]
                 .filter(Boolean)
                 .join(" ")}
-              registration={form.register("newClient.phoneNumber")}
+              registration={register("phoneNumber")}
             />
             <FieldDescription id={`${fieldId("phoneNumber")}-hint`}>{tClients("fields.phoneHint")}</FieldDescription>
             <FieldError id={`${fieldId("phoneNumber")}-error`} errors={errorText(errors?.phoneNumber?.message)} />
@@ -86,13 +98,13 @@ export function NewClientSection({ id, form, errorText, onDiscard }: NewClientSe
 
           <Field data-invalid={Boolean(errors?.dni)} className={FIELD_WIDTH.dni}>
             <FieldLabel htmlFor={fieldId("dni")}>{tClients("fields.dni")}</FieldLabel>
-            <DniInput {...fieldProps("dni")} registration={form.register("newClient.dni")} />
+            <DniInput {...fieldProps("dni")} registration={register("dni")} />
             <FieldError id={`${fieldId("dni")}-error`} errors={errorText(errors?.dni?.message)} />
           </Field>
         </FormRow>
       </FieldGroup>
 
-      <p className="text-xs text-muted-foreground">{t("newClient.hint")}</p>
+      <p className="text-xs text-muted-foreground">{hint}</p>
     </section>
   );
 }

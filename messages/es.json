@@ -30,7 +30,15 @@
     "brandInvalid": "Elegí una marca de la lista.",
     "modelRequired": "Elegí el modelo.",
     "modelInvalid": "Elegí un modelo de la lista.",
-    "clientInvalid": "Elegí un cliente de la lista."
+    "clientInvalid": "Elegí un cliente de la lista.",
+    "priceRequired": "Ingresá el precio.",
+    "priceInvalid": "Revisá el precio: usá solo números y coma para los decimales.",
+    "quantityInvalid": "Ingresá una cantidad de 1 o más.",
+    "kilometersInvalid": "Revisá el kilometraje.",
+    "vehicleRequired": "Elegí el vehículo.",
+    "vehicleInvalid": "Elegí un vehículo de la lista.",
+    "serviceRequired": "Elegí un servicio.",
+    "serviceInvalid": "Elegí un servicio de la lista."
   },
   "auth": {
     "login": {
@@ -81,7 +89,9 @@
     "retry": "Reintentar",
     "clearSearch": "Borrar búsqueda",
     "sortedAscending": "ordenado de la A a la Z",
-    "sortedDescending": "ordenado de la Z a la A"
+    "sortedDescending": "ordenado de la Z a la A",
+    "clear": "Limpiar",
+    "clearFilter": "Limpiar filtro: {filter}"
   },
   "services": {
     "title": "Servicios",
@@ -213,6 +223,135 @@
       "entregado": "Entregado",
       "cancelado": "Cancelado"
     }
+  },
+  "jobs": {
+    "title": "Trabajos",
+    "modalTitle": "Trabajo",
+    "summary": "{total, plural, one {# trabajo} other {# trabajos}} en total, {archived, plural, one {# archivado} other {# archivados}}.",
+    "add": "Nuevo trabajo",
+    "columns": {
+      "plate": "Patente",
+      "vehicle": "Vehículo",
+      "client": "Cliente",
+      "status": "Estado",
+      "kilometers": "Kilometraje",
+      "total": "Total",
+      "updatedOn": "Actualizado"
+    },
+    "searchPlaceholder": "Buscar por patente, marca, modelo o cliente",
+    "empty": {
+      "noResultsTitle": "No encontramos trabajos",
+      "noResultsHint": "Probá con otra patente, marca, modelo o cliente.",
+      "noneTitle": "Todavía no hay trabajos",
+      "noneHint": "Creá el primero para registrar el trabajo de un vehículo.",
+      "onlyArchivedTitle": "No hay trabajos activos",
+      "onlyArchivedHint": "Activá Mostrar archivados para ver los archivados.",
+      "clearAll": "Limpiar búsqueda y filtros"
+    },
+    "noClient": "Sin cliente",
+    "clientArchived": "{name} (Archivado)",
+    "totalFinal": "Final",
+    "totalQuoted": "Presupuestado",
+    "edit": "Editar trabajo",
+    "save": "Guardar cambios",
+    "notLoaded": "Sin cargar",
+    "noObservations": "Sin observaciones",
+    "details": {
+      "status": "Estado",
+      "client": "Cliente",
+      "kilometers": "Kilometraje",
+      "observations": "Observaciones",
+      "closed": "Cerrado, no se puede editar"
+    },
+    "services": {
+      "title": "Servicios",
+      "service": "Servicio",
+      "quantity": "Cant.",
+      "price": "Precio",
+      "quoted": "Presupuestado",
+      "final": "Final",
+      "total": "Total",
+      "empty": "Todavía no hay servicios cargados.",
+      "archived": "{name} (Archivado)"
+    },
+    "history": {
+      "title": "Historial de estados"
+    },
+    "archiveConfirm": {
+      "title": "¿Archivar este trabajo?",
+      "body": "Su kilometraje deja de contar como último kilometraje del vehículo."
+    },
+    "toasts": {
+      "created": "Trabajo agregado",
+      "updated": "Cambios guardados",
+      "archived": "Trabajo archivado",
+      "unarchived": "Trabajo desarchivado",
+      "statusChanged": "Estado actualizado"
+    },
+    "form": {
+      "submit": "Agregar trabajo"
+    },
+    "fields": {
+      "vehicle": "Vehículo",
+      "vehiclePlaceholder": "Buscá por patente, marca o modelo",
+      "client": "Cliente",
+      "clientArchived": "{name} (Archivado)",
+      "vehicleArchived": "{label} (Archivado)",
+      "status": "Estado",
+      "kilometers": "Kilometraje",
+      "kilometersHint": "Último registrado: {km}",
+      "appointmentValue": "{date} {time} hs",
+      "observations": "Observaciones",
+      "noOptions": "No encontramos resultados",
+      "clientPending": "Se completa con el dueño del vehículo",
+      "ownerArchivedHint": "El dueño del vehículo ({name}) está archivado: el trabajo se guarda sin cliente."
+    },
+    "closing": {
+      "warning": "Al guardar como {status}, el trabajo queda cerrado y no se va a poder editar más.",
+      "confirmTitle": "¿Cerrar el trabajo?",
+      "confirmBody": "Va a quedar como {status} y no se va a poder editar más.",
+      "confirm": "Guardar y cerrar",
+      "entregado": "entregado",
+      "cancelado": "cancelado"
+    },
+    "editor": {
+      "title": "Servicios",
+      "add": "Agregar servicio",
+      "remove": "Quitar servicio",
+      "service": "Servicio",
+      "servicePlaceholder": "Buscá un servicio",
+      "quantity": "Cant.",
+      "unitPrice": "Precio unit.",
+      "quotedUnit": "Presup. unit.",
+      "finalUnit": "Final unit.",
+      "subtotal": "Subtotal",
+      "total": "Total",
+      "quoted": "Presupuestado",
+      "final": "Final",
+      "archivedService": "{name} (Archivado)"
+    },
+    "errors": {
+      "kmBelowPrevious": "No puede ser menor que el último kilometraje registrado ({floor}).",
+      "kmBelowPreviousNoFloor": "No puede ser menor que el último kilometraje registrado.",
+      "vehicleArchived": "Este vehículo está archivado y no puede tener trabajos nuevos.",
+      "clientArchived": "Este cliente está archivado. Elegí otro o dejalo vacío.",
+      "serviceArchived": "Alguno de los servicios está archivado. Quitalo o elegí otro.",
+      "closed": "Este trabajo ya está cerrado y no se puede editar.",
+      "notFound": "Este trabajo ya no existe. Actualizá la página."
+    },
+    "filters": {
+      "status": "Estado",
+      "date": "Fecha",
+      "from": "Desde",
+      "to": "Hasta",
+      "dateOrderError": "La fecha “Desde” no puede ser posterior a “Hasta”.",
+      "countsError": "No pudimos cargar las cantidades.",
+      "dateChip": "Actualizado: {from} al {to}",
+      "dateChipFrom": "Actualizado: desde {from}",
+      "dateChipTo": "Actualizado: hasta {to}",
+      "remove": "Quitar filtro: {filter}"
+    },
+    "statusChange": "Cambiar estado"
   },
   "vehicles": {
     "noVin": "Sin VIN",

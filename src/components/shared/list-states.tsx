@@ -37,11 +37,22 @@ type ListNoRowsProps = {
   addLabel: string;
   onAdd: () => void;
   onClearSearch: () => void;
+  // The clear button's text when it clears more than the search ("Limpiar búsqueda y filtros").
+  clearLabel?: string;
   onShowArchived: () => void;
 };
 
 // The three empty states every list page shares (docs/design.md#list-pages).
-export function ListNoRows({ hasSearch, total, texts, addLabel, onAdd, onClearSearch, onShowArchived }: ListNoRowsProps) {
+export function ListNoRows({
+  hasSearch,
+  total,
+  texts,
+  addLabel,
+  onAdd,
+  onClearSearch,
+  clearLabel,
+  onShowArchived,
+}: ListNoRowsProps) {
   const t = useTranslations("list");
 
   if (hasSearch) {
@@ -51,7 +62,7 @@ export function ListNoRows({ hasSearch, total, texts, addLabel, onAdd, onClearSe
         hint={texts.noResultsHint}
         action={
           <Button variant="outline" onClick={onClearSearch}>
-            {t("clearSearch")}
+            {clearLabel ?? t("clearSearch")}
           </Button>
         }
       />

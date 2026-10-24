@@ -115,6 +115,23 @@ describe("SearchableSelect", () => {
     expect(screen.getByTestId("value")).toHaveTextContent("2");
   });
 
+  it("shows the option's longer text in the box once chosen, and keeps the choice while it is untouched", async () => {
+    const options: SelectOption[] = [
+      { value: "v1", label: "Fiat Cronos", secondary: "AD 915 TB", inputLabel: "Fiat Cronos (AD 915 TB)" },
+    ];
+    const onValue = vi.fn();
+    renderWithIntl(<Harness options={options} onValue={onValue} />);
+    type("cro");
+    fireEvent.click(await screen.findByRole("option"));
+    await waitFor(() => expect(onValue).toHaveBeenLastCalledWith("v1"));
+    expect(box()).toHaveValue("Fiat Cronos (AD 915 TB)");
+    expect(screen.getByTestId("value")).toHaveTextContent("v1");
+
+    // Typing again drops the choice, as for any option.
+    type("Fiat Cronos (AD 915 T");
+    await waitFor(() => expect(screen.getByTestId("value")).toHaveTextContent(/^$/));
+  });
+
   it("picks an option with a click", async () => {
     renderWithIntl(<Harness />);
     type("zo");

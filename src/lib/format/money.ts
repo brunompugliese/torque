@@ -10,3 +10,15 @@ export function formatMoney(amount: number): string {
   const decimals = fraction === 0 ? "" : `,${String(fraction).padStart(2, "0")}`;
   return `${sign}$ ${formatThousands(String(whole))}${decimals}`;
 }
+
+// What a price input keeps while the user types or pastes: digits and one comma
+// with up to two decimals ("12500,50"). A dot is dropped, not turned into a
+// comma: a pasted "12.500" must not become twelve and a half.
+export function formatMoneyInput(input: string): string {
+  const cleaned = input.replace(/[^\d,]/g, "");
+  const comma = cleaned.indexOf(",");
+  if (comma === -1) return cleaned;
+  const whole = cleaned.slice(0, comma);
+  const decimals = cleaned.slice(comma + 1).replace(/,/g, "").slice(0, 2);
+  return `${whole},${decimals}`;
+}

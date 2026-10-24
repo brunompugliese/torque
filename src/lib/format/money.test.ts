@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatMoney } from "./money";
+import { formatMoney, formatMoneyInput } from "./money";
 
 describe("formatMoney", () => {
   it.each([
@@ -18,5 +18,22 @@ describe("formatMoney", () => {
   it("rounds to two decimals", () => {
     expect(formatMoney(10.004)).toBe("$ 10");
     expect(formatMoney(10.006)).toBe("$ 10,01");
+  });
+});
+
+describe("formatMoneyInput", () => {
+  it.each([
+    ["12500", "12500"],
+    ["12500,5", "12500,5"],
+    ["12500,50", "12500,50"],
+    ["12500,505", "12500,50"],
+    ["12,5,0", "12,50"],
+    ["12.500", "12500"],
+    ["$ 100", "100"],
+    ["abc", ""],
+    [",5", ",5"],
+    ["", ""],
+  ])("cleans %j to %j", (input, expected) => {
+    expect(formatMoneyInput(input)).toBe(expected);
   });
 });

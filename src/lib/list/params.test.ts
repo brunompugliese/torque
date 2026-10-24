@@ -8,7 +8,7 @@ describe("parseListParams", () => {
   });
 
   it("reads every param from a record or URLSearchParams", () => {
-    const expected = { search: "aceite", showArchived: true, sortBy: "creado", sort: "desc", page: 3 };
+    const expected = { search: "aceite", showArchived: true, sortBy: "creado", sort: "desc", page: 3, filters: {} };
     expect(
       parseListParams({ buscar: " aceite ", archivados: "1", orden: "creado", sentido: "desc", pagina: "3" }),
     ).toEqual(expected);
@@ -37,13 +37,41 @@ describe("parseListParams", () => {
   });
 });
 
+describe("parseListParams filters", () => {
+  it("reads only the whitelisted keys", () => {
+    const raw = { estado: "entregado,cancelado", desde: "2026-09-01", otro: "x" };
+    expect(parseListParams(raw, ["estado", "desde", "hasta"]).filters).toEqual({
+      estado: "entregado,cancelado",
+      desde: "2026-09-01",
+    });
+    expect(parseListParams(raw).filters).toEqual({});
+  });
+
+  it.each([["Entregado"], ["a b"], ["x;drop"], ["<script>"], [""]])("drops the value %j", (estado) => {
+    expect(parseListParams({ estado }, ["estado"]).filters).toEqual({});
+  });
+});
+
 describe("toListSearch", () => {
   it("leaves defaults out of the URL", () => {
     expect(toListSearch(DEFAULT_LIST_PARAMS)).toBe("");
   });
 
+  it("writes the filters in a stable order and round-trips them", () => {
+    const params = { ...DEFAULT_LIST_PARAMS, filters: { hasta: "2026-09-30", estado: "entregado" } };
+    expect(toListSearch(params)).toBe("estado=entregado&hasta=2026-09-30");
+    expect(parseListParams(new URLSearchParams(toListSearch(params)), ["estado", "hasta"])).toEqual(params);
+  });
+
   it("round-trips through parseListParams", () => {
-    const params = { search: "cambio de aceite", showArchived: true, sortBy: "creado", sort: "desc" as const, page: 2 };
+    const params = {
+      search: "cambio de aceite",
+      showArchived: true,
+      sortBy: "creado",
+      sort: "desc" as const,
+      page: 2,
+      filters: {},
+    };
     expect(parseListParams(new URLSearchParams(toListSearch(params)))).toEqual(params);
   });
 });

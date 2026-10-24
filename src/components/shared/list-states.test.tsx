@@ -64,6 +64,25 @@ describe("ListNoRows", () => {
     expect(onShowArchived).not.toHaveBeenCalled();
   });
 
+  it("names what the clear button clears when the page says so", () => {
+    const onClearSearch = vi.fn();
+    renderWithIntl(
+      <ListNoRows
+        hasSearch
+        total={4}
+        texts={texts}
+        addLabel="Agregar cosa"
+        onAdd={vi.fn()}
+        onClearSearch={onClearSearch}
+        clearLabel="Limpiar búsqueda y filtros"
+        onShowArchived={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Borrar búsqueda" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Limpiar búsqueda y filtros" }));
+    expect(onClearSearch).toHaveBeenCalledOnce();
+  });
+
   it("a search wins even when there are no records at all", () => {
     renderNoRows({ hasSearch: true, total: 0 });
     expect(screen.getByText("No encontramos cosas")).toBeInTheDocument();

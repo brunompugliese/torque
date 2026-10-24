@@ -42,7 +42,9 @@ export type ClientModalMode =
   | "assign"
   | "vehicle-view"
   | "vehicle-edit"
-  | "vehicle-create";
+  | "vehicle-create"
+  | "vehicle-job-view"
+  | "vehicle-job-edit";
 
 const FORM_ID = "client-form";
 
@@ -50,9 +52,10 @@ type ClientModalProps = {
   open: boolean;
   mode: ClientModalMode;
   client: Client | null;
-  // The vehicle of the vehicle-* modes.
+  // The vehicle of the vehicle-* modes, and the job of the vehicle-job-* ones.
   vehicle?: VehicleListItem | null;
-  onModeChange: (mode: ClientModalMode, client?: Client, vehicle?: VehicleListItem) => void;
+  jobId?: string | null;
+  onModeChange: (mode: ClientModalMode, client?: Client, vehicle?: VehicleListItem, jobId?: string) => void;
   onOpenChange: (open: boolean) => void;
 };
 
@@ -71,7 +74,15 @@ function isUnchanged(values: ClientFormValues, client: Client): boolean {
   );
 }
 
-export function ClientModal({ open, mode, client, vehicle = null, onModeChange, onOpenChange }: ClientModalProps) {
+export function ClientModal({
+  open,
+  mode,
+  client,
+  vehicle = null,
+  jobId = null,
+  onModeChange,
+  onOpenChange,
+}: ClientModalProps) {
   const t = useTranslations("clients");
   const tCommon = useTranslations("common");
   const format = useFormatter();
@@ -128,11 +139,22 @@ export function ClientModal({ open, mode, client, vehicle = null, onModeChange, 
   // A vehicle of this client is one more step of the chain: the same content the
   // Vehículos page shows, with "Volver" to here.
   const vehicleMode =
-    mode === "vehicle-view" ? "view" : mode === "vehicle-edit" ? "edit" : mode === "vehicle-create" ? "create" : null;
+    mode === "vehicle-view"
+      ? "view"
+      : mode === "vehicle-edit"
+        ? "edit"
+        : mode === "vehicle-create"
+          ? "create"
+          : mode === "vehicle-job-view"
+            ? "job-view"
+            : mode === "vehicle-job-edit"
+              ? "job-edit"
+              : null;
   const vehicleModal = useVehicleModal({
     mode: vehicleMode ?? "view",
     vehicle: vehicleMode ? vehicle : null,
-    onModeChange: (next, saved) => onModeChange(`vehicle-${next}`, undefined, saved),
+    jobId,
+    onModeChange: (next, saved, nextJobId) => onModeChange(`vehicle-${next}`, undefined, saved, nextJobId),
     onClose: () => onOpenChange(false),
     fromClient: client
       ? {

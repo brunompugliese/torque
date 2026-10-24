@@ -13,6 +13,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { formatClientName } from "@/features/client/format";
 import { searchClientOptions } from "@/features/client/actions";
+import { NewClientSection } from "@/features/client/components/new-client-section";
 import { useLoadedData } from "@/hooks/use-loaded-data";
 import { useRemoteOptions } from "@/hooks/use-remote-options";
 import { maxVehicleYear } from "@/lib/format/date";
@@ -30,7 +31,6 @@ import {
   type VehicleFormValues,
   type VehicleListItem,
 } from "../schemas";
-import { NewClientSection } from "./new-client-section";
 
 const PLATE_ERROR_KEYS = new Set(["plateTaken", "plateTakenArchived"]);
 const DNI_ERROR_KEYS = new Set(["dniTaken", "dniTakenArchived"]);
@@ -311,7 +311,16 @@ export function VehicleForm({ id, vehicle, lockedClient, onSubmit }: VehicleForm
         </Field>
 
         {newClient ? (
-          <NewClientSection id={id} form={form} errorText={errorText} onDiscard={discardNewClient} />
+          <NewClientSection
+            id={id}
+            title={t("newClient.title")}
+            hint={t("newClient.hint")}
+            discardLabel={t("newClient.discard")}
+            register={(name) => form.register(`newClient.${name}`)}
+            errors={errors.newClient}
+            errorText={errorText}
+            onDiscard={discardNewClient}
+          />
         ) : (
           <Field data-invalid={Boolean(errors.clientId)}>
             <FieldLabel htmlFor={idOf("clientId")}>{t("fields.client")}</FieldLabel>

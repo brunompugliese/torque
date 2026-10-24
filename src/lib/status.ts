@@ -41,3 +41,21 @@ export function isJobStatus(value: string): value is JobStatus {
 export function jobStatusFamily(status: JobStatus): StatusFamily {
   return JOB_STATUS_FAMILY[status];
 }
+
+// A job is closed once delivered or cancelled: it can't be edited again, only archived
+// (docs/design.md#job-statuses).
+const CLOSED_STATUSES: readonly JobStatus[] = ["entregado", "cancelado"];
+
+export function isClosedStatus(status: JobStatus): boolean {
+  return CLOSED_STATUSES.includes(status);
+}
+
+export type JobPhase = "quote" | "work";
+
+// Quote phase: Pendiente and the two quote statuses. Work phase: En progreso, Completado, Entregado.
+// A cancelled job keeps the phase it was in: work when its items have final prices.
+export function jobPhase(status: JobStatus, hasFinalPrices: boolean): JobPhase {
+  if (status === "en_progreso" || status === "completado" || status === "entregado") return "work";
+  if (status === "cancelado") return hasFinalPrices ? "work" : "quote";
+  return "quote";
+}

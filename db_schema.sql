@@ -777,6 +777,230 @@ select
   j.enabled, j.created_at, j.updated_at
 from public.job j;
 
+-- The jobs page (spec 007): a job with its vehicle, client and appointment, plus the search text
+-- and sort keys, all computed here and never stored (no personal data in plaintext columns). A
+-- column is only computed when a query selects or sorts by it. job_decrypted stays the light read.
+--   search_text      normalize_search of plate, brand + model and client name
+--   vehicle_key      brand, model and year: "Vehículo" sort
+--   client_name_key  name and surname: "Cliente" sort; null without a client (sorts last)
+--   status_order     1–7, the status order of docs/design.md
+--   total_amount     the final total when there is one, otherwise the quoted one: "Total" sort
+create or replace view public.job_list
+with (security_invoker = true) as
+select
+  j.id, j.shop_id, j.vehicle_id, j.client_id, j.appointment_id,
+  j.status, jd.observations, j.kilometers, j.quoted_total, j.final_total,
+  j.enabled, j.created_at, j.updated_at,
+  vd.plate,
+  v.year          as vehicle_year,
+  b.name          as brand_name,
+  m.name          as model_name,
+  v.enabled       as vehicle_enabled,
+  cd.name         as client_name,
+  cd.surname      as client_surname,
+  cd.phone_number as client_phone_number,
+  c.enabled       as client_enabled,
+  a.date          as appointment_date,
+  a.time          as appointment_time,
+  a.enabled       as appointment_enabled,
+  private.normalize_search(concat_ws('|', vd.plate, concat(b.name, m.name), concat(cd.name, cd.surname))) as search_text,
+  private.normalize_search(concat_ws(' ', b.name, m.name, v.year::text))                                   as vehicle_key,
+  nullif(private.normalize_search(concat_ws(' ', cd.name, cd.surname)), '')                                as client_name_key,
+  case j.status
+    when 'pendiente'            then 1
+    when 'presupuesto_enviado'  then 2
+    when 'presupuesto_aceptado' then 3
+    when 'en_progreso'          then 4
+    when 'completado'           then 5
+    when 'entregado'            then 6
+    when 'cancelado'            then 7
+  end as status_order,
+  coalesce(j.final_total, j.quoted_total) as total_amount
+from public.job j
+join public.vehicle v on v.id = j.vehicle_id and v.shop_id = j.shop_id
+join public.brand b on b.id = v.brand_id
+join public.model m on m.id = v.model_id
+left join public.client c on c.id = j.client_id and c.shop_id = j.shop_id
+left join public.appointment a on a.id = j.appointment_id and a.shop_id = j.shop_id
+cross join lateral (
+  select private.decrypt_text(j.observations) as observations
+) jd
+cross join lateral (
+  select private.decrypt_text(v.plate) as plate
+) vd
+left join lateral (
+  select
+    private.decrypt_text(c.name)         as name,
+    private.decrypt_text(c.surname)      as surname,
+    private.decrypt_text(c.phone_number) as phone_number
+) cd on true;
+
+-- Jobs per status for the Estado filter, in one request. Same filters as the list (a search always
+-- includes archived records; without one the archived switch applies) except the Estado selection.
+-- p_pattern: like pattern of the normalized search term (null/empty = none). p_from / p_to: bounds
+-- on updated_at, p_to exclusive (the start of the day after "Hasta", Argentina time); null = none.
+-- security invoker: RLS applies as the caller.
+create or replace function public.job_status_counts(
+  p_pattern       text,
+  p_show_archived boolean,
+  p_from          timestamptz,
+  p_to            timestamptz
+)
+returns table (status text, total bigint)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select l.status, count(*)
+  from public.job_list l
+  where case
+          when coalesce(p_pattern, '') <> '' then l.search_text like p_pattern
+          when p_show_archived then true
+          else l.enabled
+        end
+    and (p_from is null or l.updated_at >= p_from)
+    and (p_to   is null or l.updated_at <  p_to)
+  group by l.status;
+$$;
+
+revoke execute on function public.job_status_counts(text, boolean, timestamptz, timestamptz) from public, anon;
+grant execute on function public.job_status_counts(text, boolean, timestamptz, timestamptz) to authenticated;
+
+-- Saves a job, its services and its status in one transaction, for the job form (spec 007); it can
+-- also create the client and some services on the spot. p_job_id null creates, otherwise updates.
+-- p_items: [{ id?, service_id?, new_service?: {name, description}, quantity, quoted_unit_price,
+-- final_unit_price }] in the order typed: items with an id are updated, without are inserted (one at
+-- a time with clock_timestamp(), because now() is the same for the whole transaction and the order
+-- of the services is created_at), and the job's items missing from the list are deleted. The quoted
+-- price of an existing item is kept while the job is in the work phase (en_progreso, completado).
+-- Order: new client, items, job. The job comes last because guard_closed_job_item looks at the stored
+-- status ("to close a job, save its items first, then the status"); a job created directly as
+-- entregado/cancelado is inserted as pendiente and closed after its items (two history entries).
+-- The job is always updated, so updated_at moves when only the items changed.
+-- security invoker: RLS, composite FKs, encryption and the business-rule triggers apply as the
+-- caller. The shop comes from the JWT claim. Totals are calculated by the app. Returns the job's id.
+-- Errors: the 23514 rules of the triggers, 23505 client_dni_taken, P0002 job_not_found |
+-- job_item_not_found. A taken service name is checked by the app (no constraint, by decision).
+create or replace function public.save_job(
+  p_job_id         uuid,
+  p_vehicle_id     uuid,
+  p_client_id      uuid,
+  p_status         text,
+  p_kilometers     integer,
+  p_appointment_id uuid,
+  p_observations   text,
+  p_quoted_total   numeric,
+  p_final_total    numeric,
+  p_items          jsonb,
+  p_new_client     jsonb
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  v_shop          uuid := ((select auth.jwt()) ->> 'shop_id')::uuid;
+  v_client        uuid := p_client_id;
+  v_job           uuid;
+  v_stored_status text;
+  v_item          jsonb;
+  v_service       uuid;
+  v_item_id       uuid;
+  v_keep          uuid[] := '{}';
+  v_constraint    text;
+begin
+  if jsonb_typeof(p_new_client) = 'object' then
+    insert into public.client (shop_id, name, surname, phone_number, dni)
+    values (v_shop, p_new_client ->> 'name', p_new_client ->> 'surname',
+            p_new_client ->> 'phone_number', p_new_client ->> 'dni')
+    returning id into v_client;
+  end if;
+
+  if p_job_id is null then
+    insert into public.job (shop_id, vehicle_id, client_id, status, kilometers, appointment_id,
+                            observations, quoted_total, final_total)
+    values (v_shop, p_vehicle_id, v_client,
+            case when p_status in ('entregado', 'cancelado') then 'pendiente' else p_status end,
+            p_kilometers, p_appointment_id, p_observations, p_quoted_total, p_final_total)
+    returning id, status into v_job, v_stored_status;
+  else
+    select id, status into v_job, v_stored_status
+    from public.job
+    where id = p_job_id
+    for update;
+
+    if v_job is null then
+      raise exception using errcode = 'P0002', message = 'job_not_found';
+    end if;
+  end if;
+
+  for v_item in
+    select e.value
+    from jsonb_array_elements(coalesce(p_items, '[]'::jsonb)) with ordinality as e(value, n)
+    order by e.n
+  loop
+    v_service := nullif(v_item ->> 'service_id', '')::uuid;
+    if jsonb_typeof(v_item -> 'new_service') = 'object' then
+      insert into public.service (shop_id, name, description)
+      values (v_shop, v_item -> 'new_service' ->> 'name', v_item -> 'new_service' ->> 'description')
+      returning id into v_service;
+    end if;
+
+    v_item_id := nullif(v_item ->> 'id', '')::uuid;
+    if v_item_id is not null then
+      update public.job_item
+      set service_id        = v_service,
+          quantity          = (v_item ->> 'quantity')::numeric,
+          quoted_unit_price = case
+                                when v_stored_status in ('en_progreso', 'completado') then quoted_unit_price
+                                else (v_item ->> 'quoted_unit_price')::numeric
+                              end,
+          final_unit_price  = nullif(v_item ->> 'final_unit_price', '')::numeric
+      where id = v_item_id and job_id = v_job;
+
+      if not found then
+        raise exception using errcode = 'P0002', message = 'job_item_not_found';
+      end if;
+    else
+      insert into public.job_item (job_id, service_id, quantity, quoted_unit_price, final_unit_price, created_at)
+      values (v_job, v_service, (v_item ->> 'quantity')::numeric, (v_item ->> 'quoted_unit_price')::numeric,
+              nullif(v_item ->> 'final_unit_price', '')::numeric, clock_timestamp())
+      returning id into v_item_id;
+    end if;
+    v_keep := v_keep || v_item_id;
+  end loop;
+
+  delete from public.job_item where job_id = v_job and not (id = any (v_keep));
+
+  update public.job
+  set vehicle_id     = p_vehicle_id,
+      client_id      = v_client,
+      status         = p_status,
+      kilometers     = p_kilometers,
+      appointment_id = p_appointment_id,
+      observations   = p_observations,
+      quoted_total   = p_quoted_total,
+      final_total    = p_final_total
+  where id = v_job;
+
+  return v_job;
+exception
+  when unique_violation then
+    get stacked diagnostics v_constraint = constraint_name;
+    raise exception using errcode = '23505', message = case
+      when v_constraint like '%dni_hash%' then 'client_dni_taken'
+      else 'unique_violation'
+    end;
+end;
+$$;
+
+revoke execute on function public.save_job(uuid, uuid, uuid, text, integer, uuid, text, numeric, numeric, jsonb, jsonb)
+  from public, anon;
+grant execute on function public.save_job(uuid, uuid, uuid, text, integer, uuid, text, numeric, numeric, jsonb, jsonb)
+  to authenticated;
+
 -- =============================================================================
 -- MULTI-TENANCY: custom claim on the JWT
 -- NOTE: register this as the "Customize Access Token (Auth) Hook" in the
@@ -1041,3 +1265,8 @@ revoke insert, update, delete, truncate, references, trigger, maintain
   on public.client_decrypted, public.vehicle_decrypted,
      public.appointment_decrypted, public.job_decrypted
   from authenticated;
+
+-- job_list (spec 007): read-only for authenticated, nothing for anon.
+grant select on public.job_list to authenticated;
+revoke all on public.job_list from anon;
+revoke insert, update, delete, truncate, references, trigger, maintain on public.job_list from authenticated;

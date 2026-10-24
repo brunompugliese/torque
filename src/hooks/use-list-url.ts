@@ -8,14 +8,19 @@ import { parseListParams, toListSearch, type ListParams } from "@/lib/list/param
 
 export const SEARCH_DEBOUNCE_MS = 200;
 
+const NO_FILTERS: readonly string[] = [];
+
 // The list state: search, archived switch, sort and page. It lives in the URL,
 // except the search on pages wrapped in a ListSearchProvider: there it stays in
 // state and never reaches the address bar.
-export function useListUrl() {
+export function useListUrl(filterKeys: readonly string[] = NO_FILTERS) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const shared = useListSearch();
-  const urlParams = useMemo(() => parseListParams(new URLSearchParams(searchParams.toString())), [searchParams]);
+  const urlParams = useMemo(
+    () => parseListParams(new URLSearchParams(searchParams.toString()), filterKeys),
+    [searchParams, filterKeys],
+  );
   const params = useMemo(() => (shared ? { ...urlParams, search: shared.search } : urlParams), [shared, urlParams]);
 
   const navigate = useCallback(
@@ -90,5 +95,39 @@ export function useListUrl() {
 
   const setPage = useCallback((page: number) => navigate({ ...params, page }), [navigate, params]);
 
-  return { params, searchValue, setSearchValue, clearSearch, setShowArchived, toggleSort, setPage };
+  // Merges the patch into the page's filters; an empty or undefined value removes that filter.
+  const setFilters = useCallback(
+    (patch: Record<string, string | undefined>) => {
+      const filters = { ...params.filters };
+      for (const [key, value] of Object.entries(patch)) {
+        if (value) filters[key] = value;
+        else delete filters[key];
+      }
+      navigate({ ...params, filters, page: 1 });
+    },
+    [navigate, params],
+  );
+
+  const clearFilters = useCallback(() => navigate({ ...params, filters: {}, page: 1 }), [navigate, params]);
+
+  // "Limpiar búsqueda y filtros": the search text and every filter.
+  const clearAll = useCallback(() => {
+    clearTimeout(timer.current);
+    setSearchValueState("");
+    setSharedSearch?.("");
+    navigate({ ...latestParams.current, search: "", filters: {}, page: 1 });
+  }, [navigate, setSearchValueState, setSharedSearch]);
+
+  return {
+    params,
+    searchValue,
+    setSearchValue,
+    clearSearch,
+    setShowArchived,
+    toggleSort,
+    setPage,
+    setFilters,
+    clearFilters,
+    clearAll,
+  };
 }
