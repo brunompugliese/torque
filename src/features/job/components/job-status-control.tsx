@@ -2,7 +2,7 @@
 
 import { LockIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -28,7 +28,9 @@ type JobStatusControlProps = {
 export function JobStatusControl({ job, onChanged, readOnly = false }: JobStatusControlProps) {
   const t = useTranslations("jobs");
   const tCommon = useTranslations("common");
-  const [pending, startTransition] = useTransition();
+  // Plain state, not a transition: a transition holds every update made inside it until it ends, so
+  // the new status would not show "right away" while the save runs.
+  const [pending, setPending] = useState(false);
   const [confirming, setConfirming] = useState<JobStatus | null>(null);
   // The new status shows right away, until the list brings the saved one.
   const [optimistic, setOptimistic] = useState<{ from: JobStatus; to: JobStatus } | null>(null);
@@ -51,20 +53,21 @@ export function JobStatusControl({ job, onChanged, readOnly = false }: JobStatus
   }
   if (readOnly || !job.enabled) return <JobStatusBadge status={shown} />;
 
-  const run = (next: JobStatus) =>
-    startTransition(async () => {
-      setOptimistic({ from: job.status, to: next });
-      const result = await setJobStatus(job.id, next).catch(() => null);
-      if (result?.ok) {
-        toast(t("toasts.statusChanged"), { description: formatJobLabel(result.data) });
-        onChanged?.();
-        return;
-      }
-      setOptimistic(null);
-      toast.error(result && !result.ok && result.error === "closed" ? t("errors.closed") : tCommon("unexpectedError"));
-    });
+  async function run(next: JobStatus) {
+    setPending(true);
+    setOptimistic({ from: job.status, to: next });
+    const result = await setJobStatus(job.id, next).catch(() => null);
+    setPending(false);
+    if (result?.ok) {
+      toast(t("toasts.statusChanged"), { description: formatJobLabel(result.data) });
+      onChanged?.();
+      return;
+    }
+    setOptimistic(null);
+    toast.error(result && !result.ok && result.error === "closed" ? t("errors.closed") : tCommon("unexpectedError"));
+  }
 
-  const change = (next: JobStatus) => (isClosedStatus(next) ? setConfirming(next) : run(next));
+  const change = (next: JobStatus) => (isClosedStatus(next) ? setConfirming(next) : void run(next));
   const closing = confirming === "entregado" || confirming === "cancelado" ? confirming : null;
 
   return (
@@ -83,7 +86,7 @@ export function JobStatusControl({ job, onChanged, readOnly = false }: JobStatus
         onConfirm={() => {
           const next = confirming;
           setConfirming(null);
-          if (next) run(next);
+          if (next) void run(next);
         }}
       />
     </span>

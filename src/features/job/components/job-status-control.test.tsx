@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test/render";
@@ -41,6 +41,20 @@ beforeEach(() => {
 });
 
 describe("JobStatusControl", () => {
+  it("shows the new status while the save is still running, and locks the pill until it ends", async () => {
+    let finish: (value: unknown) => void = () => {};
+    mocks.setJobStatus.mockReturnValue(new Promise((done) => (finish = done)));
+    renderWithIntl(<JobStatusControl job={JOB} />);
+    await choose("En progreso");
+
+    const trigger = await screen.findByRole("combobox", { name: "Cambiar estado: En progreso" });
+    expect(trigger).toBeDisabled();
+    expect(mocks.toast).not.toHaveBeenCalled();
+
+    await act(async () => finish({ ok: true, data: { ...JOB, status: "en_progreso" } }));
+    await waitFor(() => expect(screen.getByRole("combobox")).toBeEnabled());
+  });
+
   it("is a dropdown for an open, active job", () => {
     renderWithIntl(<JobStatusControl job={JOB} />);
     expect(screen.getByRole("combobox", { name: "Cambiar estado: Pendiente" })).toBeInTheDocument();
@@ -87,7 +101,7 @@ describe("JobStatusControl", () => {
     await waitFor(() => expect(mocks.setJobStatus).toHaveBeenCalledWith("j1", "en_progreso"));
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
     expect(mocks.toast).toHaveBeenCalledWith("Estado actualizado", { description: "AB 123 CD, Fiat Cronos" });
-    expect(screen.getByRole("combobox", { name: "Cambiar estado: En progreso" })).toBeInTheDocument();
+    expect(await screen.findByRole("combobox", { name: "Cambiar estado: En progreso" })).toBeInTheDocument();
   });
 
   it.each([
