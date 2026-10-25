@@ -143,16 +143,17 @@ describe("ServiceModal: create", () => {
     expect(mocks.createService).not.toHaveBeenCalled();
   });
 
-  it("creates, toasts and opens the new service", async () => {
+  it("creates, toasts and closes the modal", async () => {
     mocks.createService.mockResolvedValue({ ok: true, data: SERVICE });
-    const { onModeChange } = renderModal("create", null);
+    const { onModeChange, onOpenChange } = renderModal("create", null);
 
     fireEvent.change(await screen.findByLabelText("Nombre *"), { target: { value: "  Cambio de aceite " } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Agregar servicio" })));
 
     expect(mocks.createService).toHaveBeenCalledWith({ name: "Cambio de aceite", description: null });
     expect(mocks.toast).toHaveBeenCalledWith("Servicio agregado", { description: "Cambio de aceite" });
-    expect(onModeChange).toHaveBeenCalledWith("view", SERVICE);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -201,17 +202,18 @@ describe("ServiceModal: edit", () => {
     expect(onModeChange).toHaveBeenCalledWith("view");
   });
 
-  it("saves and returns to the details with Cambios guardados", async () => {
+  it("saves, closes the modal and confirms with Cambios guardados", async () => {
     const updated = { ...SERVICE, description: "Incluye filtro." };
     mocks.updateService.mockResolvedValue({ ok: true, data: updated });
-    const { onModeChange } = renderModal("edit");
+    const { onModeChange, onOpenChange } = renderModal("edit");
 
     fireEvent.change(await screen.findByLabelText("Descripción"), { target: { value: "Incluye filtro." } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" })));
 
     expect(mocks.updateService).toHaveBeenCalledWith(SERVICE.id, { name: "Cambio de aceite", description: "Incluye filtro." });
     expect(mocks.toast).toHaveBeenCalledWith("Cambios guardados", { description: "Cambio de aceite" });
-    expect(onModeChange).toHaveBeenCalledWith("view", updated);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -233,7 +235,7 @@ describe("ServiceModal: edit", () => {
     mocks.updateService
       .mockResolvedValueOnce({ ok: false, error: "renameNeedsConfirmation" })
       .mockResolvedValueOnce({ ok: true, data: renamed });
-    const { onModeChange } = renderModal("edit");
+    const { onOpenChange } = renderModal("edit");
 
     fireEvent.change(await screen.findByLabelText("Nombre *"), { target: { value: "Service completo" } });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" })));
@@ -251,7 +253,7 @@ describe("ServiceModal: edit", () => {
       { confirmRename: true },
     );
     expect(mocks.toast).toHaveBeenCalledWith("Cambios guardados", { description: "Service completo" });
-    expect(onModeChange).toHaveBeenCalledWith("view", renamed);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it("keeps the form and saves nothing when the rename is cancelled", async () => {

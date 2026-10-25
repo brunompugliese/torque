@@ -8,6 +8,10 @@ import { DNI_MAX_DIGITS } from "@/lib/format/dni";
 // A record id, as it comes back from the database.
 export const idSchema = z.uuid();
 
+// A record picked from a list (a brand, a model): empty or not an id shows the
+// field's own message.
+export const requiredIdField = (errorKey: ValidationErrorKey) => z.uuid({ error: errorKey });
+
 export const EMAIL_MAX_LENGTH = 254;
 
 export const emailField = z
@@ -93,7 +97,24 @@ export type ValidationErrorKey =
   | "nameRequired"
   | "phoneRequired"
   | "phoneInvalid"
-  | "dniInvalid";
+  | "dniInvalid"
+  | "plateRequired"
+  | "plateInvalid"
+  | "yearInvalid"
+  | "vinInvalid"
+  | "brandRequired"
+  | "brandInvalid"
+  | "modelRequired"
+  | "modelInvalid"
+  | "clientInvalid"
+  | "priceRequired"
+  | "priceInvalid"
+  | "quantityInvalid"
+  | "kilometersInvalid"
+  | "vehicleRequired"
+  | "vehicleInvalid"
+  | "serviceRequired"
+  | "serviceInvalid";
 
 // First issue per field, as the key the form translates.
 export function toFieldErrors<Field extends string>(

@@ -24,42 +24,20 @@ const NAME_CELL_CLASS = "w-full min-w-44 max-w-0";
 const EMAIL_CELL_CLASS = "max-w-56";
 const EMPTY = "—";
 
+// `pending`: another page, search or sort is loading (the rows shown are the old ones).
 type ClientsTableProps =
-  | { ok: true; rows: Client[]; matching: number; total: number }
-  | { ok: false; onRetry: () => void };
+  | { ok: true; rows: Client[]; matching: number; total: number; pending?: boolean }
+  | { ok: false; onRetry: () => void; pending?: boolean };
 
 export function ClientsTable(props: ClientsTableProps) {
   const t = useTranslations("clients");
   const { params, clearSearch, setShowArchived, toggleSort, setPage } = useListUrl();
   const { openClient, openCreate } = useClientsPanel();
 
-  const pastTheEnd = props.ok && props.rows.length === 0 && params.page > 1;
+  const pastTheEnd = props.ok && !props.pending && props.rows.length === 0 && params.page > 1;
   useEffect(() => {
     if (pastTheEnd) setPage(1);
   }, [pastTheEnd, setPage]);
-
-  if (!props.ok) return <ListError onRetry={props.onRetry} />;
-
-  if (props.rows.length === 0) {
-    return (
-      <ListNoRows
-        hasSearch={Boolean(params.search)}
-        total={props.total}
-        texts={{
-          noResultsTitle: t("empty.noResultsTitle"),
-          noResultsHint: t("empty.noResultsHint"),
-          noneTitle: t("empty.noneTitle"),
-          noneHint: t("empty.noneHint"),
-          onlyArchivedTitle: t("empty.onlyArchivedTitle"),
-          onlyArchivedHint: t("empty.onlyArchivedHint"),
-        }}
-        addLabel={t("add")}
-        onAdd={openCreate}
-        onClearSearch={clearSearch}
-        onShowArchived={() => setShowArchived(true)}
-      />
-    );
-  }
 
   const columns: DataTableColumn<Client>[] = [
     {
@@ -102,6 +80,45 @@ export function ClientsTable(props: ClientsTableProps) {
       cell: (client) => <TableDate value={client.createdAt} />,
     },
   ];
+  const sort = SORT_IDS.includes(params.sortBy) ? { columnId: params.sortBy, direction: params.sort } : undefined;
+
+  // While the next rows load the header stays and the body shows placeholders.
+  if (props.pending) {
+    return (
+      <DataTable
+        loading
+        label={t("title")}
+        columns={columns}
+        rows={props.ok ? props.rows : []}
+        getRowId={(client) => client.id}
+        sort={sort}
+        onSortChange={toggleSort}
+      />
+    );
+  }
+
+  if (!props.ok) return <ListError onRetry={props.onRetry} />;
+
+  if (props.rows.length === 0) {
+    return (
+      <ListNoRows
+        hasSearch={Boolean(params.search)}
+        total={props.total}
+        texts={{
+          noResultsTitle: t("empty.noResultsTitle"),
+          noResultsHint: t("empty.noResultsHint"),
+          noneTitle: t("empty.noneTitle"),
+          noneHint: t("empty.noneHint"),
+          onlyArchivedTitle: t("empty.onlyArchivedTitle"),
+          onlyArchivedHint: t("empty.onlyArchivedHint"),
+        }}
+        addLabel={t("add")}
+        onAdd={openCreate}
+        onClearSearch={clearSearch}
+        onShowArchived={() => setShowArchived(true)}
+      />
+    );
+  }
 
   return (
     <>
@@ -112,7 +129,7 @@ export function ClientsTable(props: ClientsTableProps) {
         getRowId={(client) => client.id}
         onRowClick={openClient}
         isRowMuted={(client) => !client.enabled}
-        sort={SORT_IDS.includes(params.sortBy) ? { columnId: params.sortBy, direction: params.sort } : undefined}
+        sort={sort}
         onSortChange={toggleSort}
       />
       <PaginationBar page={params.page} pageSize={LIST_PAGE_SIZE} total={props.matching} onPageChange={setPage} />

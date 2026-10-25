@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FIELD_WIDTH } from "@/components/shared/form-layout";
 import { renderWithIntl } from "@/test/render";
 
 import type { Client } from "../schemas";
@@ -168,6 +169,25 @@ describe("ClientModal: archive", () => {
   });
 });
 
+describe("ClientModal: form layout", () => {
+  it("puts Nombre next to Apellido and Teléfono next to DNI, each as wide as its values need, and Email alone", async () => {
+    renderModal("create", null);
+    await screen.findByRole("dialog", { name: "Agregar cliente" });
+    const rowOf = (label: string) => screen.getByLabelText(label).closest('[data-slot="form-row"]');
+    const fieldOf = (label: string) => screen.getByLabelText(label).closest('[data-slot="field"]');
+
+    expect(rowOf("Nombre *")).toContainElement(screen.getByLabelText("Apellido"));
+    expect(rowOf("Teléfono *")).toContainElement(screen.getByLabelText("DNI"));
+    expect(rowOf("Nombre *")).not.toBe(rowOf("Teléfono *"));
+    expect(rowOf("Nombre *")).toHaveClass("sm:grid-cols-2");
+    expect(rowOf("Email")).toBeNull();
+
+    expect(fieldOf("Teléfono *")).toHaveClass(FIELD_WIDTH.phone);
+    expect(fieldOf("DNI")).toHaveClass(FIELD_WIDTH.dni);
+    expect(fieldOf("Email")).not.toHaveClass(FIELD_WIDTH.phone);
+  });
+});
+
 describe("ClientModal: create", () => {
   it("shows the empty form with the required-fields subtitle and the right keyboards", async () => {
     renderModal("create", null);
@@ -310,9 +330,9 @@ describe("ClientModal: create", () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
-  it("creates with the tidied values, toasts and opens the new client", async () => {
+  it("creates with the tidied values, toasts and closes the modal", async () => {
     mocks.createClient.mockResolvedValue({ ok: true, data: CLIENT });
-    const { onModeChange } = renderModal("create", null);
+    const { onModeChange, onOpenChange } = renderModal("create", null);
 
     await screen.findByRole("dialog");
     type("Nombre *", "  Ana ");
@@ -330,7 +350,8 @@ describe("ClientModal: create", () => {
       email: "ana@example.com",
     });
     expect(mocks.toast).toHaveBeenCalledWith("Cliente agregado", { description: "Ana Gómez" });
-    expect(onModeChange).toHaveBeenCalledWith("view", CLIENT);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
   it("sends the optional fields as null when left empty", async () => {
@@ -409,10 +430,10 @@ describe("ClientModal: edit", () => {
     expect(onModeChange).toHaveBeenCalledWith("view");
   });
 
-  it("saves and returns to the details with Cambios guardados", async () => {
+  it("saves, closes the modal and confirms with Cambios guardados", async () => {
     const updated = { ...CLIENT, email: null };
     mocks.updateClient.mockResolvedValue({ ok: true, data: updated });
-    const { onModeChange } = renderModal("edit");
+    const { onModeChange, onOpenChange } = renderModal("edit");
 
     await screen.findByRole("dialog");
     type("Email", "");
@@ -426,7 +447,8 @@ describe("ClientModal: edit", () => {
       email: null,
     });
     expect(mocks.toast).toHaveBeenCalledWith("Cambios guardados", { description: "Ana Gómez" });
-    expect(onModeChange).toHaveBeenCalledWith("view", updated);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onModeChange).not.toHaveBeenCalled();
   });
 
   it.each([

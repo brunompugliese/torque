@@ -14,13 +14,15 @@ export type ListQueryOptions = {
   // Column id (as in the URL) → database column.
   sortColumns: Record<string, string>;
   defaultSortBy: string;
+  // Direction while no column is chosen (the page's default order, no header marked).
+  defaultDirection?: "asc" | "desc";
 };
 
 // Searching always includes archived records (docs/design.md#search).
 export function applyListQuery<Q extends ListQueryBuilder<Q>>(
   query: Q,
   params: ListParams,
-  { searchColumn, sortColumns, defaultSortBy }: ListQueryOptions,
+  { searchColumn, sortColumns, defaultSortBy, defaultDirection = "asc" }: ListQueryOptions,
 ): Q {
   const pattern = toSearchPattern(params.search);
   let result = query;
@@ -28,7 +30,7 @@ export function applyListQuery<Q extends ListQueryBuilder<Q>>(
   else if (!params.showArchived) result = result.eq("enabled", true);
 
   const sortColumn = sortColumns[resolveSortBy(params.sortBy, Object.keys(sortColumns), defaultSortBy)];
-  const ascending = params.sort === "asc";
+  const ascending = params.sortBy === "" && defaultDirection === "desc" ? false : params.sort === "asc";
   const from = (params.page - 1) * LIST_PAGE_SIZE;
   // Empty values come last in both directions; id breaks ties so rows never
   // repeat across pages.

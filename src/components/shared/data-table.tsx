@@ -20,6 +20,8 @@ export type DataTableColumn<Row> = {
   sortable?: boolean;
   cell: (row: Row) => ReactNode;
   className?: string;
+  // Placeholder lines in this column while the table loads (default 1).
+  skeletonLines?: number;
 };
 
 export type DataTableSort = { columnId: string; direction: SortDirection };
@@ -33,7 +35,15 @@ type DataTableProps<Row> = {
   sort?: DataTableSort;
   onSortChange?: (columnId: string) => void;
   label: string;
+  // New rows are on their way (a search, a sort, another page): the header stays,
+  // so the keyboard focus on a sort button isn't lost, and the body shows
+  // placeholder rows, announced once.
+  loading?: boolean;
 };
+
+// Rows shown while loading: about as many as were there, so little moves.
+const LOADING_ROWS_MAX = 8;
+const LOADING_ROWS_EMPTY = 5;
 
 const ALIGN_CLASS: Record<ColumnAlign, string> = {
   left: "text-left",
@@ -57,8 +67,10 @@ export function DataTable<Row>({
   sort,
   onSortChange,
   label,
+  loading = false,
 }: DataTableProps<Row>) {
   const t = useTranslations("list");
+  const tCommon = useTranslations("common");
 
   const onRowKeyDown = (event: KeyboardEvent<HTMLTableRowElement>, row: Row) => {
     if (event.target !== event.currentTarget) return;
@@ -69,7 +81,12 @@ export function DataTable<Row>({
   };
 
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="rounded-xl border bg-card" aria-busy={loading || undefined}>
+      {loading ? (
+        <span role="status" className="sr-only">
+          {tCommon("loading")}
+        </span>
+      ) : null}
       <Table aria-label={label}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -111,7 +128,18 @@ export function DataTable<Row>({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => {
+          {loading ? (
+            <SkeletonRows
+              columns={columns.map((column) => ({
+                key: column.id,
+                align: column.align,
+                lines: column.skeletonLines,
+                className: column.className,
+              }))}
+              count={rows.length > 0 ? Math.min(rows.length, LOADING_ROWS_MAX) : LOADING_ROWS_EMPTY}
+            />
+          ) : null}
+          {(loading ? [] : rows).map((row) => {
             const muted = isRowMuted?.(row) ?? false;
             return (
               <TableRow
@@ -138,6 +166,39 @@ export function DataTable<Row>({
       </Table>
     </div>
   );
+}
+
+type SkeletonRowsProps = {
+  columns: readonly { key: string; align?: ColumnAlign; lines?: number; className?: string }[];
+  count: number;
+};
+
+// Placeholder rows in the size of the real ones, for the first load and for
+// every later search, sort or page.
+function SkeletonRows({ columns, count }: SkeletonRowsProps) {
+  return Array.from({ length: count }, (_, rowIndex) => (
+    <TableRow key={rowIndex} className="hover:bg-transparent">
+      {columns.map((column) => (
+        <TableCell key={column.key} className={cn("px-4 py-3", column.className)}>
+          <div
+            className={cn(
+              "flex flex-col gap-1.5",
+              column.align === "right" && "items-end",
+              column.align === "center" && "items-center",
+            )}
+          >
+            {Array.from({ length: column.lines ?? 1 }, (_, line) => (
+              <Skeleton
+                key={line}
+                data-testid="skeleton-block"
+                className={cn("h-3.5", line === 0 ? "w-2/5" : "h-3 w-3/5")}
+              />
+            ))}
+          </div>
+        </TableCell>
+      ))}
+    </TableRow>
+  ));
 }
 
 export type DataTableSkeletonColumn = {
@@ -170,29 +231,10 @@ export function DataTableSkeleton({ columns, rows = 8 }: DataTableSkeletonProps)
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: rows }, (_, rowIndex) => (
-              <TableRow key={rowIndex} className="hover:bg-transparent">
-                {columns.map((column) => (
-                  <TableCell key={column.header} className={cn("px-4 py-3", column.className)}>
-                    <div
-                      className={cn(
-                        "flex flex-col gap-1.5",
-                        column.align === "right" && "items-end",
-                        column.align === "center" && "items-center",
-                      )}
-                    >
-                      {Array.from({ length: column.lines ?? 1 }, (_, line) => (
-                        <Skeleton
-                          key={line}
-                          data-testid="skeleton-block"
-                          className={cn("h-3.5", line === 0 ? "w-2/5" : "h-3 w-3/5")}
-                        />
-                      ))}
-                    </div>
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+            <SkeletonRows
+              columns={columns.map((column) => ({ ...column, key: column.header }))}
+              count={rows}
+            />
           </TableBody>
         </Table>
       </div>

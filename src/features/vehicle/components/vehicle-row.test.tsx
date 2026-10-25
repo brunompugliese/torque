@@ -35,9 +35,10 @@ describe("VehicleRow", () => {
     expect(screen.getByText("Sin VIN")).toBeInTheDocument();
   });
 
-  it("shows the badge when archived", () => {
-    renderWithIntl(<VehicleRow vehicle={{ ...VEHICLE, enabled: false }} />);
+  it("shows the badge and greys out when archived", () => {
+    const { container } = renderWithIntl(<VehicleRow vehicle={{ ...VEHICLE, enabled: false }} />);
     expect(screen.getByText("Archivado")).toBeInTheDocument();
+    expect(container.firstChild).toHaveClass("opacity-60");
   });
 
   it("accepts extra classes", () => {

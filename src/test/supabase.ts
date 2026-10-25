@@ -8,7 +8,11 @@ export type FakeQuery = {
   operation: string;
 };
 
-export type FakeResult = { data?: unknown; error?: { code: string } | null; count?: number | null };
+export type FakeResult = {
+  data?: unknown;
+  error?: { code: string; message?: string } | null;
+  count?: number | null;
+};
 
 const CHAIN_METHODS = [
   "select",
@@ -19,13 +23,21 @@ const CHAIN_METHODS = [
   "neq",
   "in",
   "is",
+  "not",
+  "lt",
+  "gt",
+  "gte",
+  "lte",
   "like",
+  "or",
   "order",
   "range",
   "limit",
 ] as const;
 
-// Records each query's calls and resolves it with respond(query).
+// Records each query's calls and resolves it with respond(query). A database
+// function (rpc) is recorded as a query on the table named after it, with the
+// operation "rpc".
 export function createFakeSupabase(respond: (query: FakeQuery) => FakeResult) {
   const queries: FakeQuery[] = [];
 
@@ -52,7 +64,13 @@ export function createFakeSupabase(respond: (query: FakeQuery) => FakeResult) {
     return builder;
   }
 
-  return { supabase: { from: vi.fn(from) }, queries };
+  function rpc(name: string, args: unknown) {
+    const query: FakeQuery = { table: name, calls: [["rpc", name, args]], operation: "rpc" };
+    queries.push(query);
+    return Promise.resolve({ data: null, error: null, count: null, ...respond(query) });
+  }
+
+  return { supabase: { from: vi.fn(from), rpc: vi.fn(rpc) }, queries };
 }
 
 export function filterValue(query: FakeQuery, method: string, column: string): unknown {
