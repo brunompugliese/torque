@@ -10,16 +10,15 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { FormAlert } from "@/components/shared/form-alert";
 import { FormRow } from "@/components/shared/form-layout";
 import { FormattedInput } from "@/components/shared/formatted-input";
-import { SearchableSelect, type SelectOption } from "@/components/shared/searchable-select";
+import type { SelectOption } from "@/components/shared/searchable-select";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatClientName } from "@/features/client/format";
+import { VehicleSelect } from "@/features/vehicle/components/vehicle-select";
 import { useLoadedData } from "@/hooks/use-loaded-data";
-import { useRemoteOptions } from "@/hooks/use-remote-options";
 import { formatKm, formatKmInput } from "@/lib/format/km";
-import { formatPlate } from "@/lib/format/plate";
 import { JOB_STATUSES, isClosedStatus, jobPhase, type JobStatus } from "@/lib/status";
 import type { ValidationErrorKey } from "@/lib/validation/fields";
 
@@ -27,7 +26,6 @@ import {
   getOwnerOfVehicle,
   getServiceOptions,
   getVehicleKmFloor,
-  searchVehicleOptions,
   type JobActionResult,
 } from "../actions";
 import { emptyJobForm, jobClientId, jobToFormState, type JobFormRow } from "../form";
@@ -111,31 +109,9 @@ export function JobForm({ id, job, items = [], onSubmit }: JobFormProps) {
   const status: JobStatus = useWatch({ control: form.control, name: "status" }) ?? "pendiente";
   const phase = jobPhase(status, storedHadFinal);
 
-  const vehicleLabel = (vehicle: { brandName: string; modelName: string; enabled: boolean }) =>
-    vehicle.enabled
-      ? `${vehicle.brandName} ${vehicle.modelName}`
-      : t("fields.vehicleArchived", { label: `${vehicle.brandName} ${vehicle.modelName}` });
-
   // --- Vehicle ---------------------------------------------------------------------------
-  const currentVehicleOption = (vehicle: JobListItem["vehicle"]): SelectOption => ({
-    value: vehicle.id,
-    label: vehicleLabel(vehicle),
-    secondary: formatPlate(vehicle.plate),
-    inputLabel: `${vehicleLabel(vehicle)} (${formatPlate(vehicle.plate)})`,
-  });
-  const [pickedVehicle, setPickedVehicle] = useState<SelectOption | null>(job ? currentVehicleOption(job.vehicle) : null);
-  const [vehicleText, setVehicleText] = useState(pickedVehicle?.inputLabel ?? "");
-
-  const vehicleSearch = useRemoteOptions(vehicleText.trim(), async (term) => {
-    const result = await searchVehicleOptions(term, job?.vehicle.id);
-    return result.ok ? result.rows : null;
-  });
-  const vehicleOptions = useMemo<SelectOption[]>(
-    () =>
-      vehicleSearch.rows.map((vehicle) => currentVehicleOption({ ...vehicle, year: null })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- the option builders only read translations
-    [vehicleSearch.rows],
-  );
+  // The text in the box, to tell a vehicle typed but not chosen from an empty field.
+  const [vehicleText, setVehicleText] = useState("");
 
   // --- Client: the vehicle's owner, never chosen ------------------------------------------
   const owner = useLoadedData(vehicleId ? `owner:${vehicleId}` : "owner:none", async () => {
@@ -156,9 +132,8 @@ export function JobForm({ id, job, items = [], onSubmit }: JobFormProps) {
   const clientLabel = (client: { name: string; surname: string | null; enabled: boolean }) =>
     client.enabled ? formatClientName(client) : t("fields.clientArchived", { name: formatClientName(client) });
 
-  const chooseVehicle = (next: string, option: SelectOption | null) => {
+  const chooseVehicle = (next: string) => {
     form.setValue("vehicleId", next, { shouldValidate: form.formState.isSubmitted });
-    setPickedVehicle(option);
     // Another vehicle starts with no appointment ("Sin turno").
     if (next && next !== vehicleId) form.setValue("appointmentId", "");
   };
@@ -319,24 +294,12 @@ export function JobForm({ id, job, items = [], onSubmit }: JobFormProps) {
         <FormRow>
         <Field data-invalid={Boolean(errors.vehicleId)}>
           <FieldLabel htmlFor={idOf("vehicleId")}>{t("fields.vehicle")} *</FieldLabel>
-          <SearchableSelect
+          <VehicleSelect
             id={idOf("vehicleId")}
-            options={vehicleOptions}
-            selectedOption={pickedVehicle ?? undefined}
             value={vehicleId}
-            onValueChange={(next) =>
-              chooseVehicle(
-                next,
-                vehicleOptions.find((candidate) => candidate.value === next) ??
-                  (pickedVehicle?.value === next ? pickedVehicle : null),
-              )
-            }
-            inputValue={vehicleText}
-            onInputValueChange={setVehicleText}
-            filter="remote"
-            loading={vehicleSearch.loading}
-            placeholder={t("fields.vehiclePlaceholder")}
-            emptyText={t("fields.noOptions")}
+            onChange={chooseVehicle}
+            current={job?.vehicle}
+            onTextChange={setVehicleText}
             invalid={Boolean(errors.vehicleId)}
             describedBy={errors.vehicleId ? `${idOf("vehicleId")}-error` : undefined}
           />

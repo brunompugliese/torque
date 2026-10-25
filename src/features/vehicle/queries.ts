@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { type ListParams, type SortDirection } from "@/lib/list/params";
 import { applyListQuery } from "@/lib/list/query";
+import { toSearchPattern } from "@/lib/search/normalize";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 import { VEHICLE_DEFAULT_SORT, VEHICLE_SORT_COLUMNS } from "./list";
@@ -147,4 +148,32 @@ export async function listModelOptions(brandId: string, currentId?: string): Pro
     return { ok: false };
   }
   return { ok: true, rows: z.array(catalogOptionSchema).parse(data ?? []) };
+}
+
+export const VEHICLE_OPTIONS_LIMIT = 10;
+
+const vehicleOptionSchema = z
+  .object({ id: z.string(), plate: z.string(), brand_name: z.string(), model_name: z.string(), enabled: z.boolean() })
+  .transform(({ brand_name, model_name, ...row }) => ({ ...row, brandName: brand_name, modelName: model_name }));
+
+export type VehicleOption = z.output<typeof vehicleOptionSchema>;
+export type VehicleOptionList = { ok: true; rows: VehicleOption[] } | { ok: false };
+
+// The active vehicles a job or an appointment can be created for, as the user types; the record's
+// own vehicle (`currentId`, a validated uuid) stays listed even if archived.
+export async function listVehicleOptions(term: string, currentId?: string): Promise<VehicleOptionList> {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const pattern = toSearchPattern(term);
+  let query = supabase.from("vehicle_decrypted").select("id, plate, brand_name, model_name, enabled");
+  if (pattern) query = query.like("search_text", pattern);
+  query = currentId ? query.or(`enabled.eq.true,id.eq.${currentId}`) : query.eq("enabled", true);
+
+  const { data, error } = await query.order("plate").order("id").limit(VEHICLE_OPTIONS_LIMIT);
+  if (error) {
+    console.error("[vehicle] options failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, rows: z.array(vehicleOptionSchema).parse(data ?? []) };
 }

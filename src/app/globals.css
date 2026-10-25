@@ -195,3 +195,13 @@
     cursor: not-allowed;
   }
 }
+
+/* The Confirmado look (docs/design.md#visual-identity): diagonal lines in the status color over the
+   card, in its calendar card and in the legend's square. */
+@utility hatch-done {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--status-done-dot) 45%, transparent) 0 1px,
+    transparent 1px 5px
+  );
+}

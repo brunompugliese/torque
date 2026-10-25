@@ -14,6 +14,9 @@ import { LoadingRegion } from "./loading-region";
 export type DetailModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Called once the modal has fully closed (its exit animation done and the page usable again), for
+  // whatever must wait for that, like reopening a popover that was open behind it.
+  onClosed?: () => void;
   title: ReactNode;
   badge?: ReactNode;
   // A modal with a form that needs the room (a job): the same dialog, wider.
@@ -29,6 +32,7 @@ export type DetailModalProps = {
 export function DetailModal({
   open,
   onOpenChange,
+  onClosed,
   title,
   badge,
   wide = false,
@@ -58,7 +62,13 @@ export function DetailModal({
     ) : null;
 
   return (
-    <Dialog open={open} onOpenChange={(next) => onOpenChange(next)}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => onOpenChange(next)}
+      onOpenChangeComplete={(isOpen) => {
+        if (!isOpen) onClosed?.();
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className={cn(

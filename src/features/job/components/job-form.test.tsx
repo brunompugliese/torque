@@ -24,11 +24,11 @@ vi.mock("../actions", () => ({
   updateJob: mocks.updateJob,
   setJobArchived: mocks.setJobArchived,
   getJobDetails: mocks.getJobDetails,
-  searchVehicleOptions: mocks.searchVehicleOptions,
   getOwnerOfVehicle: mocks.getOwnerOfVehicle,
   getVehicleKmFloor: mocks.getVehicleKmFloor,
   getServiceOptions: mocks.getServiceOptions,
 }));
+vi.mock("@/features/vehicle/actions", () => ({ searchVehicleOptions: mocks.searchVehicleOptions }));
 vi.mock("sonner", () => ({ toast: mocks.toast }));
 
 import { useJobModal, type JobFromHost, type JobModalMode } from "./use-job-modal";

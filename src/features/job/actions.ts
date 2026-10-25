@@ -21,7 +21,6 @@ import {
   listJobs,
   listServiceOptions,
   listVehicleJobs,
-  listVehicleOptions,
   type JobDetail,
   type JobPage,
   type JobRowResult,
@@ -29,7 +28,6 @@ import {
   type KmFloor,
   type ServiceOptionList,
   type VehicleJobList,
-  type VehicleOptionList,
   type VehicleOwnerResult,
 } from "./queries";
 import {
@@ -45,8 +43,8 @@ import { calculateTotals, fillFinalPrices } from "./total";
 
 const JOBS_PATH = "/trabajos";
 const VEHICLES_PATH = "/vehiculos";
+const APPOINTMENTS_PATH = "/turnos";
 const FOREIGN_KEY_VIOLATION = "23503";
-const OPTION_TERM_MAX_LENGTH = 100;
 
 export type JobErrorKey =
   | "invalid"
@@ -120,13 +118,6 @@ export async function getServiceOptions(currentIds?: unknown): Promise<ServiceOp
   return listServiceOptions(ids.data);
 }
 
-// The term travels in the request body, never in a URL.
-export async function searchVehicleOptions(term: unknown, currentId?: unknown): Promise<VehicleOptionList> {
-  const current = idSchema.nullish().safeParse(currentId);
-  if (typeof term !== "string" || !current.success) return { ok: false };
-  return listVehicleOptions(term.slice(0, OPTION_TERM_MAX_LENGTH), current.data ?? undefined);
-}
-
 // -----------------------------------------------------------------------------
 // Writes
 // -----------------------------------------------------------------------------
@@ -151,6 +142,8 @@ async function readBack(supabase: Supabase, id: string): Promise<JobActionResult
   revalidatePath(JOBS_PATH);
   // The vehicle's history and last km change with its jobs.
   revalidatePath(VEHICLES_PATH);
+  // An appointment shows its job ("Ver trabajo" / "Crear trabajo").
+  revalidatePath(APPOINTMENTS_PATH);
   return ok(jobListRowSchema.parse(data));
 }
 

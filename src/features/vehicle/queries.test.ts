@@ -19,6 +19,7 @@ import {
   listClientVehicles,
   listModelOptions,
   listUnassignedVehicles,
+  listVehicleOptions,
   listVehicles,
 } from "./queries";
 
@@ -245,5 +246,28 @@ describe("listModelOptions", () => {
   it("reports a failure without throwing", async () => {
     setup(() => ({ error: { code: "XX000" } }));
     expect(await listModelOptions("b1")).toEqual({ ok: false });
+  });
+});
+
+describe("listVehicleOptions", () => {
+  const VEHICLE = { id: "v1", plate: "AE482KD", brand_name: "Fiat", model_name: "Cronos", enabled: true };
+
+  it("lists the active vehicles that match, a few at a time", async () => {
+    const queries = setup(() => ({ data: [VEHICLE] }));
+    expect(await listVehicleOptions("ae 482")).toEqual({
+      ok: true,
+      rows: [{ id: "v1", plate: "AE482KD", brandName: "Fiat", modelName: "Cronos", enabled: true }],
+    });
+    expect(queries[0].table).toBe("vehicle_decrypted");
+    expect(filterValue(queries[0], "like", "search_text")).toBe("%ae482%");
+    expect(filterValue(queries[0], "eq", "enabled")).toBe(true);
+    expect(queries[0].calls).toContainEqual(["limit", 10]);
+  });
+
+  it("keeps the record's own vehicle even if archived", async () => {
+    const queries = setup(() => ({ data: [] }));
+    await listVehicleOptions("", "v9");
+    expect(queries[0].calls).toContainEqual(["or", "enabled.eq.true,id.eq.v9"]);
+    expect(queries[0].calls.some(([name]) => name === "like")).toBe(false);
   });
 });

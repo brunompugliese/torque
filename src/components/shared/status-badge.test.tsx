@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { JOB_STATUSES } from "@/lib/status";
 import { renderWithIntl } from "@/test/render";
 
-import { JobStatusBadge, StatusBadge } from "./status-badge";
+import { AppointmentStatusBadge, JobStatusBadge, StatusBadge } from "./status-badge";
 
 describe("StatusBadge", () => {
   it("shows its text with the family's tokens and no dot", () => {
@@ -38,6 +38,18 @@ describe("StatusBadge trailing icon", () => {
   it("has nothing after the text without it", () => {
     renderWithIntl(<StatusBadge family="done">Hecho</StatusBadge>);
     expect(screen.getByText("Hecho").children).toHaveLength(0);
+  });
+});
+
+describe("AppointmentStatusBadge", () => {
+  it.each([
+    ["pendiente", "Pendiente", "bg-status-pending"],
+    ["confirmado", "Confirmado", "bg-status-done"],
+    ["completado", "Completado", "bg-status-done"],
+    ["cancelado", "Cancelado", "bg-status-cancelled"],
+  ] as const)("shows %s as %s", (status, label, token) => {
+    renderWithIntl(<AppointmentStatusBadge status={status} />);
+    expect(screen.getByText(label)).toHaveClass(token);
   });
 });
 

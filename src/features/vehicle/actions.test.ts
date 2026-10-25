@@ -14,7 +14,7 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/auth/session", () => ({ requireSession: mocks.requireSession }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
-import { assignVehiclesToClient, getClientVehicles, getUnassignedVehicles } from "./actions";
+import { assignVehiclesToClient, getClientVehicles, getUnassignedVehicles, searchVehicleOptions } from "./actions";
 
 const CLIENT_ID = "6f1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 const V1 = "7a1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
@@ -122,5 +122,28 @@ describe("assignVehiclesToClient", () => {
     setup(() => ({ error: { code: "XX000" } }));
     expect(await assignVehiclesToClient(CLIENT_ID, [V1])).toEqual({ ok: false, error: "unexpected" });
     expect(console.error).toHaveBeenCalledWith("[vehicle] assign failed", { code: "XX000" });
+  });
+});
+
+describe("searchVehicleOptions", () => {
+  it.each([
+    ["a term that is not text", () => searchVehicleOptions(42)],
+    ["a current vehicle that is not an id", () => searchVehicleOptions("ae", "nope")],
+  ])("fails without querying with %s", async (_name, run) => {
+    const queries = setup(() => ({ data: [] }));
+    expect(await run()).toEqual({ ok: false });
+    expect(queries).toHaveLength(0);
+  });
+
+  it("reads with valid input", async () => {
+    setup(() => ({ data: [] }));
+    expect(await searchVehicleOptions("ae", V1)).toEqual({ ok: true, rows: [] });
+    expect(await searchVehicleOptions("")).toEqual({ ok: true, rows: [] });
+  });
+
+  it("cuts a very long search term", async () => {
+    const queries = setup(() => ({ data: [] }));
+    await searchVehicleOptions("a".repeat(500));
+    expect(String(filterValue(queries[0], "like", "search_text")).length).toBeLessThan(110);
   });
 });

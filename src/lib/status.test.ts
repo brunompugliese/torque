@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { JOB_STATUSES, isClosedStatus, isJobStatus, jobPhase, jobStatusFamily } from "./status";
+import {
+  APPOINTMENT_STATUSES,
+  JOB_STATUSES,
+  appointmentStatusFamily,
+  isAppointmentStatus,
+  isClosedStatus,
+  isJobStatus,
+  jobPhase,
+  jobStatusFamily,
+} from "./status";
 
 describe("job statuses", () => {
   it("lists the seven statuses in display order", () => {
@@ -31,6 +40,27 @@ describe("job statuses", () => {
     expect(isJobStatus("en_progreso")).toBe(true);
     expect(isJobStatus("confirmado")).toBe(false);
     expect(isJobStatus("")).toBe(false);
+  });
+});
+
+describe("appointment statuses", () => {
+  it("lists the four statuses in display order", () => {
+    expect(APPOINTMENT_STATUSES).toEqual(["pendiente", "confirmado", "completado", "cancelado"]);
+  });
+
+  it.each([
+    ["pendiente", "pending"],
+    ["confirmado", "done"],
+    ["completado", "done"],
+    ["cancelado", "cancelled"],
+  ] as const)("maps %s to the %s family", (status, family) => {
+    expect(appointmentStatusFamily(status)).toBe(family);
+  });
+
+  it("tells an appointment status from any other text", () => {
+    expect(isAppointmentStatus("confirmado")).toBe(true);
+    expect(isAppointmentStatus("en_progreso")).toBe(false);
+    expect(isAppointmentStatus("")).toBe(false);
   });
 });
 

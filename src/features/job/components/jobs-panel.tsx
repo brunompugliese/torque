@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { ModalBoundary } from "@/components/shared/modal-boundary";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { JobListItem } from "../schemas";
@@ -44,13 +45,15 @@ export function JobsPanel({ children }: { children: ReactNode }) {
       {children}
       {/* Mounted from the first open on, so it can animate closed. */}
       {modal.job || modal.mode === "create" ? (
-        <JobModal
-          open={modal.open}
-          mode={modal.mode}
-          job={modal.job}
-          onModeChange={(mode, job) => setModal((current) => ({ ...current, mode, job: job ?? current.job }))}
-          onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
-        />
+        <ModalBoundary>
+          <JobModal
+            open={modal.open}
+            mode={modal.mode}
+            job={modal.job}
+            onModeChange={(mode, job) => setModal((current) => ({ ...current, mode, job: job ?? current.job }))}
+            onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
+          />
+        </ModalBoundary>
       ) : null}
     </PanelContext.Provider>
   );
