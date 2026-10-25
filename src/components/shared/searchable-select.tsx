@@ -48,6 +48,9 @@ type SearchableSelectProps = {
   placeholder?: string;
   emptyText: string;
   action?: SelectAction;
+  // For an optional field: shows an X, named by this text ("Quitar cliente"), while an option is
+  // chosen; it empties the choice and the box.
+  clearLabel?: string;
   invalid?: boolean;
   describedBy?: string;
 };
@@ -72,6 +75,7 @@ export function SearchableSelect({
   placeholder,
   emptyText,
   action,
+  clearLabel,
   invalid,
   describedBy,
 }: SearchableSelectProps) {
@@ -121,6 +125,8 @@ export function SearchableSelect({
           if (selected && text !== boxText(selected)) onValueChange("");
         } else if (details.reason === "item-press" && text !== action?.label) {
           onInputValueChange(text);
+        } else if (details.reason === "clear-press") {
+          onInputValueChange("");
         }
       }}
     >
@@ -131,6 +137,8 @@ export function SearchableSelect({
         aria-invalid={invalid}
         aria-describedby={describedBy}
         autoComplete="off"
+        showClear={Boolean(clearLabel)}
+        clearLabel={clearLabel}
       />
       <ComboboxContent>
         {loading || noOptions ? (

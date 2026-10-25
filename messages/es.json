@@ -399,7 +399,8 @@
       "client": "Cliente",
       "clientPlaceholder": "Buscá por nombre o teléfono",
       "clientHint": "Dejalo vacío si el vehículo no tiene cliente.",
-      "noOptions": "No encontramos resultados"
+      "noOptions": "No encontramos resultados",
+      "clientClear": "Quitar cliente"
     },
     "newClient": {
       "title": "Cliente nuevo",
