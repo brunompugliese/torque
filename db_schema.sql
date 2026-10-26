@@ -884,12 +884,17 @@ left join lateral (
 -- includes archived records; without one the archived switch applies) except the Estado selection.
 -- p_pattern: like pattern of the normalized search term (null/empty = none). p_from / p_to: bounds
 -- on updated_at, p_to exclusive (the start of the day after "Hasta", Argentina time); null = none.
+-- p_closed_from (Inicio, spec 009): when not null, entregado / cancelado jobs count only if updated_at
+-- >= p_closed_from; the other statuses are unaffected; null = no such window. p_enabled_only: archived
+-- jobs never count, even with a search (Inicio).
 -- security invoker: RLS applies as the caller.
 create or replace function public.job_status_counts(
   p_pattern       text,
   p_show_archived boolean,
   p_from          timestamptz,
-  p_to            timestamptz
+  p_to            timestamptz,
+  p_closed_from   timestamptz default null,
+  p_enabled_only  boolean default false
 )
 returns table (status text, total bigint)
 language sql
@@ -899,18 +904,22 @@ set search_path = ''
 as $$
   select l.status, count(*)
   from public.job_list l
-  where case
+  where (not p_enabled_only or l.enabled)
+    and case
           when coalesce(p_pattern, '') <> '' then l.search_text like p_pattern
           when p_show_archived then true
           else l.enabled
         end
     and (p_from is null or l.updated_at >= p_from)
     and (p_to   is null or l.updated_at <  p_to)
+    and (p_closed_from is null
+         or l.status not in ('entregado', 'cancelado')
+         or l.updated_at >= p_closed_from)
   group by l.status;
 $$;
 
-revoke execute on function public.job_status_counts(text, boolean, timestamptz, timestamptz) from public, anon;
-grant execute on function public.job_status_counts(text, boolean, timestamptz, timestamptz) to authenticated;
+revoke execute on function public.job_status_counts(text, boolean, timestamptz, timestamptz, timestamptz, boolean) from public, anon;
+grant execute on function public.job_status_counts(text, boolean, timestamptz, timestamptz, timestamptz, boolean) to authenticated;
 
 -- Saves a job, its services and its status in one transaction, for the job form (spec 007); it can
 -- also create the client and some services on the spot. p_job_id null creates, otherwise updates.

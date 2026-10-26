@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Calendar } from "@/components/shared/calendar";
 import { ListError } from "@/components/shared/list-states";
 import { useListResults } from "@/hooks/use-list-results";
-import { anchorForDate, normalizeAnchor, todayIsoDate, visibleRange } from "@/lib/calendar";
+import { anchorForDate, normalizeAnchor, todayIsoDate, visibleRange, type CalendarView } from "@/lib/calendar";
 import { formatIsoDate } from "@/lib/format/date";
 
 import { searchAppointments } from "../actions";
@@ -19,11 +19,16 @@ type AppointmentsCalendarProps = {
   // The first range, loaded on the server.
   initial: AppointmentRange;
   initialState: CalendarState;
+  // A page that shows one view only (Inicio: the week): the toggle isn't drawn.
+  fixedView?: CalendarView;
+  // Whether the view and the day shown are kept in the URL (Turnos). A page whose URL belongs to
+  // something else (Inicio's list) turns it off.
+  syncUrl?: boolean;
 };
 
 // The Turnos calendar: the month or the week in the URL, the appointments of the days it shows, and
 // the "+N más" list of a crowded day. Changing the range loads only that range.
-export function AppointmentsCalendar({ initial, initialState }: AppointmentsCalendarProps) {
+export function AppointmentsCalendar({ initial, initialState, fixedView, syncUrl = true }: AppointmentsCalendarProps) {
   const t = useTranslations("appointments");
   const panel = useAppointmentsPanel();
 
@@ -55,9 +60,10 @@ export function AppointmentsCalendar({ initial, initialState }: AppointmentsCale
 
   // The URL follows the calendar; the Back button keeps working because nothing is pushed.
   useEffect(() => {
+    if (!syncUrl) return;
     const search = toCalendarSearch(state, todayIsoDate());
     window.history.replaceState(null, "", `${window.location.pathname}${search ? `?${search}` : ""}`);
-  }, [state]);
+  }, [state, syncUrl]);
 
   const items = useMemo(
     () => (result.ok ? result.rows.map((row) => ({ ...row, sortKey: `${row.time}|${row.createdAt}` })) : []),
@@ -67,6 +73,7 @@ export function AppointmentsCalendar({ initial, initialState }: AppointmentsCale
   return (
     <Calendar
       view={state.view}
+      views={fixedView ? [fixedView] : undefined}
       anchor={state.anchor}
       items={items}
       loading={pending}

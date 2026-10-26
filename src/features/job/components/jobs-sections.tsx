@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 
 import { toListSearch, type ListParams } from "@/lib/list/params";
 
-import { getJobCounts, listJobs } from "../queries";
+import { getJobCounts, getOpenJobCount, listJobs } from "../queries";
 import { JobsListView } from "./jobs-list";
 
 export async function JobsSummary() {
@@ -21,6 +21,21 @@ export async function JobsList({ params }: { params: ListParams }) {
       initial={counts.ok ? page : { ok: false }}
       initialKey={toListSearch(listParams)}
       total={counts.ok ? counts.total : 0}
+    />
+  );
+}
+
+// Inicio's table: the open jobs, and the recently closed ones once asked for. The same first render
+// as JobsList, with the home scope; its total is the open jobs, for the empty state.
+export async function HomeJobsList({ params }: { params: ListParams }) {
+  const listParams = { ...params, search: "" };
+  const [page, open] = await Promise.all([listJobs(listParams, "home"), getOpenJobCount()]);
+  return (
+    <JobsListView
+      initial={open.ok ? page : { ok: false }}
+      initialKey={toListSearch(listParams)}
+      total={open.ok ? open.total : 0}
+      scope="home"
     />
   );
 }

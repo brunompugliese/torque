@@ -15,6 +15,8 @@ import { formatKm } from "@/lib/format/km";
 import { formatMoney } from "@/lib/format/money";
 import { LIST_PAGE_SIZE } from "@/lib/list/params";
 
+import type { JobListScope } from "../queries";
+
 import { JOB_FILTER_KEYS, JOB_SORT_COLUMNS } from "../list";
 import type { JobListItem } from "../schemas";
 import { jobTotal } from "../total";
@@ -30,11 +32,12 @@ const EMPTY = "—";
 
 // `pending`: another page, search, filter or sort is loading (the rows shown are the old ones).
 type JobsTableProps =
-  | { ok: true; rows: JobListItem[]; matching: number; total: number; pending?: boolean }
-  | { ok: false; onRetry: () => void; pending?: boolean };
+  | { ok: true; rows: JobListItem[]; matching: number; total: number; pending?: boolean; scope?: JobListScope }
+  | { ok: false; onRetry: () => void; pending?: boolean; scope?: JobListScope };
 
 export function JobsTable(props: JobsTableProps) {
   const t = useTranslations("jobs");
+  const tHome = useTranslations("home.jobs");
   const { params, clearAll, setShowArchived, toggleSort, setPage } = useListUrl(JOB_FILTER_KEYS);
   const { openJob, openCreate } = useJobsPanel();
 
@@ -155,8 +158,8 @@ export function JobsTable(props: JobsTableProps) {
         texts={{
           noResultsTitle: t("empty.noResultsTitle"),
           noResultsHint: t("empty.noResultsHint"),
-          noneTitle: t("empty.noneTitle"),
-          noneHint: t("empty.noneHint"),
+          noneTitle: props.scope === "home" ? tHome("empty.title") : t("empty.noneTitle"),
+          noneHint: props.scope === "home" ? tHome("empty.hint") : t("empty.noneHint"),
           onlyArchivedTitle: t("empty.onlyArchivedTitle"),
           onlyArchivedHint: t("empty.onlyArchivedHint"),
         }}

@@ -19,6 +19,18 @@ describe("ChecklistFilter", () => {
     expect(screen.getByText("0")).toBeInTheDocument();
   });
 
+  it("shows the label but lets a screen reader hear the longer accessible one", () => {
+    render(
+      <ChecklistFilter
+        options={[{ value: "c", label: "Entregado (últ. 30 días)", accessibleLabel: "Entregado, últimos 30 días", count: 5 }]}
+        selected={[]}
+        onChange={() => {}}
+      />,
+    );
+    expect(screen.getByText("Entregado (últ. 30 días)")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /^Entregado, últimos 30 días/ })).toBeInTheDocument();
+  });
+
   it("adds a choice to the selection in the options' order", () => {
     const onChange = vi.fn();
     render(<ChecklistFilter options={OPTIONS} selected={["c"]} onChange={onChange} />);

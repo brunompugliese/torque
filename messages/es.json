@@ -95,6 +95,22 @@
     "clear": "Limpiar",
     "clearFilter": "Limpiar filtro: {filter}"
   },
+  "home": {
+    "title": "Inicio",
+    "summary": "{appointments, plural, one {# turno} other {# turnos}} en los próximos 7 días, {jobs, plural, one {# trabajo abierto} other {# trabajos abiertos}}.",
+    "appointments": {
+      "title": "Turnos"
+    },
+    "jobs": {
+      "title": "Trabajos",
+      "closedLabel": "{status} (últ. 30 días)",
+      "closedLabelFull": "{status}, últimos 30 días",
+      "empty": {
+        "title": "No hay trabajos abiertos",
+        "hint": "Los trabajos pendientes o en curso aparecen acá."
+      }
+    }
+  },
   "appointments": {
     "title": "Turnos",
     "summary": "{total, plural, one {# turno} other {# turnos}} en total.",

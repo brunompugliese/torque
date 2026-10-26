@@ -4,6 +4,7 @@ import { cache } from "react";
 import { z } from "zod";
 
 import { requireSession } from "@/lib/auth/session";
+import { todayIsoDate } from "@/lib/calendar";
 import { argentinaDayStart, argentinaNextDayStart } from "@/lib/format/date";
 import { type ListParams, type SortDirection } from "@/lib/list/params";
 import { applyListQuery } from "@/lib/list/query";
@@ -11,6 +12,7 @@ import { toSearchPattern } from "@/lib/search/normalize";
 import { JOB_STATUSES, type JobStatus } from "@/lib/status";
 import { createServerSupabase } from "@/lib/supabase/server";
 
+import { HOME_OPEN_STATUSES, homeClosedFrom, homeMixedFilterExpression, homeStatusFilter } from "./home";
 import { JOB_DEFAULT_DIRECTION, JOB_DEFAULT_SORT, JOB_FILTER, JOB_SORT_COLUMNS, parseJobFilters } from "./list";
 import {
   JOB_HISTORY_COLUMNS,
@@ -32,6 +34,8 @@ export type JobPage = { ok: true; rows: JobListItem[]; matching: number } | { ok
 export type JobCounts = { ok: true; total: number; archived: number } | { ok: false };
 export type JobRowResult = { ok: true; row: JobListItem } | { ok: false };
 export type JobDetail = { ok: true; items: JobItem[]; history: JobHistoryEntry[] } | { ok: false };
+// Trabajos lists every job; Inicio lists the open ones and, when ticked, the recently closed ones.
+export type JobListScope = "all" | "home";
 export type JobStatusCounts = { ok: true; counts: Record<JobStatus, number> } | { ok: false };
 
 // Every job of the vehicle, archived ones included, newest first. No page: the
@@ -75,18 +79,30 @@ const listJobsCached = cache(
     status: string,
     from: string,
     to: string,
+    scope: JobListScope,
   ): Promise<JobPage> => {
     await requireSession();
     const { supabase } = await createServerSupabase();
 
     const filters = { [JOB_FILTER.status]: status, [JOB_FILTER.from]: from, [JOB_FILTER.to]: to };
-    const bounds = filterBounds(filters);
 
     // The plate and the client are encrypted: read through the list view.
     let query = supabase.from("job_list").select(JOB_LIST_COLUMNS, { count: "exact" });
-    if (bounds.statuses.length > 0) query = query.in("status", bounds.statuses);
-    if (bounds.from) query = query.gte("updated_at", bounds.from);
-    if (bounds.to) query = query.lt("updated_at", bounds.to);
+    if (scope === "home") {
+      // Inicio: its own rules, taken from the server's clock; the URL's dates and archived switch
+      // mean nothing here, and a search never brings archived jobs back.
+      const filter = homeStatusFilter(parseJobFilters(filters).statuses, homeClosedFrom(todayIsoDate()));
+      if (filter.kind === "in") query = query.in("status", filter.statuses);
+      else if (filter.kind === "closed-window")
+        query = query.in("status", filter.statuses).gte("updated_at", filter.from);
+      else query = query.or(homeMixedFilterExpression(filter));
+      query = query.eq("enabled", true);
+    } else {
+      const bounds = filterBounds(filters);
+      if (bounds.statuses.length > 0) query = query.in("status", bounds.statuses);
+      if (bounds.from) query = query.gte("updated_at", bounds.from);
+      if (bounds.to) query = query.lt("updated_at", bounds.to);
+    }
 
     const { data, error, count } = await applyListQuery(
       query,
@@ -106,7 +122,7 @@ const listJobsCached = cache(
   },
 );
 
-export function listJobs(params: ListParams): Promise<JobPage> {
+export function listJobs(params: ListParams, scope: JobListScope = "all"): Promise<JobPage> {
   const { filters } = params;
   return listJobsCached(
     params.search,
@@ -117,8 +133,26 @@ export function listJobs(params: ListParams): Promise<JobPage> {
     filters[JOB_FILTER.status] ?? "",
     filters[JOB_FILTER.from] ?? "",
     filters[JOB_FILTER.to] ?? "",
+    scope,
   );
 }
+
+// Inicio's "trabajos abiertos": active jobs that are not delivered or cancelled.
+export const getOpenJobCount = cache(async (): Promise<{ ok: true; total: number } | { ok: false }> => {
+  await requireSession();
+  const { supabase } = await createServerSupabase();
+
+  const { count, error } = await supabase
+    .from("job")
+    .select("id", { count: "exact", head: true })
+    .eq("enabled", true)
+    .in("status", HOME_OPEN_STATUSES);
+  if (error) {
+    console.error("[job] open count query failed", { code: error.code });
+    return { ok: false };
+  }
+  return { ok: true, total: count ?? 0 };
+});
 
 // Counts read the table, not the view: nothing to decrypt.
 export const getJobCounts = cache(async (): Promise<JobCounts> => {
@@ -144,17 +178,30 @@ const statusCountRowSchema = z.object({
 
 // The Estado filter's numbers: jobs per status for the current search, archived
 // switch and dates, ignoring the Estado selection itself. One request.
-export async function getJobStatusCounts(params: ListParams): Promise<JobStatusCounts> {
+export async function getJobStatusCounts(params: ListParams, scope: JobListScope = "all"): Promise<JobStatusCounts> {
   await requireSession();
   const { supabase } = await createServerSupabase();
 
+  const home = scope === "home";
   const bounds = filterBounds(params.filters);
-  const { data, error } = await supabase.rpc("job_status_counts", {
-    p_pattern: toSearchPattern(params.search),
-    p_show_archived: params.showArchived,
-    p_from: bounds.from,
-    p_to: bounds.to,
-  });
+  const { data, error } = await supabase.rpc(
+    "job_status_counts",
+    home
+      ? {
+          p_pattern: toSearchPattern(params.search),
+          p_show_archived: false,
+          p_from: null,
+          p_to: null,
+          p_closed_from: homeClosedFrom(todayIsoDate()),
+          p_enabled_only: true,
+        }
+      : {
+          p_pattern: toSearchPattern(params.search),
+          p_show_archived: params.showArchived,
+          p_from: bounds.from,
+          p_to: bounds.to,
+        },
+  );
   if (error) {
     console.error("[job] status counts failed", { code: error.code });
     return { ok: false };

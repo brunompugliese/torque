@@ -14,8 +14,11 @@ import { formatIsoDate } from "@/lib/format/date";
 import { toListSearch, type ListParams } from "@/lib/list/params";
 import { JOB_STATUSES, type JobStatus } from "@/lib/status";
 
-import { getStatusCounts } from "../actions";
+import { getHomeStatusCounts, getStatusCounts } from "../actions";
+import { isClosedStatus } from "@/lib/status";
 import { JOB_FILTER, JOB_FILTER_KEYS, jobFiltersToParams, parseJobFilters } from "../list";
+import type { JobListScope } from "../queries";
+import { NewJobButton } from "./new-job-button";
 
 // What the Estado counts depend on: the search, the archived switch and the dates
 // (not the Estado selection itself, nor the page or the sort).
@@ -30,28 +33,36 @@ function StatusFilterPanel({
   params,
   selected,
   onChange,
+  scope,
 }: {
   params: ListParams;
   selected: readonly JobStatus[];
   onChange: (statuses: JobStatus[]) => void;
+  scope: JobListScope;
 }) {
   const t = useTranslations("jobs.filters");
+  const tHome = useTranslations("home.jobs");
   const tStatus = useTranslations("status.job");
   const tCommon = useTranslations("common");
   const key = countsKey(params);
-  const counts = useLoadedData(key, () =>
-    getStatusCounts(key).then((result) => {
+  const fetchCounts = scope === "home" ? getHomeStatusCounts : getStatusCounts;
+  const counts = useLoadedData(`${scope}:${key}`, () =>
+    fetchCounts(key).then((result) => {
       if (!result.ok) throw new Error("counts");
       return result.counts;
     }),
   );
 
   const known = counts.status === "ready" ? counts.data : undefined;
-  const options: ChecklistOption[] = JOB_STATUSES.map((status) => ({
-    value: status,
-    label: tStatus(status),
-    count: known?.[status],
-  }));
+  const options: ChecklistOption[] = JOB_STATUSES.map((status) => {
+    const windowed = scope === "home" && isClosedStatus(status);
+    return {
+      value: status,
+      label: windowed ? tHome("closedLabel", { status: tStatus(status) }) : tStatus(status),
+      accessibleLabel: windowed ? tHome("closedLabelFull", { status: tStatus(status) }) : undefined,
+      count: known?.[status],
+    };
+  });
 
   return (
     <>
@@ -73,11 +84,22 @@ function StatusFilterPanel({
 
 // The jobs list's toolbar: search, the Estado and Fecha filters, "Mostrar archivados", and the
 // active filters as removable chips.
-export function JobsToolbar({ searchPlaceholder }: { searchPlaceholder: string }) {
+export function JobsToolbar({
+  searchPlaceholder,
+  scope = "all",
+}: {
+  searchPlaceholder: string;
+  scope?: JobListScope;
+}) {
   const t = useTranslations("jobs.filters");
+  const tHome = useTranslations("home.jobs");
+  const home = scope === "home";
   const tStatus = useTranslations("status.job");
   const { params, searchValue, setSearchValue, setShowArchived, setFilters } = useListUrl(JOB_FILTER_KEYS);
-  const filters = parseJobFilters(params.filters);
+  // Inicio has no dates: a typed-in "desde" or "hasta" means nothing there and is dropped like any
+  // other stale filter.
+  const parsed = parseJobFilters(params.filters);
+  const filters = home ? { ...parsed, from: null, to: null } : parsed;
 
   // A URL can hold filters that apply to nothing (a half-typed date, a hand-edited value): drop them,
   // so what the address bar says is what the list shows.
@@ -89,11 +111,13 @@ export function JobsToolbar({ searchPlaceholder }: { searchPlaceholder: string }
   }, [stale]);
   const hasDates = filters.from !== null || filters.to !== null;
 
-  const chips: FilterChip[] = filters.statuses.map((status) => ({
-    id: `${JOB_FILTER.status}:${status}`,
-    label: tStatus(status),
-    removeLabel: t("remove", { filter: tStatus(status) }),
-  }));
+  const chips: FilterChip[] = filters.statuses.map((status) => {
+    const label =
+      home && isClosedStatus(status) ? tHome("closedLabel", { status: tStatus(status) }) : tStatus(status);
+    const full =
+      home && isClosedStatus(status) ? tHome("closedLabelFull", { status: tStatus(status) }) : tStatus(status);
+    return { id: `${JOB_FILTER.status}:${status}`, label, removeLabel: t("remove", { filter: full }) };
+  });
   if (hasDates) {
     const label =
       filters.from && filters.to
@@ -122,7 +146,8 @@ export function JobsToolbar({ searchPlaceholder }: { searchPlaceholder: string }
         onSearchChange={setSearchValue}
         searchPlaceholder={searchPlaceholder}
         showArchived={params.showArchived}
-        onShowArchivedChange={setShowArchived}
+        onShowArchivedChange={home ? undefined : setShowArchived}
+        actions={<NewJobButton />}
         filters={
           <>
             <FilterPopover
@@ -134,26 +159,29 @@ export function JobsToolbar({ searchPlaceholder }: { searchPlaceholder: string }
               <StatusFilterPanel
                 params={params}
                 selected={filters.statuses}
+                scope={scope}
                 onChange={(statuses) =>
                   setFilters({ [JOB_FILTER.status]: statuses.length > 0 ? statuses.join(",") : undefined })
                 }
               />
             </FilterPopover>
-            <FilterPopover
-              label={t("date")}
-              active={hasDates}
-              onClear={() => setFilters({ [JOB_FILTER.from]: undefined, [JOB_FILTER.to]: undefined })}
-            >
-              <DateRangeFilter
-                value={{ from: filters.from ?? "", to: filters.to ?? "" }}
-                onChange={(range) =>
-                  setFilters({ [JOB_FILTER.from]: range.from || undefined, [JOB_FILTER.to]: range.to || undefined })
-                }
-                fromLabel={t("from")}
-                toLabel={t("to")}
-                orderError={t("dateOrderError")}
-              />
-            </FilterPopover>
+            {home ? null : (
+              <FilterPopover
+                label={t("date")}
+                active={hasDates}
+                onClear={() => setFilters({ [JOB_FILTER.from]: undefined, [JOB_FILTER.to]: undefined })}
+              >
+                <DateRangeFilter
+                  value={{ from: filters.from ?? "", to: filters.to ?? "" }}
+                  onChange={(range) =>
+                    setFilters({ [JOB_FILTER.from]: range.from || undefined, [JOB_FILTER.to]: range.to || undefined })
+                  }
+                  fromLabel={t("from")}
+                  toLabel={t("to")}
+                  orderError={t("dateOrderError")}
+                />
+              </FilterPopover>
+            )}
           </>
         }
       />
