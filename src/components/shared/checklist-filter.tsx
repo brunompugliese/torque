@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export type ChecklistOption = {
   value: string;
   label: string;
+  // What a screen reader hears instead of the label when it needs more words ("Entregado, últimos 30 días").
+  accessibleLabel?: string;
   // How many records the option would list; undefined while counts load.
   count?: number;
 };
@@ -49,7 +51,16 @@ export function ChecklistFilter({
           <li key={option.value}>
             <label className="flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-sm hover:bg-muted">
               <Checkbox checked={checked} onCheckedChange={(next) => toggle(option.value, next)} />
-              <span className="flex-1">{option.label}</span>
+              {option.accessibleLabel ? (
+                <>
+                  <span aria-hidden="true" className="flex-1">
+                    {option.label}
+                  </span>
+                  <span className="sr-only">{option.accessibleLabel}</span>
+                </>
+              ) : (
+                <span className="flex-1">{option.label}</span>
+              )}
               {loadingCounts ? (
                 <Skeleton aria-hidden="true" className="h-4 w-6" />
               ) : option.count !== undefined ? (

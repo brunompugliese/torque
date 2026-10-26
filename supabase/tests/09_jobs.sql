@@ -119,10 +119,36 @@ select results_eq($$ select status, total::int from public.job_status_counts(
 select is((select count(*)::int from public.job_status_counts(null, true, null, null)
            where status = 'cancelado'), 0, 'statuses without jobs are not listed');
 
+-- p_closed_from (Inicio): a window on updated_at for entregado / cancelado only (the archived delivered
+-- job was last updated on 2026-09-30 23:30 UTC).
+select results_eq($$ select status, total::int from public.job_status_counts(
+                       null, true, null, null, '2026-10-01 00:00:00+00') order by status $$,
+                  $$ values ('en_progreso', 1), ('pendiente', 2) $$,
+                  'a closed job last updated before p_closed_from is not counted; open jobs of any age are');
+select results_eq($$ select status, total::int from public.job_status_counts(
+                       null, true, null, null, '2026-09-30 00:00:00+00') order by status $$,
+                  $$ values ('en_progreso', 1), ('entregado', 1), ('pendiente', 2) $$,
+                  'a closed job updated on or after p_closed_from is counted');
+select results_eq($$ select status, total::int from public.job_status_counts(
+                       null, false, null, null, '2026-09-30 00:00:00+00') order by status $$,
+                  $$ values ('en_progreso', 1), ('pendiente', 2) $$,
+                  'p_closed_from keeps following the archived switch');
+select results_eq($$ select status, total::int from public.job_status_counts(null, true, null, null, null) order by status $$,
+                  $$ values ('en_progreso', 1), ('entregado', 1), ('pendiente', 2) $$,
+                  'a null p_closed_from behaves as before');
+select results_eq($$ select status, total::int from public.job_status_counts(
+                       '%volkswagen%', true, null, null, null, true) order by status $$,
+                  $$ values ('pendiente', 1) $$,
+                  'p_enabled_only leaves archived jobs out even with a search');
+
 select tests.act_as('user_b');
 select results_eq($$ select status, total::int from public.job_status_counts(null, true, null, null) $$,
                   $$ values ('pendiente', 1) $$,
                   'counts only count the caller''s shop');
+select results_eq($$ select status, total::int from public.job_status_counts(
+                       null, true, null, null, '2000-01-01 00:00:00+00') $$,
+                  $$ values ('pendiente', 1) $$,
+                  'counts with p_closed_from only count the caller''s shop');
 select tests.act_as_anon();
 select throws_ok($$ select * from public.job_status_counts(null, true, null, null) $$, '42501', null,
                  'anon cannot run job_status_counts');

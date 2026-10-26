@@ -56,6 +56,27 @@ export const getAppointmentCounts = cache(async (): Promise<AppointmentCounts> =
   return { ok: true, total: count ?? 0 };
 });
 
+// Inicio's summary: the appointments from `from` to `to` (both included) that are not cancelled.
+export const getAppointmentCountInRange = cache(
+  async (from: string, to: string): Promise<AppointmentCounts> => {
+    await requireSession();
+    const { supabase } = await createServerSupabase();
+
+    const { count, error } = await supabase
+      .from("appointment")
+      .select("id", { count: "exact", head: true })
+      .eq("enabled", true)
+      .neq("status", "cancelado")
+      .gte("date", from)
+      .lte("date", to);
+    if (error) {
+      console.error("[appointment] range count query failed", { code: error.code });
+      return { ok: false };
+    }
+    return { ok: true, total: count ?? 0 };
+  },
+);
+
 // One appointment as the calendar shows it.
 export async function getAppointmentListRow(id: string): Promise<AppointmentRowResult> {
   await requireSession();

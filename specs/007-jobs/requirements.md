@@ -59,7 +59,7 @@ Job modal
 - [ ] Given a job with no services, when the table shows, then it says "Todavía no hay servicios cargados."
 - [ ] Given the job, when the "Historial de estados" shows, then it is a vertical timeline, newest first. Each entry has the new status as its pill and the user's name and the date and time (dd/mm/aaaa hh:mm hs); no "desde …" or "(creación)" text. The line connecting the entries is continuous from the first node to the last.
 - [ ] Given the footer, when it shows, then it has "Creado el dd/mm/aaaa" (Argentina time) and "Volver" only when the modal was opened from another modal.
-- [ ] Given one job modal for the whole app, when it is opened from Trabajos, Turnos or a vehicle's history, then it has the actions above; when it is opened from Inicio, then it is read only (no "Archivar" and no "Editar trabajo"). Inicio and Turnos adopt it in their own specs.
+- [ ] Given one job modal for the whole app, when it is opened from Trabajos, Turnos or a vehicle's history, then it has the actions above; when it is opened from Inicio, then it has the same actions too (changed by [spec 009](../009-home/requirements.md); it was read only here before). Inicio and Turnos adopt it in their own specs.
 - [ ] Given a vehicle's "Historial de trabajos" (spec 006), when a job row is clicked or activated with the keyboard, then the job modal opens with "Volver" back to the vehicle (and the row's focus restored). This supersedes spec 006's "not clickable" criterion. After any action on the job the whole chain closes, and the X closes every modal in the chain.
 
 New and edit job

@@ -295,3 +295,44 @@ describe("AppointmentsCalendar job step", () => {
     expect(await screen.findByRole("heading", { name: `${formatIsoDate(TODAY)} · 09:00 hs` })).toBeInTheDocument();
   });
 });
+
+describe("AppointmentsCalendar on Inicio (fixed week, no URL)", () => {
+  const WEEK: CalendarState = { view: "week", anchor: TODAY };
+
+  function renderHome(initial: AppointmentRange) {
+    return renderWithIntl(
+      <AppointmentsPanel>
+        <NewAppointmentButton />
+        <AppointmentsCalendar initial={initial} initialState={WEEK} fixedView="week" syncUrl={false} />
+      </AppointmentsPanel>,
+    );
+  }
+
+  it("shows the next seven days without the Mes / Semana toggle", () => {
+    renderHome(ok(appointment("a1", TODAY, "09:00")));
+    expect(screen.getByRole("heading", { name: `${formatIsoDate(TODAY)} al ${formatIsoDate(addDays(TODAY, 6))}` })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mes" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Semana" })).toBeNull();
+    expect(within(day(TODAY)).getByRole("button", { name: /09:00/ })).toBeInTheDocument();
+  });
+
+  it("moves by seven days and loads that week, without touching the URL", async () => {
+    window.history.replaceState(null, "", "/inicio?estado=entregado&pagina=2");
+    mocks.searchAppointments.mockResolvedValue(ok());
+    renderHome(ok());
+
+    fireEvent.click(screen.getByRole("button", { name: "7 días siguientes" }));
+
+    const next = addDays(TODAY, 7);
+    const range = visibleRange("week", next);
+    await waitFor(() => expect(mocks.searchAppointments).toHaveBeenCalledWith(range.from, range.to));
+    expect(window.location.search).toBe("?estado=entregado&pagina=2");
+  });
+
+  it("still creates an appointment from a day", async () => {
+    renderHome(ok());
+    fireEvent.click(screen.getByRole("button", { name: `Nuevo turno el ${formatIsoDate(addDays(TODAY, 2))}` }));
+    expect(await screen.findByRole("heading", { name: "Nuevo turno" })).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Fecha/)).toHaveValue(addDays(TODAY, 2));
+  });
+});

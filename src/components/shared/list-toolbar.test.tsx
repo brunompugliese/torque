@@ -30,6 +30,11 @@ describe("ListToolbar", () => {
     expect(onSearchChange).toHaveBeenCalledWith("acei");
   });
 
+  it("draws no archived switch when the page gives no handler", () => {
+    renderToolbar({ onShowArchivedChange: undefined });
+    expect(screen.queryByRole("switch", { name: "Mostrar archivados" })).toBeNull();
+  });
+
   it("toggles Mostrar archivados", () => {
     const { onShowArchivedChange } = renderToolbar();
     const toggle = screen.getByRole("switch", { name: "Mostrar archivados" });

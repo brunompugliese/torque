@@ -23,6 +23,7 @@ import {
 } from "./schemas";
 
 const APPOINTMENTS_PATH = "/turnos";
+const HOME_PATH = "/inicio";
 const FOREIGN_KEY_VIOLATION = "23503";
 // A month grid is at most six weeks; a bigger range is not a calendar's.
 const MAX_RANGE_DAYS = WEEK_LENGTH * 9;
@@ -77,6 +78,8 @@ async function readBack(supabase: Supabase, id: string): Promise<AppointmentActi
   if (error) return unexpected("read back", error.code);
   if (!data) return fail("notFound");
   revalidatePath(APPOINTMENTS_PATH);
+  // Inicio shows the coming week.
+  revalidatePath(HOME_PATH);
   return ok(appointmentListRowSchema.parse(data));
 }
 
@@ -216,6 +219,9 @@ export async function createJobFromAppointment(id: unknown): Promise<Appointment
     observations: appointment.reason,
     items: [],
   });
-  if (result.ok) revalidatePath(APPOINTMENTS_PATH);
+  if (result.ok) {
+    revalidatePath(APPOINTMENTS_PATH);
+    revalidatePath(HOME_PATH);
+  }
   return result;
 }

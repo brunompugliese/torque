@@ -9,7 +9,6 @@ import { TextSkeleton } from "@/components/shared/text-skeleton";
 import { JobsPanel } from "@/features/job/components/jobs-panel";
 import { JobsList, JobsSummary } from "@/features/job/components/jobs-sections";
 import { JobsTableSkeleton } from "@/features/job/components/jobs-table";
-import { NewJobButton } from "@/features/job/components/new-job-button";
 import { JOB_FILTER_KEYS } from "@/features/job/list";
 import { requireSession } from "@/lib/auth/session";
 import { parseListParams } from "@/lib/list/params";
@@ -36,7 +35,6 @@ export default async function JobsPage({ searchParams }: PageProps<"/trabajos">)
               <JobsSummary />
             </Suspense>
           }
-          actions={<NewJobButton />}
         />
         <Suspense
           fallback={
