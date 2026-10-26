@@ -17,6 +17,7 @@ import {
   getJobListRow,
   getJobStatusCounts,
   getKmFloor,
+  getOpenJobCount,
   getVehicleOwner,
   listJobs,
   listServiceOptions,
@@ -44,6 +45,7 @@ import { calculateTotals, fillFinalPrices } from "./total";
 const JOBS_PATH = "/trabajos";
 const VEHICLES_PATH = "/vehiculos";
 const APPOINTMENTS_PATH = "/turnos";
+const HOME_PATH = "/inicio";
 const FOREIGN_KEY_VIOLATION = "23503";
 
 export type JobErrorKey =
@@ -82,6 +84,27 @@ export async function getStatusCounts(listSearch: unknown): Promise<JobStatusCou
   return getJobStatusCounts(
     parseListParams(new URLSearchParams(typeof listSearch === "string" ? listSearch : ""), JOB_FILTER_KEYS),
   );
+}
+
+// Inicio's table: the same list with the home scope. The scope is which action ran, never an input,
+// so the 30-day window can't be widened from the browser.
+export async function searchHomeJobs(listSearch: unknown): Promise<JobPage> {
+  return listJobs(
+    parseListParams(new URLSearchParams(typeof listSearch === "string" ? listSearch : ""), JOB_FILTER_KEYS),
+    "home",
+  );
+}
+
+export async function getHomeStatusCounts(listSearch: unknown): Promise<JobStatusCounts> {
+  return getJobStatusCounts(
+    parseListParams(new URLSearchParams(typeof listSearch === "string" ? listSearch : ""), JOB_FILTER_KEYS),
+    "home",
+  );
+}
+
+// The number of open jobs, for Inicio's empty state.
+export async function getHomeOpenJobCount() {
+  return getOpenJobCount();
 }
 
 // A job as the list shows it, for a modal opened from a vehicle's history.
@@ -144,6 +167,8 @@ async function readBack(supabase: Supabase, id: string): Promise<JobActionResult
   revalidatePath(VEHICLES_PATH);
   // An appointment shows its job ("Ver trabajo" / "Crear trabajo").
   revalidatePath(APPOINTMENTS_PATH);
+  // Inicio lists the open jobs.
+  revalidatePath(HOME_PATH);
   return ok(jobListRowSchema.parse(data));
 }
 

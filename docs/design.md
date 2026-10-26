@@ -152,13 +152,21 @@ Mandatory on every page, modal and component that loads data.
 
 ### Calendar
 
-A page that is a calendar (Turnos; Inicio reuses it) is not a list: no search, no pagination, no archived switch.
+A page that is a calendar (Turnos; [Inicio](#inicio) reuses its week) is not a list: no search, no pagination, no archived switch.
 
 - **Header:** the period as title in dd/mm/aaaa, never with month names ("01/10/2026 al 31/10/2026" for a month, "12/10/2026 al 18/10/2026" for a week); a "Mes / Semana" toggle (month by default), "Hoy" (disabled when the view already holds today) and previous / next arrows (a month, or 7 days). The weekday labels over the month grid are column headers, not dates.
 - **Month:** Monday-first grid, days of other months greyed, today with a dark circle on its number. Days are tall (a day is a target, not a number) and the pointer is a hand over the whole day. A record is one line (time in bold + its name, cut with "…" when it doesn't fit) styled by status; a day shows 3, then "+N más" opens a popover titled with the day's date that lists them all and closes with its X, Esc, a click outside or scrolling. **Week:** today and the next 6 days; a day lists 5 records, then "+N más" with the same list.
 - **Creating:** clicking an empty part of a day, or its "+" button (visible on hover or keyboard focus), opens the form on that day. After saving, the calendar goes to the saved record's day.
 - **State in the URL:** `?vista=semana&fecha=2026-10-12` (both absent at their defaults). Only the visible days are loaded, with the calendar's skeleton and an error with "Reintentar".
 - **Modal chain:** a record opened from a day's "+N más" list has no "Volver" (going back would only close the modal): closing the modal, with the X or after an action, leaves the list open again with the focus on the record.
+
+### Inicio
+
+The home page is two existing screens on one page, with the title "Inicio", a summary ("3 turnos en los próximos 7 días, 12 trabajos abiertos.": today and the next 6 days, Cancelado left out, and the active jobs that are not Entregado or Cancelado), and no buttons in its header: "Nuevo turno" is on the right of the "Turnos" heading and "Nuevo trabajo" on the right of the "Trabajos" heading. Everything on it works exactly as on Turnos and Trabajos, with their modals and actions.
+
+- **"Turnos":** the calendar's week view (today and the next 6 days) without the "Mes / Semana" toggle. The week is not kept in the URL (the jobs list owns the address bar), so a reload returns to today's week.
+- **"Trabajos":** the Trabajos table with the search and the Estado filter, and without the Fecha filter and the archived switch (archived jobs are never listed). With nothing ticked it lists every job that is not Entregado or Cancelado, whatever its age. The Estado dropdown still lists all seven statuses; "Entregado (últ. 30 días)" and "Cancelado (últ. 30 días)" add the jobs in those statuses last updated in the last 30 days (today and the 29 before it, Argentina time), and their counts cover only that window. A ticked one is a chip with the same text. The window is applied on the server, never taken from the URL.
+- **Empty:** with no open jobs and nothing searched: "No hay trabajos abiertos" · "Los trabajos pendientes o en curso aparecen acá." · "Nuevo trabajo".
 
 ### Search
 

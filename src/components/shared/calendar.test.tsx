@@ -17,6 +17,7 @@ function item(id: string, date: string, time: string): Item {
 type HarnessProps = {
   items?: Item[];
   view?: "month" | "week";
+  views?: readonly ("month" | "week")[];
   anchor?: string;
   loading?: boolean;
   errorSlot?: ReactNode;
@@ -31,6 +32,7 @@ type HarnessProps = {
 function Harness({
   items = [],
   view = "month",
+  views,
   anchor = "2026-10-01",
   loading,
   errorSlot,
@@ -45,6 +47,7 @@ function Harness({
   return (
     <Calendar
       view={view}
+      views={views}
       anchor={anchor}
       items={items}
       loading={loading}
@@ -136,6 +139,17 @@ describe("Calendar header", () => {
     renderWithIntl(<Harness view="week" anchor="2026-10-21" onAnchorChange={onAnchorChange} />);
     fireEvent.click(screen.getByRole("button", { name: "Hoy" }));
     expect(onAnchorChange).toHaveBeenCalledWith(TODAY);
+  });
+
+  it("draws no view toggle when the calendar has a single view, and keeps Hoy and the arrows", () => {
+    const onAnchorChange = vi.fn();
+    renderWithIntl(<Harness view="week" views={["week"]} anchor="2026-10-21" onAnchorChange={onAnchorChange} />);
+    expect(screen.queryByRole("button", { name: "Mes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Semana" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "21/10/2026 al 27/10/2026" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hoy" }));
+    fireEvent.click(screen.getByRole("button", { name: "7 días siguientes" }));
+    expect(onAnchorChange.mock.calls).toEqual([[TODAY], ["2026-10-28"]]);
   });
 
   it("shows the legend it is given", () => {

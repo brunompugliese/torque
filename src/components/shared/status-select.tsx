@@ -54,7 +54,8 @@ function StatusPillSelect<Status extends string>({
       >
         {badge(status, <CaretDownIcon aria-hidden="true" />)}
       </SelectTrigger>
-      <SelectContent>
+      {/* Wide enough for the longest status and the tick, whatever the width of the pill. */}
+      <SelectContent className="min-w-52">
         {statuses.map((value) => (
           <SelectItem key={value} value={value}>
             {labelOf(value)}

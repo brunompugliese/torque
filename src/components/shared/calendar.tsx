@@ -32,9 +32,12 @@ export const MONTH_DAY_LIMIT = 3;
 export const WEEK_DAY_LIMIT = 5;
 
 const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+const ALL_VIEWS: readonly CalendarView[] = ["month", "week"];
 
 type CalendarProps<Item extends CalendarItem> = {
   view: CalendarView;
+  // The views the user can switch between (both by default). With only one, the toggle isn't drawn.
+  views?: readonly CalendarView[];
   // The month's first day, or the week's first day.
   anchor: string;
   items: readonly Item[];
@@ -69,6 +72,7 @@ function groupByDay<Item extends CalendarItem>(items: readonly Item[]): Map<stri
 
 export function Calendar<Item extends CalendarItem>({
   view,
+  views = ALL_VIEWS,
   anchor,
   items,
   loading = false,
@@ -110,22 +114,24 @@ export function Calendar<Item extends CalendarItem>({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold tabular-nums">{range}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <div role="group" aria-label={t("viewLabel")} className="inline-flex gap-0.5 rounded-lg border p-0.5">
-            {(["month", "week"] as const).map((option) => (
-              <Button
-                key={option}
-                type="button"
-                size="sm"
-                variant={view === option ? "default" : "ghost"}
-                aria-pressed={view === option}
-                onClick={() => {
-                  if (view !== option) onViewChange(option, switchView(option, anchor, today));
-                }}
-              >
-                {t(option)}
-              </Button>
-            ))}
-          </div>
+          {views.length > 1 ? (
+            <div role="group" aria-label={t("viewLabel")} className="inline-flex gap-0.5 rounded-lg border p-0.5">
+              {views.map((option) => (
+                <Button
+                  key={option}
+                  type="button"
+                  size="sm"
+                  variant={view === option ? "default" : "ghost"}
+                  aria-pressed={view === option}
+                  onClick={() => {
+                    if (view !== option) onViewChange(option, switchView(option, anchor, today));
+                  }}
+                >
+                  {t(option)}
+                </Button>
+              ))}
+            </div>
+          ) : null}
           <Button
             type="button"
             size="sm"

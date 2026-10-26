@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 vi.mock("@/lib/auth/session", () => ({ requireSession: mocks.requireSession }));
 
-import { getAppointmentCounts, getAppointmentListRow, listAppointments } from "./queries";
+import { getAppointmentCountInRange, getAppointmentCounts, getAppointmentListRow, listAppointments } from "./queries";
 
 const ROW = {
   id: "a1",
@@ -78,6 +78,24 @@ describe("getAppointmentCounts", () => {
     expect(await getAppointmentCounts()).toEqual({ ok: true, total: 7 });
     expect(queries[0].table).toBe("appointment");
     expect(filterValue(queries[0], "eq", "enabled")).toBe(true);
+  });
+});
+
+describe("getAppointmentCountInRange", () => {
+  it("counts the active, not cancelled appointments of the days on the table", async () => {
+    const queries = setup(() => ({ count: 4 }));
+    expect(await getAppointmentCountInRange("2026-10-25", "2026-10-31")).toEqual({ ok: true, total: 4 });
+    expect(queries[0].table).toBe("appointment");
+    expect(filterValue(queries[0], "eq", "enabled")).toBe(true);
+    expect(filterValue(queries[0], "neq", "status")).toBe("cancelado");
+    expect(filterValue(queries[0], "gte", "date")).toBe("2026-10-25");
+    expect(filterValue(queries[0], "lte", "date")).toBe("2026-10-31");
+  });
+
+  it("is not ok when the query fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    setup(() => ({ error: { code: "XX000" } }));
+    expect(await getAppointmentCountInRange("2026-11-01", "2026-11-07")).toEqual({ ok: false });
   });
 });
 

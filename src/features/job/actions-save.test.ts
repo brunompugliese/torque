@@ -131,7 +131,7 @@ describe("createJob", () => {
   it("revalidates the jobs and the vehicles pages", async () => {
     setup();
     await createJob({ vehicleId: VEHICLE });
-    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos", "/turnos"]);
+    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos", "/turnos", "/inicio"]);
   });
 
   describe("the client", () => {
@@ -521,7 +521,7 @@ describe("setJobStatus", () => {
     expect(args.p_items).toMatchObject([
       { id: ITEM, service_id: SERVICE, quantity: 2, quoted_unit_price: 100, final_unit_price: null },
     ]);
-    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos", "/turnos"]);
+    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos", "/turnos", "/inicio"]);
   });
 
   it("moving into the work phase gives every service its quoted price as the final one", async () => {
