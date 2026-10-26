@@ -78,9 +78,15 @@ select throws_ok($$ select count(*) from public.appointment_list $$, '42501', nu
 -- Read only
 -- -----------------------------------------------------------------------------
 select tests.act_as('user_a');
-select throws_ok($$ update public.appointment_list set status = 'cancelado' $$, '42501', null,
-                 'appointment_list cannot be updated');
-select throws_ok($$ delete from public.appointment_list $$, '42501', null, 'appointment_list cannot be deleted from');
+-- A view with joins can't be written to at all (Postgres says so before it looks at privileges), so the
+-- grants are checked directly: authenticated may only select.
+select ok(has_table_privilege('authenticated', 'public.appointment_list', 'SELECT'), 'authenticated can select from appointment_list');
+select ok(not has_table_privilege('authenticated', 'public.appointment_list', 'INSERT'), 'authenticated cannot insert into appointment_list');
+select ok(not has_table_privilege('authenticated', 'public.appointment_list', 'UPDATE'), 'authenticated cannot update appointment_list');
+select ok(not has_table_privilege('authenticated', 'public.appointment_list', 'DELETE'), 'authenticated cannot delete from appointment_list');
+select ok(not has_table_privilege('anon', 'public.appointment_list', 'SELECT'), 'anon cannot select from appointment_list');
+select throws_ok($$ update public.appointment_list set status = 'cancelado' $$, '55000', null,
+                 'appointment_list cannot be updated: it is not an updatable view');
 
 -- -----------------------------------------------------------------------------
 -- Rules the page relies on
