@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { JOB_STATUSES } from "@/lib/status";
 import { renderWithIntl } from "@/test/render";
 
-import { StatusSelect } from "./status-select";
+import { AppointmentStatusSelect, StatusSelect } from "./status-select";
 
 // A Select option is chosen on pointer release, as a mouse does it.
 function press(option: HTMLElement) {
@@ -66,6 +66,42 @@ describe("StatusSelect", () => {
 
   it("can't be opened when disabled", () => {
     renderWithIntl(<StatusSelect status="pendiente" label="Cambiar estado" disabled onChange={() => {}} />);
+    expect(screen.getByRole("combobox")).toBeDisabled();
+  });
+});
+
+describe("AppointmentStatusSelect", () => {
+  it("shows the appointment status as its pill on a button that names it", () => {
+    renderWithIntl(<AppointmentStatusSelect status="confirmado" label="Cambiar estado" onChange={() => {}} />);
+    const trigger = screen.getByRole("combobox", { name: "Cambiar estado: Confirmado" });
+    expect(within(trigger).getByText("Confirmado")).toHaveClass("bg-status-done");
+    expect(trigger.querySelectorAll("svg")).toHaveLength(1);
+  });
+
+  it("lists the four statuses in order and marks the current one", async () => {
+    renderWithIntl(<AppointmentStatusSelect status="completado" label="Cambiar estado" onChange={() => {}} />);
+    fireEvent.click(screen.getByRole("combobox"));
+    const options = await screen.findAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual(["Pendiente", "Confirmado", "Completado", "Cancelado"]);
+    expect(screen.getByRole("option", { name: "Completado" })).toHaveAttribute("aria-selected", "true");
+    for (const option of options) expect(option.className).not.toMatch(/status-/);
+  });
+
+  it("jumps to any status and ignores the current one", async () => {
+    const onChange = vi.fn();
+    renderWithIntl(<AppointmentStatusSelect status="cancelado" label="Cambiar estado" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("combobox"));
+    press(await screen.findByRole("option", { name: "Completado" }));
+    expect(onChange).toHaveBeenCalledWith("completado");
+    onChange.mockClear();
+
+    fireEvent.click(screen.getByRole("combobox"));
+    press(await screen.findByRole("option", { name: "Cancelado" }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("can't be opened when disabled", () => {
+    renderWithIntl(<AppointmentStatusSelect status="pendiente" label="Cambiar estado" disabled onChange={() => {}} />);
     expect(screen.getByRole("combobox")).toBeDisabled();
   });
 });

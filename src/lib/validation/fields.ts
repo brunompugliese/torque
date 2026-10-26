@@ -114,7 +114,9 @@ export type ValidationErrorKey =
   | "vehicleRequired"
   | "vehicleInvalid"
   | "serviceRequired"
-  | "serviceInvalid";
+  | "serviceInvalid"
+  | "dateRequired"
+  | "timeRequired";
 
 // First issue per field, as the key the form translates.
 export function toFieldErrors<Field extends string>(

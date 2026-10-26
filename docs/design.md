@@ -43,12 +43,12 @@ Neutral black, white and greys, so status colors are the only strong color on sc
 | Entregado | #F8FAFC | #1E293B | #334155 |
 | Cancelado | #FEF2F2 | #991B1B | #EF4444 |
 
-**Appointment status colors.** Calendar cards have a 4px left edge in the status color.
+**Appointment status colors.** Calendar cards: a white card with a 4px left edge in the status color (Pendiente), a solid green border with diagonal lines over white ("////", Confirmado), or a filled card with the edge (Completado, Cancelado). The legend under the calendar draws each status as a small square that says the same: a plain amber square (Pendiente), a solid green border with diagonal lines (Confirmado), the Completado card's solid fill with a solid green border, and a plain red square (Cancelado).
 
 | Status | Card | Badge (fill / text / dot) |
 | --- | --- | --- |
 | Pendiente | White card, edge #F59E0B | #FFFBEB / #92400E / #F59E0B |
-| Confirmado | White card, edge #22C55E | #F0FDF4 / #166534 / #22C55E |
+| Confirmado | White card, solid border #22C55E, diagonal lines in #22C55E at 45%, no edge | #F0FDF4 / #166534 / #22C55E |
 | Completado | Fill #F0FDF4, border #BBF7D0, edge #22C55E, text #166534, not struck through | #F0FDF4 / #166534 / #22C55E |
 | Cancelado | Fill #FEF2F2, border #FECACA, edge #EF4444, text #991B1B, struck through | #FEF2F2 / #991B1B / #EF4444 |
 
@@ -150,6 +150,16 @@ Mandatory on every page, modal and component that loads data.
 - Screen readers hear one "Cargando…" for the region (`aria-busy`), not each block.
 - Spinners are only for an action in progress inside a button ("Ingresando…"), never for loading a page or a list.
 
+### Calendar
+
+A page that is a calendar (Turnos; Inicio reuses it) is not a list: no search, no pagination, no archived switch.
+
+- **Header:** the period as title in dd/mm/aaaa, never with month names ("01/10/2026 al 31/10/2026" for a month, "12/10/2026 al 18/10/2026" for a week); a "Mes / Semana" toggle (month by default), "Hoy" (disabled when the view already holds today) and previous / next arrows (a month, or 7 days). The weekday labels over the month grid are column headers, not dates.
+- **Month:** Monday-first grid, days of other months greyed, today with a dark circle on its number. Days are tall (a day is a target, not a number) and the pointer is a hand over the whole day. A record is one line (time in bold + its name, cut with "…" when it doesn't fit) styled by status; a day shows 3, then "+N más" opens a popover titled with the day's date that lists them all and closes with its X, Esc, a click outside or scrolling. **Week:** today and the next 6 days; a day lists 5 records, then "+N más" with the same list.
+- **Creating:** clicking an empty part of a day, or its "+" button (visible on hover or keyboard focus), opens the form on that day. After saving, the calendar goes to the saved record's day.
+- **State in the URL:** `?vista=semana&fecha=2026-10-12` (both absent at their defaults). Only the visible days are loaded, with the calendar's skeleton and an error with "Reintentar".
+- **Modal chain:** a record opened from a day's "+N más" list has no "Volver" (going back would only close the modal): closing the modal, with the X or after an action, leaves the list open again with the focus on the record.
+
 ### Search
 
 Filters as you type. Ignores case and accents, and also matches with spaces, dots and dashes removed ("ae 482", "AE482", "suarez", "35.123.456"). Search always includes archived records: while the search box has text, matching archived records are listed too (greyed, with the "Archivado" badge) even with "Mostrar archivados" off. Encrypted fields are searched through the `search_text` column of the decrypted views (see [architecture.md](architecture.md#sensitive-data)).
@@ -158,13 +168,13 @@ Filters as you type. Ignores case and accents, and also matches with spaces, dot
 
 - Header: title (record identity), its badges (status, "Archivado"), subtitle, then the X.
 - Body: label/value pairs, then related lists. A tall modal scrolls inside the window; its header and footer stay.
-- Footer: "Creado el dd/mm/aaaa" in small grey text on the left; on the right "Volver" (when the modal was opened from another modal), then the actions — "Archivar" / "Desarchivar" and "Editar …" — and status-specific actions (appointments). A modal with a form shows its own footer ("Cancelar" / "Guardar").
+- Footer: "Creado el dd/mm/aaaa" in small grey text on the left; on the right "Volver" (when the modal was opened from another modal), then the actions — "Archivar" / "Desarchivar" and "Editar …". A modal with a form shows its own footer ("Cancelar" / "Guardar").
 - **Editable status:** where a job's status shows as a pill (list rows, the job modal header) it is a dropdown of the seven statuses in the neutral style, not each status' color, unless the job is closed or archived. Changing it follows the form's rules (final prices fill or clear with the phase, closing asks first) and confirms with a toast. The dropdown arrow is inside the pill; a closed job's pill has a lock inside instead, with no text hint.
 - The X always closes every modal in the chain.
 
 ### Modal to modal
 
-A modal opened from another modal (client → vehicle, vehicle → job, day list → appointment) has "Volver", which returns to the previous modal with focus on the item you came from. Once an action succeeds the whole chain closes (see [Modals](#modals)).
+A modal opened from another modal (client → vehicle, vehicle → job, appointment → job) has "Volver", which returns to the previous modal with focus on the item you came from. Once an action succeeds the whole chain closes (see [Modals](#modals)).
 
 ### Modals
 
@@ -191,11 +201,11 @@ Every pick from a list (brand, model, client, vehicle, service) is a field you t
 
 ### Quick create inside a dropdown
 
-The last option is always "+ Crear … nuevo", except in the job form, which has no quick create: its client is the vehicle's owner and its services come from the catalog. It hides the dropdown and opens an inline "… nuevo" section in the same form, with an X to discard it. Text the user typed is carried over (a name to Nombre/Apellido, a number to Teléfono or Patente); a value picked from the list is not. One save creates both records with one toast.
+The last option is always "+ Crear … nuevo", except in the job and appointment forms, which have no quick create: a job's or an appointment's client is the vehicle's owner, a job's services come from the catalog and its vehicle is picked from the existing ones. It hides the dropdown and opens an inline "… nuevo" section in the same form, with an X to discard it. Text the user typed is carried over (a name to Nombre/Apellido, a number to Teléfono or Patente); a value picked from the list is not. One save creates both records with one toast.
 
 ### Archive
 
-Vehicles, clients, jobs and services are archived, never deleted. Archiving sets `enabled = false`; the UI never shows the word "habilitado".
+Vehicles, clients, jobs and services are archived, never deleted. Archiving sets `enabled = false`; the UI never shows the word "habilitado". Appointments are the exception in the app: they have no archive action and no archived state on screen; a booking that won't happen is Cancelado (and can be reactivated).
 
 - "Archivar" is in the detail modal header, next to "Editar". It always asks for confirmation: "¿Archivar este vehículo?" + "Va a dejar de aparecer en el listado. Lo podés ver activando Mostrar archivados y desarchivarlo cuando quieras." + "Cancelar" / "Archivar".
 - Archived records show an "Archivado" badge and greyed rows; "Desarchivar" restores them immediately, without confirmation.
@@ -227,7 +237,11 @@ Seven, in this order (also their sort order): Pendiente, Presupuesto enviado, Pr
 
 ### Appointment statuses
 
-Pendiente, Confirmado, Completado, Cancelado (`pendiente`, `confirmado`, `completado`, `cancelado`). New appointments start as Pendiente. Completado is set manually. Cancelled appointments can be reactivated (back to Pendiente).
+Pendiente, Confirmado, Completado, Cancelado (`pendiente`, `confirmado`, `completado`, `cancelado`). New appointments start as Pendiente. Completado is set manually, never by the job. Cancelled appointments can be reactivated (back to Pendiente). Any appointment can still be edited, whatever its status.
+
+The appointment's status is a pill in its modal's header that works like a job's: it opens a dropdown with the four statuses and any of them can be chosen at any time (the list is in the app's neutral style, and a toast confirms: "Turno confirmado", "Turno completado", "Turno cancelado", "Estado actualizado" for Pendiente). Cancelling asks first (also from the edit form); the other changes are reversible and ask nothing. The footer has only "Editar turno" (and "Creado el").
+
+A job can be created from an appointment ("Crear trabajo"): it takes the appointment's vehicle, its vehicle's owner as client, the reason as observations and the latest recorded km, with no services and status Pendiente. It is hidden for a cancelled appointment and disabled while the vehicle is archived. An appointment shows its latest non-archived job ("Ver trabajo") instead.
 
 ### Prices
 
@@ -247,7 +261,7 @@ A job's km is prefilled with the vehicle's latest recorded km (from its previous
 ### Clients on records
 
 - Vehicles: optional owner.
-- Appointments: the client is the vehicle's owner at the moment the appointment is created. It can't be changed in the appointment.
+- Appointments: the client is the vehicle's owner at the moment the appointment is created. Nobody picks it (the form shows it read only). It stays while the appointment's vehicle does, even if the owner changes later, and follows the new vehicle's owner when an edit changes the vehicle. An archived owner stays and shows as "(Archivado)".
 - Jobs: the vehicle's owner, or none. Nobody picks it (the job form shows it read only). An archived owner can't be put on a new job, so the job is saved with no client and the form says so beforehand; a job that already has it keeps it.
 - An archived client stays linked to their vehicles and shows as "Nombre Apellido (Archivado)" wherever a vehicle shows its client. Archiving a client never changes their vehicles.
 

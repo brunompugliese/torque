@@ -767,6 +767,51 @@ select
   a.status, a.enabled, a.created_at, a.updated_at
 from public.appointment a;
 
+-- The Turnos calendar (spec 008): an appointment with its vehicle, client and latest job, all
+-- computed here and never stored (no personal data in plaintext columns). A column is only
+-- computed when a query selects it. appointment_decrypted stays the light read.
+--   job_id  the latest non-archived job linked to the appointment ("Ver trabajo"); null without one
+create or replace view public.appointment_list
+with (security_invoker = true) as
+select
+  a.id, a.shop_id, a.vehicle_id, a.client_id, a.date, a.time,
+  ad.reason,
+  a.status, a.enabled, a.created_at, a.updated_at,
+  vd.plate,
+  v.year          as vehicle_year,
+  b.name          as brand_name,
+  m.name          as model_name,
+  v.enabled       as vehicle_enabled,
+  cd.name         as client_name,
+  cd.surname      as client_surname,
+  cd.phone_number as client_phone_number,
+  c.enabled       as client_enabled,
+  lj.id           as job_id
+from public.appointment a
+join public.vehicle v on v.id = a.vehicle_id and v.shop_id = a.shop_id
+join public.brand b on b.id = v.brand_id
+join public.model m on m.id = v.model_id
+left join public.client c on c.id = a.client_id and c.shop_id = a.shop_id
+cross join lateral (
+  select private.decrypt_text(a.reason) as reason
+) ad
+cross join lateral (
+  select private.decrypt_text(v.plate) as plate
+) vd
+left join lateral (
+  select
+    private.decrypt_text(c.name)         as name,
+    private.decrypt_text(c.surname)      as surname,
+    private.decrypt_text(c.phone_number) as phone_number
+) cd on true
+left join lateral (
+  select j.id
+  from public.job j
+  where j.appointment_id = a.id and j.shop_id = a.shop_id and j.enabled
+  order by j.created_at desc, j.id desc
+  limit 1
+) lj on true;
+
 create or replace view public.job_decrypted
 with (security_invoker = true) as
 select
@@ -1270,3 +1315,8 @@ revoke insert, update, delete, truncate, references, trigger, maintain
 grant select on public.job_list to authenticated;
 revoke all on public.job_list from anon;
 revoke insert, update, delete, truncate, references, trigger, maintain on public.job_list from authenticated;
+
+-- appointment_list (spec 008): read-only for authenticated, nothing for anon.
+grant select on public.appointment_list to authenticated;
+revoke all on public.appointment_list from anon;
+revoke insert, update, delete, truncate, references, trigger, maintain on public.appointment_list from authenticated;

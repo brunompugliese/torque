@@ -14,10 +14,12 @@ import {
   listClientVehicles,
   listModelOptions,
   listUnassignedVehicles,
+  listVehicleOptions,
   listVehicles,
   type CatalogOptionList,
   type ClientVehicleList,
   type VehicleList,
+  type VehicleOptionList,
   type VehiclePage,
 } from "./queries";
 import {
@@ -37,6 +39,7 @@ const VEHICLES_PATH = "/vehiculos";
 const CLIENTS_PATH = "/clientes";
 const UNIQUE_VIOLATION = "23505";
 const FOREIGN_KEY_VIOLATION = "23503";
+const OPTION_TERM_MAX_LENGTH = 100;
 
 // What save_vehicle_with_new_client raises (docs/db_schema.sql).
 const PLATE_TAKEN = "vehicle_plate_taken";
@@ -85,6 +88,14 @@ export async function getModelOptions(brandId: unknown, currentId?: unknown): Pr
   const current = idSchema.nullish().safeParse(currentId);
   if (!brand.success || !current.success) return { ok: false };
   return listModelOptions(brand.data, current.data ?? undefined);
+}
+
+// The vehicle dropdown of the job and appointment forms. The term travels in the request body, never
+// in a URL; `currentId` is the record's own vehicle, kept even if archived.
+export async function searchVehicleOptions(term: unknown, currentId?: unknown): Promise<VehicleOptionList> {
+  const current = idSchema.nullish().safeParse(currentId);
+  if (typeof term !== "string" || !current.success) return { ok: false };
+  return listVehicleOptions(term.slice(0, OPTION_TERM_MAX_LENGTH), current.data ?? undefined);
 }
 
 // One statement. The "client_id is null" guard leaves untouched any vehicle

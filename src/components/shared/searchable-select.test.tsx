@@ -18,6 +18,7 @@ type HarnessProps = {
   loading?: boolean;
   disabled?: boolean;
   action?: SelectAction;
+  clearLabel?: string;
   initialValue?: string;
   onValue?: (value: string) => void;
   onText?: (text: string) => void;
@@ -149,6 +150,39 @@ describe("SearchableSelect", () => {
     expect(screen.getByTestId("value")).toHaveTextContent("");
     expect(onText).toHaveBeenLastCalledWith("Martín Su");
     expect(box()).toHaveValue("Martín Su");
+  });
+
+  describe("clear button", () => {
+    it("is not there unless the field asks for it", () => {
+      renderWithIntl(<Harness initialValue="2" />);
+      expect(screen.queryByRole("button", { name: "Quitar cliente" })).toBeNull();
+    });
+
+    it("is not there while the field is empty", () => {
+      renderWithIntl(<Harness clearLabel="Quitar cliente" />);
+      expect(screen.queryByRole("button", { name: "Quitar cliente" })).toBeNull();
+    });
+
+    it("empties the choice and the text, and tells the form", async () => {
+      const onValue = vi.fn();
+      const onText = vi.fn();
+      renderWithIntl(<Harness initialValue="2" clearLabel="Quitar cliente" onValue={onValue} onText={onText} />);
+      expect(box()).toHaveValue("Martín Suárez");
+
+      fireEvent.click(screen.getByRole("button", { name: "Quitar cliente" }));
+      await waitFor(() => expect(box()).toHaveValue(""));
+      expect(screen.getByTestId("value")).toHaveTextContent("");
+      expect(onValue).toHaveBeenLastCalledWith("");
+      expect(onText).toHaveBeenLastCalledWith("");
+      expect(screen.queryByRole("button", { name: "Quitar cliente" })).toBeNull();
+    });
+
+    it("shows only for a chosen option: text that matches nothing is erased by hand", async () => {
+      renderWithIntl(<Harness clearLabel="Quitar cliente" />);
+      type("zzz");
+      await waitFor(() => expect(box()).toHaveValue("zzz"));
+      expect(screen.queryByRole("button", { name: "Quitar cliente" })).toBeNull();
+    });
   });
 
   it("keeps text that matches no option, so the form can reject it", async () => {

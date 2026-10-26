@@ -41,6 +41,7 @@ vi.mock("@/features/vehicle/actions", () => ({
   setVehicleArchived: vi.fn(),
   getBrandOptions: vi.fn(async () => ({ ok: true, rows: [] })),
   getModelOptions: vi.fn(async () => ({ ok: true, rows: [] })),
+  searchVehicleOptions: vi.fn(async () => ({ ok: true, rows: [] })),
 }));
 vi.mock("@/features/job/actions", () => ({
   getVehicleJobs: mocks.getVehicleJobs,
@@ -49,7 +50,6 @@ vi.mock("@/features/job/actions", () => ({
   setJobArchived: mocks.setJobArchived,
   updateJob: mocks.updateJob,
   createJob: vi.fn(),
-  searchVehicleOptions: vi.fn(async () => ({ ok: true, rows: [] })),
   getOwnerOfVehicle: vi.fn(async () => ({ ok: true, owner: null })),
   getVehicleKmFloor: vi.fn(async () => ({ ok: true, floor: null })),
   getServiceOptions: vi.fn(async () => ({ ok: true, rows: [] })),

@@ -340,6 +340,7 @@ export function VehicleForm({ id, vehicle, lockedClient, onSubmit }: VehicleForm
                 placeholder={t("fields.clientPlaceholder")}
                 emptyText={t("fields.noOptions")}
                 action={{ label: t("newClient.create"), onSelect: openNewClient }}
+                clearLabel={t("fields.clientClear")}
                 invalid={Boolean(errors.clientId)}
                 describedBy={[
                   `${idOf("clientId")}-hint`,

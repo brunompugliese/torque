@@ -50,6 +50,27 @@ export function isClosedStatus(status: JobStatus): boolean {
   return CLOSED_STATUSES.includes(status);
 }
 
+// In display order (docs/design.md#appointment-statuses).
+export const APPOINTMENT_STATUSES = ["pendiente", "confirmado", "completado", "cancelado"] as const;
+
+export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
+
+// Confirmado and Completado share the badge family; their calendar cards differ (docs/design.md).
+const APPOINTMENT_STATUS_FAMILY: Record<AppointmentStatus, StatusFamily> = {
+  pendiente: "pending",
+  confirmado: "done",
+  completado: "done",
+  cancelado: "cancelled",
+};
+
+export function isAppointmentStatus(value: string): value is AppointmentStatus {
+  return (APPOINTMENT_STATUSES as readonly string[]).includes(value);
+}
+
+export function appointmentStatusFamily(status: AppointmentStatus): StatusFamily {
+  return APPOINTMENT_STATUS_FAMILY[status];
+}
+
 export type JobPhase = "quote" | "work";
 
 // Quote phase: Pendiente and the two quote statuses. Work phase: En progreso, Completado, Entregado.

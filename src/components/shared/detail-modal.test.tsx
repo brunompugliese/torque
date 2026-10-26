@@ -1,4 +1,5 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { renderWithIntl } from "@/test/render";
@@ -6,6 +7,28 @@ import { renderWithIntl } from "@/test/render";
 import { ConfirmDialog } from "./confirm-dialog";
 import { DetailList } from "./detail-list";
 import { DetailModal, DetailModalBodySkeleton } from "./detail-modal";
+
+describe("DetailModal closing", () => {
+  it("tells when it has fully closed, not when it starts to", async () => {
+    const onClosed = vi.fn();
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return (
+        <DetailModal open={open} onOpenChange={setOpen} onClosed={onClosed} title="Turno">
+          <p>Cuerpo</p>
+        </DetailModal>
+      );
+    }
+    renderWithIntl(<Host />);
+    await screen.findByRole("dialog", { name: "Turno" });
+    expect(onClosed).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cerrar" }));
+
+    await waitFor(() => expect(onClosed).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+});
 
 describe("DetailModal", () => {
   it("shows the title, badge, actions, body and the Creado el footer", async () => {
