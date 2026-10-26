@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { ModalBoundary } from "@/components/shared/modal-boundary";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { Service } from "../schemas";
@@ -44,13 +45,15 @@ export function ServicesPanel({ children }: { children: ReactNode }) {
       {children}
       {/* Mounted from the first open on, so it can animate closed. */}
       {modal.service || modal.mode === "create" ? (
-        <ServiceModal
-          open={modal.open}
-          mode={modal.mode}
-          service={modal.service}
-          onModeChange={(mode, service) => setModal((current) => ({ ...current, mode, service: service ?? current.service }))}
-          onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
-        />
+        <ModalBoundary>
+          <ServiceModal
+            open={modal.open}
+            mode={modal.mode}
+            service={modal.service}
+            onModeChange={(mode, service) => setModal((current) => ({ ...current, mode, service: service ?? current.service }))}
+            onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
+          />
+        </ModalBoundary>
       ) : null}
     </PanelContext.Provider>
   );

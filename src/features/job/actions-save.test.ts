@@ -23,7 +23,6 @@ import {
   getStatusCounts,
   getVehicleKmFloor,
   searchJobs,
-  searchVehicleOptions,
   setJobArchived,
   setJobStatus,
   updateJob,
@@ -132,7 +131,7 @@ describe("createJob", () => {
   it("revalidates the jobs and the vehicles pages", async () => {
     setup();
     await createJob({ vehicleId: VEHICLE });
-    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos"]);
+    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos", "/turnos"]);
   });
 
   describe("the client", () => {
@@ -462,8 +461,6 @@ describe("read actions", () => {
     ["getVehicleKmFloor with a bad job", () => getVehicleKmFloor(VEHICLE, "nope")],
     ["getOwnerOfVehicle", () => getOwnerOfVehicle(undefined)],
     ["getServiceOptions", () => getServiceOptions(["nope"])],
-    ["searchVehicleOptions with a bad term", () => searchVehicleOptions(42)],
-    ["searchVehicleOptions with a bad id", () => searchVehicleOptions("ae", "nope")],
   ])("%s fails without querying when its input is not valid", async (_name, run) => {
     const queries = setup();
     expect(await run()).toEqual({ ok: false });
@@ -482,13 +479,6 @@ describe("read actions", () => {
     expect(await getOwnerOfVehicle(VEHICLE)).toEqual({ ok: true, owner: null });
     expect(await getServiceOptions([SERVICE])).toEqual({ ok: true, rows: [] });
     expect(await getServiceOptions()).toEqual({ ok: true, rows: [] });
-    expect(await searchVehicleOptions("ae", VEHICLE)).toEqual({ ok: true, rows: [] });
-  });
-
-  it("cuts a very long search term", async () => {
-    const queries = setup(() => ({ data: [] }));
-    await searchVehicleOptions("a".repeat(500));
-    expect(String(filterValue(queries[0], "like", "search_text")).length).toBeLessThan(110);
   });
 });
 
@@ -531,7 +521,7 @@ describe("setJobStatus", () => {
     expect(args.p_items).toMatchObject([
       { id: ITEM, service_id: SERVICE, quantity: 2, quoted_unit_price: 100, final_unit_price: null },
     ]);
-    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos"]);
+    expect(mocks.revalidatePath.mock.calls.map(([path]) => path)).toEqual(["/trabajos", "/vehiculos", "/turnos"]);
   });
 
   it("moving into the work phase gives every service its quoted price as the final one", async () => {

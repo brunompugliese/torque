@@ -10,9 +10,8 @@ import { DetailList } from "@/components/shared/detail-list";
 import { DetailModalBodySkeleton, type DetailModalProps } from "@/components/shared/detail-modal";
 import { ListError } from "@/components/shared/list-states";
 import { PlateDisplay } from "@/components/shared/plate-display";
-import { WhatsappButton } from "@/components/shared/whatsapp-button";
 import { Button } from "@/components/ui/button";
-import { formatClientName } from "@/features/client/format";
+import { ClientSummary } from "@/features/client/components/client-summary";
 import { useArchiveFlow } from "@/hooks/use-archive-flow";
 import { useLoadedData } from "@/hooks/use-loaded-data";
 import { fail } from "@/lib/actions/result";
@@ -209,24 +208,7 @@ export function useJobModal({
             items={[
               {
                 label: t("details.client"),
-                value: client ? (
-                  <span className="flex flex-col gap-1">
-                    <span className="flex items-center gap-2">
-                      <span className={client.enabled ? undefined : "text-muted-foreground"}>{formatClientName(client)}</span>
-                      {client.enabled ? null : <ArchivedBadge />}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      {client.phoneNumber}
-                      <WhatsappButton
-                        phone={client.phoneNumber}
-                        label={tCommon("whatsapp")}
-                        text={tCommon("whatsappText")}
-                      />
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">{t("noClient")}</span>
-                ),
+                value: <ClientSummary client={client} noClient={t("noClient")} />,
               },
               { label: t("details.kilometers"), value: job.kilometers === null ? notLoaded : formatKm(job.kilometers) },
               {

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { ModalBoundary } from "@/components/shared/modal-boundary";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import type { VehicleListItem } from "@/features/vehicle/schemas";
@@ -55,23 +56,25 @@ export function ClientsPanel({ children }: { children: ReactNode }) {
       {children}
       {/* Mounted from the first open on, so it can animate closed. */}
       {modal.client || modal.mode === "create" ? (
-        <ClientModal
-          open={modal.open}
-          mode={modal.mode}
-          client={modal.client}
-          vehicle={modal.vehicle}
-          jobId={modal.jobId}
-          onModeChange={(mode, client, vehicle, jobId) =>
-            setModal((current) => ({
-              ...current,
-              mode,
-              client: client ?? current.client,
-              vehicle: vehicle ?? current.vehicle,
-              jobId: jobId ?? current.jobId,
-            }))
-          }
-          onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
-        />
+        <ModalBoundary>
+          <ClientModal
+            open={modal.open}
+            mode={modal.mode}
+            client={modal.client}
+            vehicle={modal.vehicle}
+            jobId={modal.jobId}
+            onModeChange={(mode, client, vehicle, jobId) =>
+              setModal((current) => ({
+                ...current,
+                mode,
+                client: client ?? current.client,
+                vehicle: vehicle ?? current.vehicle,
+                jobId: jobId ?? current.jobId,
+              }))
+            }
+            onOpenChange={(open) => setModal((current) => ({ ...current, open }))}
+          />
+        </ModalBoundary>
       ) : null}
     </PanelContext.Provider>
   );

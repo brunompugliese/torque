@@ -38,7 +38,9 @@
     "vehicleRequired": "Elegí el vehículo.",
     "vehicleInvalid": "Elegí un vehículo de la lista.",
     "serviceRequired": "Elegí un servicio.",
-    "serviceInvalid": "Elegí un servicio de la lista."
+    "serviceInvalid": "Elegí un servicio de la lista.",
+    "dateRequired": "Elegí la fecha.",
+    "timeRequired": "Elegí la hora."
   },
   "auth": {
     "login": {
@@ -92,6 +94,98 @@
     "sortedDescending": "ordenado de la Z a la A",
     "clear": "Limpiar",
     "clearFilter": "Limpiar filtro: {filter}"
+  },
+  "appointments": {
+    "title": "Turnos",
+    "summary": "{total, plural, one {# turno} other {# turnos}} en total.",
+    "add": "Nuevo turno",
+    "modalTitle": "Turno",
+    "createOn": "Nuevo turno el {date}",
+    "card": "{time}, {model}, {status}",
+    "cardWithPlate": "{time}, {model}, {plate}, {status}",
+    "legend": "Estados de los turnos",
+    "edit": "Editar turno",
+    "save": "Guardar cambios",
+    "noClient": "Sin cliente",
+    "noReason": "Sin motivo",
+    "clientArchived": "{name} (Archivado)",
+    "details": {
+      "client": "Cliente",
+      "vehicle": "Vehículo",
+      "reason": "Motivo",
+      "job": "Trabajo"
+    },
+    "job": {
+      "view": "Ver trabajo",
+      "create": "Crear trabajo",
+      "creating": "Creando…",
+      "vehicleArchived": "El vehículo está archivado."
+    },
+    "cancelConfirm": {
+      "title": "¿Cancelar el turno?",
+      "body": "Va a quedar como cancelado. Lo podés reactivar cuando quieras.",
+      "confirm": "Cancelar turno"
+    },
+    "toasts": {
+      "created": "Turno agregado",
+      "updated": "Cambios guardados",
+      "confirmed": "Turno confirmado",
+      "completed": "Turno completado",
+      "cancelled": "Turno cancelado",
+      "jobCreated": "Trabajo agregado",
+      "pending": "Estado actualizado"
+    },
+    "form": {
+      "submit": "Agregar turno"
+    },
+    "fields": {
+      "vehicle": "Vehículo",
+      "client": "Cliente",
+      "clientHint": "Dueño del vehículo al momento de crear el turno.",
+      "clientNoOwner": "El vehículo no tiene cliente",
+      "clientPending": "Elegí un vehículo",
+      "date": "Fecha",
+      "time": "Hora",
+      "timePlaceholder": "Elegí la hora",
+      "status": "Estado",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Ej.: ruido al frenar, service de los 10.000 km"
+    },
+    "errors": {
+      "vehicleArchived": "Este vehículo está archivado y no puede tener turnos nuevos.",
+      "notFound": "Este turno ya no existe. Actualizá la página.",
+      "cancelled": "Un turno cancelado no puede tener trabajos nuevos."
+    },
+    "statusChange": "Cambiar estado"
+  },
+  "vehicleSelect": {
+    "placeholder": "Buscá por patente, marca o modelo",
+    "noOptions": "No encontramos resultados",
+    "archived": "{label} (Archivado)"
+  },
+  "calendar": {
+    "viewLabel": "Vista del calendario",
+    "month": "Mes",
+    "week": "Semana",
+    "today": "Hoy",
+    "previousMonth": "Mes anterior",
+    "nextMonth": "Mes siguiente",
+    "previousWeek": "7 días anteriores",
+    "nextWeek": "7 días siguientes",
+    "period": "{from} al {to}",
+    "announce": "Mostrando del {from} al {to}",
+    "loading": "Cargando…",
+    "more": "+{count} más",
+    "close": "Cerrar",
+    "weekdays": {
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb",
+      "sun": "Dom"
+    }
   },
   "services": {
     "title": "Servicios",
@@ -222,6 +316,12 @@
       "completado": "Completado",
       "entregado": "Entregado",
       "cancelado": "Cancelado"
+    },
+    "appointment": {
+      "pendiente": "Pendiente",
+      "confirmado": "Confirmado",
+      "completado": "Completado",
+      "cancelado": "Cancelado"
     }
   },
   "jobs": {
@@ -293,10 +393,8 @@
     },
     "fields": {
       "vehicle": "Vehículo",
-      "vehiclePlaceholder": "Buscá por patente, marca o modelo",
       "client": "Cliente",
       "clientArchived": "{name} (Archivado)",
-      "vehicleArchived": "{label} (Archivado)",
       "status": "Estado",
       "kilometers": "Kilometraje",
       "kilometersHint": "Último registrado: {km}",
@@ -399,7 +497,8 @@
       "client": "Cliente",
       "clientPlaceholder": "Buscá por nombre o teléfono",
       "clientHint": "Dejalo vacío si el vehículo no tiene cliente.",
-      "noOptions": "No encontramos resultados"
+      "noOptions": "No encontramos resultados",
+      "clientClear": "Quitar cliente"
     },
     "newClient": {
       "title": "Cliente nuevo",

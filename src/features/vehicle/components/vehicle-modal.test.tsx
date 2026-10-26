@@ -662,6 +662,21 @@ describe("vehicle form: edit", () => {
     expect(onModeChange).not.toHaveBeenCalled();
   });
 
+  it("takes the client away with the X in the client field", async () => {
+    mocks.updateVehicle.mockResolvedValue({ ok: true, data: BARE });
+    renderModal("edit");
+    expect(field("Cliente")).toHaveValue("Ana Gómez");
+    fireEvent.click(screen.getByRole("button", { name: "Quitar cliente" }));
+    await waitFor(() => expect(field("Cliente")).toHaveValue(""));
+    await save("Guardar cambios");
+    expect(mocks.updateVehicle).toHaveBeenCalledWith(VEHICLE_ID, expect.objectContaining({ clientId: null }));
+  });
+
+  it("has no X on the other dropdowns, which are required", () => {
+    renderModal("edit");
+    expect(screen.getAllByRole("button", { name: "Quitar cliente" })).toHaveLength(1);
+  });
+
   it("can take the client away", async () => {
     mocks.updateVehicle.mockResolvedValue({ ok: true, data: BARE });
     renderModal("edit");

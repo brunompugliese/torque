@@ -78,7 +78,7 @@ Current palette, *Neutral* (the visual identity in [design.md](design.md#visual-
 | `--chart-1` … `--chart-5` | `#18181B`, `#3B82F6`, `#8B5CF6`, `#22C55E`, `#F59E0B` | Chart series |
 | `--sidebar-*` | Same values as `card`, `foreground`, `primary`, `accent`, `border` and `ring` | shadcn sidebar component |
 
-Status families map to database values in one shared helper (`lib/status.ts`, drawn by `StatusBadge`; `StatusSelect` is the same pill as a dropdown, and `JobStatusControl` adds the job's rules), never per component:
+Status families map to database values in one shared helper (`lib/status.ts`, drawn by `StatusBadge` and `AppointmentStatusBadge`; calendar cards (`AppointmentCard`) use the same `--status-*` tokens with the card styles of [design.md](design.md#visual-identity), so Confirmado and Completado share a badge but not a card; `StatusSelect` is the same pill as a dropdown, and `JobStatusControl` adds the job's rules), never per component:
 
 | Family | Job status | Appointment status |
 |---|---|---|

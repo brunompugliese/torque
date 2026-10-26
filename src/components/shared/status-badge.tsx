@@ -2,7 +2,13 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { jobStatusFamily, type JobStatus, type StatusFamily } from "@/lib/status";
+import {
+  appointmentStatusFamily,
+  jobStatusFamily,
+  type AppointmentStatus,
+  type JobStatus,
+  type StatusFamily,
+} from "@/lib/status";
 
 // Tailwind needs whole class names, so each family spells its tokens out. Badge = tinted fill +
 // dark text + a border in the same text color, softened: every status has the same border
@@ -34,6 +40,15 @@ export function StatusBadge({
       {children}
       {trailing}
     </Badge>
+  );
+}
+
+export function AppointmentStatusBadge({ status, trailing }: { status: AppointmentStatus; trailing?: ReactNode }) {
+  const t = useTranslations("status.appointment");
+  return (
+    <StatusBadge family={appointmentStatusFamily(status)} trailing={trailing}>
+      {t(status)}
+    </StatusBadge>
   );
 }
 

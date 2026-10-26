@@ -2,52 +2,99 @@
 
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
-import { JobStatusBadge } from "@/components/shared/status-badge";
+import { AppointmentStatusBadge, JobStatusBadge } from "@/components/shared/status-badge";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
-import { JOB_STATUSES, type JobStatus } from "@/lib/status";
+import { APPOINTMENT_STATUSES, JOB_STATUSES, type AppointmentStatus, type JobStatus } from "@/lib/status";
 import { cn } from "@/lib/utils";
 
-type StatusSelectProps = {
-  status: JobStatus;
-  onChange: (next: JobStatus) => void;
+type StatusPillSelectProps<Status extends string> = {
+  status: Status;
+  statuses: readonly Status[];
+  onChange: (next: Status) => void;
+  // The text of a status, for the list and for the pill's accessible name.
+  labelOf: (status: Status) => string;
+  // The status as its pill, with the dropdown arrow it must draw inside.
+  badge: (status: Status, trailing: ReactNode) => ReactNode;
   // What a screen reader says about the pill ("Cambiar estado").
   label: string;
   disabled?: boolean;
   className?: string;
 };
 
-// The status pill as a dropdown with every status, its arrow inside the pill. The pill keeps its own colors; the list is
+// A status pill as a dropdown with every status, its arrow inside the pill. The pill keeps its own colors; the list is
 // the app's neutral one (primary), so the options don't compete with the status colors.
-export function StatusSelect({ status, onChange, label, disabled = false, className }: StatusSelectProps) {
-  const t = useTranslations("status.job");
-
+function StatusPillSelect<Status extends string>({
+  status,
+  statuses,
+  onChange,
+  labelOf,
+  badge,
+  label,
+  disabled = false,
+  className,
+}: StatusPillSelectProps<Status>) {
   return (
     <Select
       value={status}
       disabled={disabled}
       onValueChange={(next) => {
-        if (next && next !== status) onChange(next as JobStatus);
+        if (next && next !== status) onChange(next as Status);
       }}
-      items={JOB_STATUSES.map((value) => ({ value, label: t(value) }))}
+      items={statuses.map((value) => ({ value, label: labelOf(value) }))}
     >
       <SelectTrigger
         icon={false}
-        aria-label={`${label}: ${t(status)}`}
+        aria-label={`${label}: ${labelOf(status)}`}
         className={cn(
           "h-auto w-auto gap-1 rounded-full border-0 bg-transparent p-0 text-xs data-[size=default]:h-auto dark:bg-transparent dark:hover:bg-transparent",
           className,
         )}
       >
-        <JobStatusBadge status={status} trailing={<CaretDownIcon aria-hidden="true" />} />
+        {badge(status, <CaretDownIcon aria-hidden="true" />)}
       </SelectTrigger>
       <SelectContent>
-        {JOB_STATUSES.map((value) => (
+        {statuses.map((value) => (
           <SelectItem key={value} value={value}>
-            {t(value)}
+            {labelOf(value)}
           </SelectItem>
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+type StatusSelectProps<Status extends string> = {
+  status: Status;
+  onChange: (next: Status) => void;
+  label: string;
+  disabled?: boolean;
+  className?: string;
+};
+
+// A job's status as a dropdown of the seven statuses.
+export function StatusSelect(props: StatusSelectProps<JobStatus>) {
+  const t = useTranslations("status.job");
+  return (
+    <StatusPillSelect
+      {...props}
+      statuses={JOB_STATUSES}
+      labelOf={(status) => t(status)}
+      badge={(status, trailing) => <JobStatusBadge status={status} trailing={trailing} />}
+    />
+  );
+}
+
+// An appointment's status as a dropdown of the four statuses.
+export function AppointmentStatusSelect(props: StatusSelectProps<AppointmentStatus>) {
+  const t = useTranslations("status.appointment");
+  return (
+    <StatusPillSelect
+      {...props}
+      statuses={APPOINTMENT_STATUSES}
+      labelOf={(status) => t(status)}
+      badge={(status, trailing) => <AppointmentStatusBadge status={status} trailing={trailing} />}
+    />
   );
 }
