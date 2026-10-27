@@ -3,8 +3,10 @@
 const ARGENTINA_MOBILE_PREFIX = "549";
 const ARGENTINA_CODE = "54";
 
-export function toWhatsappUrl(phone: string): string {
+// With `text`, the chat opens with the message prefilled (the user still taps Send).
+export function toWhatsappUrl(phone: string, text?: string): string {
   const digits = phone.replace(/\D/g, "").replace(/^0+/, "");
   const number = digits.startsWith(ARGENTINA_CODE) ? digits : `${ARGENTINA_MOBILE_PREFIX}${digits}`;
-  return `https://wa.me/${number}`;
+  const url = `https://wa.me/${number}`;
+  return text ? `${url}?text=${encodeURIComponent(text)}` : url;
 }

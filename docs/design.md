@@ -262,6 +262,15 @@ A job can be created from an appointment ("Crear trabajo"): it takes the appoint
 
 Services carry no price; prices are set per job item.
 
+### Sending the quote
+
+"Enviar presupuesto" sits on the right of the "Servicios" heading in the job modal's view (editable or read only, so also on Inicio); it is not in the edit form. It opens the client's WhatsApp chat (the same link rule as the "WhatsApp" button) with the quote already written, and the user taps Send. It never changes the job: no status change, no history entry, no toast; the shop updates the status by hand.
+
+- **Enabled** for Pendiente, Presupuesto enviado, Presupuesto aceptado and Cancelado (so a rejected quote can be resent after a change), when the job has a client with a phone and at least one service. The reason it is disabled shows in a tooltip (hover, keyboard focus on its wrapper) and is linked with `aria-describedby`; the first failing row wins: "No disponible en este estado", "Cargá un cliente con teléfono", "Cargá al menos un servicio". While the services load it is disabled with no reason; if they fail to load it is not shown.
+- **Archived job, client or vehicle:** clicking asks first ("Hay registros archivados", one line per archived record, "Cancelar" / "Confirmar"); only "Confirmar" opens the chat.
+- **Message** (Spanish, voseo; real line breaks; built from the saved job): "Hola {first name}, te paso el presupuesto para tu {brand} {model} ({plate}):", one bullet per service in saved order ("• {service}: {line total}", with "(xN)" only when N > 1; archived services by their plain name), "Total: {quoted total}", "Cualquier duda avisanos. ¡Gracias!" and "— {shop name}" (the name in the top bar; left out if missing). Quoted prices only, never the final ones, in the app's money format.
+- Look: the shared WhatsApp button's (token colors, 28 px high) with a paper-plane icon; disabled it is muted at 70% opacity.
+
 ### Kilometers
 
 A job's km is prefilled with the vehicle's latest recorded km (from its previous jobs). It can't be lower than that value. **(DB)** If the vehicle has no previous km, any whole number ≥ 0 is accepted.
