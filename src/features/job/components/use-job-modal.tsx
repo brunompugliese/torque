@@ -218,7 +218,7 @@ export function useJobModal({
               },
             ]}
           />
-          <JobDetailSections key={job.id} jobId={job.id} status={job.status} />
+          <JobDetailSections key={job.id} job={job} />
         </>
       ),
     },

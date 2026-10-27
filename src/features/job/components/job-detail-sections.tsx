@@ -7,10 +7,11 @@ import { ListError } from "@/components/shared/list-states";
 import { LoadingRegion } from "@/components/shared/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLoadedData } from "@/hooks/use-loaded-data";
-import type { JobStatus } from "@/lib/status";
 
 import { getJobDetails } from "../actions";
+import type { JobListItem } from "../schemas";
 import { JobServices } from "./job-services";
+import { QuoteButton } from "./quote-button";
 import { JobStatusHistory } from "./job-status-history";
 
 function ServicesSkeleton() {
@@ -40,20 +41,36 @@ function HistorySkeleton() {
   );
 }
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  action,
+  children,
+}: {
+  id: string;
+  title: string;
+  // Right of the heading, on the same row.
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <section aria-labelledby={id} className="mt-6 flex flex-col gap-3">
-      <h3 id={id} className="text-base font-semibold">
-        {title}
-      </h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 id={id} className="text-base font-semibold">
+          {title}
+        </h3>
+        {action}
+      </div>
       {children}
     </section>
   );
 }
 
 // The job's services and status history, loaded when the modal shows them (one
-// request for both). Key it by the job so another job starts fresh.
-export function JobDetailSections({ jobId, status }: { jobId: string; status: JobStatus }) {
+// request for both). Key it by the job so another job starts fresh. The services
+// heading carries "Enviar presupuesto", which needs the loaded services.
+export function JobDetailSections({ job }: { job: JobListItem }) {
+  const { id: jobId, status } = job;
   const tServices = useTranslations("jobs.services");
   const tHistory = useTranslations("jobs.history");
   const detail = useLoadedData(jobId, () => getJobDetails(jobId));
@@ -76,7 +93,11 @@ export function JobDetailSections({ jobId, status }: { jobId: string; status: Jo
 
   return (
     <>
-      <Section id="job-services-title" title={tServices("title")}>
+      <Section
+        id="job-services-title"
+        title={tServices("title")}
+        action={<QuoteButton job={job} items={loaded ? loaded.items : null} />}
+      >
         {loaded ? <JobServices items={loaded.items} status={status} /> : <ServicesSkeleton />}
       </Section>
       <Section id="job-history-title" title={tHistory("title")}>
