@@ -228,6 +228,10 @@ Asked before: archiving, cancelling an appointment, setting a job to Entregado o
 
 Bottom right, about 3 seconds, after every save or status change: title + one line ("Turno agregado" · "Fiat Cronos, 14/10/2026 a las 09:00 hs.").
 
+### Error screen
+
+When a page fails to render, a centered card replaces the content and the header and navbar stay: warning icon, "Algo salió mal", a one-line hint, "Reintentar" and "Ir al inicio", and under them "Código: <number>", the error's digest, which matches the hosting logs. It never shows the exception's message. If the root layout itself fails, a minimal version with only "Reintentar" shows. Failures inside lists and forms keep their own error states.
+
 ## Global business rules
 
 Rules marked **(DB)** are also enforced by the database; the app must still prevent them in the UI and map the database error to a message.
