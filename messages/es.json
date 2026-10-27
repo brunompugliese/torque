@@ -393,6 +393,25 @@
     "history": {
       "title": "Historial de estados"
     },
+    "quote": {
+      "button": "Enviar presupuesto",
+      "buttonFor": "Enviar presupuesto por mensaje a {name}",
+      "reasons": {
+        "status": "No disponible en este estado",
+        "client": "Cargá un cliente con teléfono",
+        "services": "Cargá al menos un servicio"
+      },
+      "message": "Hola {client}, te paso el presupuesto para tu {vehicle}:\n\n{lines}\n\nTotal: {total}\n\nCualquier duda avisanos. ¡Gracias!{signature}",
+      "signature": "\n— {shop}",
+      "archived": {
+        "title": "Hay registros archivados",
+        "job": "Este trabajo está archivado.",
+        "client": "El cliente está archivado.",
+        "vehicle": "El vehículo está archivado.",
+        "question": "¿Querés enviar el presupuesto igual?",
+        "confirm": "Confirmar"
+      }
+    },
     "archiveConfirm": {
       "title": "¿Archivar este trabajo?",
       "body": "Su kilometraje deja de contar como último kilometraje del vehículo."

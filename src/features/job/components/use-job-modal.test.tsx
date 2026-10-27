@@ -412,3 +412,30 @@ describe("archiving", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
+
+describe("job modal Enviar presupuesto", () => {
+  it("sits on the Servicios heading row once the services load", async () => {
+    renderModal();
+    const link = await screen.findByRole("link", { name: "Enviar presupuesto por mensaje a Ana" });
+    const heading = screen.getByRole("heading", { name: "Servicios" });
+    expect(link.parentElement).toBe(heading.parentElement);
+  });
+
+  it("shows in the read-only view too", async () => {
+    renderModal(JOB, { readOnly: true });
+    expect(await screen.findByRole("link", { name: /Enviar presupuesto/ })).toBeInTheDocument();
+  });
+
+  it("is a disabled button for a job without client", async () => {
+    renderModal(BARE);
+    await screen.findByText("Cambio de aceite");
+    expect(screen.getByRole("button", { name: "Enviar presupuesto" })).toBeDisabled();
+  });
+
+  it("is not shown when the services fail to load", async () => {
+    mocks.getJobDetails.mockResolvedValue({ ok: false });
+    renderModal();
+    await screen.findAllByRole("button", { name: "Reintentar" });
+    expect(screen.queryByText("Enviar presupuesto")).toBeNull();
+  });
+});
