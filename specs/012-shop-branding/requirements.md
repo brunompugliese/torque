@@ -52,4 +52,4 @@ Isolation and database
 ## Decisions taken with the owner (2026-10-28)
 
 - Private bucket with a per-shop policy (not "any authenticated user", which would let one shop read another's logos), read through signed URLs. Reason: tenant isolation stays in the database.
-- Square logo, standard format left to the agent: PNG, JPG or WebP, 512 × 512 px, up to 512 KB, shown with `object-contain`.
+- Square logo, standard format left to the agent: PNG, JPG or WebP, 512 × 512 px, up to 512 KB, filling the whole square (`object-cover`, no padding).

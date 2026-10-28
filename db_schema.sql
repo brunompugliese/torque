@@ -10,7 +10,12 @@
 create table shop (
   id         uuid primary key default gen_random_uuid(),
   name       text not null,
-  created_at timestamptz not null default now()
+  address    text, -- optional; set in the dashboard (shops are read-only for users)
+  phone      text, -- optional; set in the dashboard, formatted by the app when shown
+  logo_path  text, -- path inside the private shop-logos bucket, always "<shop id>/<file>"
+  created_at timestamptz not null default now(),
+  constraint shop_logo_path_in_own_folder -- a shop can't point at another shop's folder, even by a typo
+    check (logo_path is null or logo_path like id::text || '/%')
 );
 
 -- One row per person. id matches auth.users(id) 1:1.
@@ -1152,6 +1157,29 @@ create policy tenant_isolation_select on shop
     id = ((select auth.jwt()) ->> 'shop_id')::uuid
     and public.is_current_profile_enabled()
   ); -- read-only: no policy allows insert/update/delete, so those are denied by default for anon/authenticated
+
+-- Shop logos live in a private Storage bucket, one folder per shop
+-- ("<shop id>/logo.png", matching shop.logo_path). The bucket enforces PNG, JPG
+-- or WebP up to 512 KB; "square, 512 x 512 px" is guidance, not enforced.
+-- The app reads a logo with the user's session (GET /logo), so this policy
+-- decides. There is deliberately no insert/update/delete policy: Storage denies
+-- writes to anon and authenticated, and the project owner uploads from the
+-- dashboard (service_role).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('shop-logos', 'shop-logos', false, 524288, array['image/png', 'image/jpeg', 'image/webp'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists shop_logos_read_own on storage.objects;
+create policy shop_logos_read_own on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'shop-logos'
+    and (storage.foldername(name))[1] = ((select auth.jwt()) ->> 'shop_id')
+    and public.is_current_profile_enabled()
+  );
 
 -- profile is read-only for users: profiles are managed only from the Supabase
 -- dashboard (service_role). Prevents self-promotion to 'owner' or re-enabling

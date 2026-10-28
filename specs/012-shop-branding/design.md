@@ -67,7 +67,7 @@ create policy shop_logos_read_own on storage.objects
 
 **Header** (design.md, Header and Logo). `TopBar` shows, on the left, `ShopLogo` and the shop's name in 17px bold (`truncate`); on the right, `actions` as today. The bar grows from 48px to 64px to hold the 40px square. The app's name is no longer written in the bar: with no shop (or no name), the bar shows `LogoMark` and "Torque", the fallback brand, so it is never empty. The login page is untouched.
 
-**`ShopLogo`** (client, `components/shared/shop-logo.tsx`): props `src` (optional), `size` (40). With `src`, a rounded-xl square with a border and white background holding `<img src alt="" width height>` with `object-contain`, `loading="eager"` and fixed size so nothing shifts; on `onError` it switches to the fallback for good. Without `src`, or after an error, it renders `LogoMark` with the Phosphor `WrenchIcon` (the same mark as the login page). Decorative: `alt=""`, the name sits beside it. A plain `<img>` is used on purpose: Next's image optimizer is for remote or build-time images, and this one is a private, already-sized file behind the session (`@next/next/no-img-element` disabled on that line with the reason).
+**`ShopLogo`** (client, `components/shared/shop-logo.tsx`): props `src` (optional), `size` (40). With `src`, a rounded-xl square with a border and white background (no padding) holding `<img src alt="" width height>` with `object-cover` so it fills the square, `loading="eager"` and fixed size so nothing shifts; on `onError` it switches to the fallback for good. Without `src`, or after an error, it renders `LogoMark` with the Phosphor `WrenchIcon` (the same mark as the login page). Decorative: `alt=""`, the name sits beside it. A plain `<img>` is used on purpose: Next's image optimizer is for remote or build-time images, and this one is a private, already-sized file behind the session (`@next/next/no-img-element` disabled on that line with the reason).
 
 **Print sheet (spec 013)** will use `src="/logo"` the same way; nothing to do here.
 
@@ -112,7 +112,7 @@ No new visible text: the logo is decorative and the name is data. The fallback b
 
 ## Risks and alternatives
 
-- **CI may not have the `storage` schema.** The workflow builds the database with `supabase db start`, which starts only Postgres; the `storage.buckets` / `storage.objects` tables are created by the Storage service. If they're missing the migration fails in CI. First task of `tasks.md` is a check: if they're missing, CI switches to `supabase start` limited to the services needed (database and Storage). Decide after the check, before writing the policy tests.
+- **CI and the `storage` schema (checked 2026-10-28, no risk).** A temporary pgTAP probe (`has_table('storage', 'buckets')` and `'objects'`) passed in the "Database tests" workflow, so the database `supabase db start` builds has the Storage tables and the migration and its policy tests run in CI unchanged. The probe was deleted.
 - **Cache staleness.** A replaced logo can show the old one for up to an hour. Acceptable for something that changes almost never; `max-age` is one constant if it must change.
 - **Alternatives rejected:**
   - Public bucket: any logo readable by anyone with the URL; breaks tenant isolation in the database.

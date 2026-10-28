@@ -7,7 +7,7 @@ import { useId, useState } from "react";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { WHATSAPP_BUTTON_CLASS } from "@/components/shared/whatsapp-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useShopName } from "@/features/shop/shop-name-context";
+import { useShopName } from "@/features/shop/shop-context";
 import { toWhatsappUrl } from "@/lib/format/whatsapp";
 import { cn } from "@/lib/utils";
 
