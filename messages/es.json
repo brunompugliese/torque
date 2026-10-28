@@ -95,6 +95,14 @@
     "clear": "Limpiar",
     "clearFilter": "Limpiar filtro: {filter}"
   },
+  "errorScreen": {
+    "title": "Algo salió mal",
+    "hint": "No pudimos mostrar esta pantalla. Probá de nuevo; si sigue igual, avisanos con el código.",
+    "hintNoCode": "No pudimos mostrar esta pantalla. Probá de nuevo en un momento.",
+    "retry": "Reintentar",
+    "home": "Ir al inicio",
+    "code": "Código: {code}"
+  },
   "home": {
     "title": "Inicio",
     "summary": "{appointments, plural, one {# turno} other {# turnos}} en los próximos 7 días, {jobs, plural, one {# trabajo abierto} other {# trabajos abiertos}}.",

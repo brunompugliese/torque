@@ -72,7 +72,7 @@ Numbers (money, km, times, DNI) use tabular figures so columns align.
 
 **Plates.** In tables and modal titles the plate is drawn as an Argentine Mercosur plate: white, black border, blue top band, bold spaced characters ("AB 123 CD"). Old-format plates ("ABC 123") use the same drawing. **Every plate is drawn identically and takes the same room on screen** (a fixed width that fits the longest, "AB 123 CD", with the characters centered), whatever its format: only the characters differ, so a column of plates lines up. In calendar cards, dropdowns and running text the plate is plain text.
 
-**Logo.** The shop's logo (white on black) in a 40px rounded square, followed by the shop's name in 17px bold.
+**Logo.** The shop's logo (a square image) in a 40px rounded square with a thin border, followed by the shop's name in 17px bold. A shop without a logo, or whose logo fails to load, shows the app's mark instead (white wrench on black, the login page's). The logo is decorative: the name always sits beside it.
 
 ## Copy and naming
 
@@ -119,7 +119,7 @@ WCAG 2.1 AA on every page. In practice:
 ## Layout and navigation
 
 - **Pages and addresses:** Ingresar (`/login`), Inicio (`/inicio`), Vehículos (`/vehiculos`), Clientes (`/clientes`), Turnos (`/turnos`), Trabajos (`/trabajos`), Servicios (`/servicios`). Each page has its own address; the browser's Back button works.
-- **Header:** logo + the shop's name on the left (the name stored in the database for the shop ID in the user's session token); the logged-in user's name and "Cerrar sesión" on the right. It scrolls away with the page; it is not fixed.
+- **Header:** the shop's logo + its name on the left (stored in the database for the shop ID in the user's session token; the app's mark and name when the name can't be read); "Cerrar sesión" on the right. The bar is 64px tall. It scrolls away with the page; it is not fixed.
 - **Navbar:** floating bar fixed at the bottom center, always visible, with an icon and label per page: Inicio, Vehículos, Clientes, Turnos, Trabajos, Servicios. The current page is highlighted (dark fill). Every page leaves enough bottom space that nothing is hidden behind it.
 - **Content width:** max 1280px, centered, identical on every page. The scrollbar space is always reserved so changing pages never shifts the layout.
 - **Page top:** page title, a one-line summary below it, and the page's main button on the right ("Agregar vehículo", "Nuevo turno", …). On list pages the summary is the total (active + archived) and the archived count, always both: "15 servicios en total, 1 archivado." · "1 servicio en total, 0 archivados."
@@ -227,6 +227,10 @@ Asked before: archiving, cancelling an appointment, setting a job to Entregado o
 ### Toasts
 
 Bottom right, about 3 seconds, after every save or status change: title + one line ("Turno agregado" · "Fiat Cronos, 14/10/2026 a las 09:00 hs.").
+
+### Error screen
+
+When a page fails to render, a centered card replaces the content and the header and navbar stay: warning icon, "Algo salió mal", a one-line hint, "Reintentar" and "Ir al inicio", and under them "Código: <number>", the error's digest, which matches the hosting logs. It never shows the exception's message. If the root layout itself fails, a minimal version with only "Reintentar" shows. Failures inside lists and forms keep their own error states.
 
 ## Global business rules
 

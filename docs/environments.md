@@ -67,6 +67,7 @@ All three variables are server-only; never use the `NEXT_PUBLIC_` prefix for the
 ### 7. Data
 
 - [ ] Create the shop(s), auth users and their profiles in the dashboard.
+- [ ] Optional, per shop: set `address` and `phone` on the `shop` row, upload a square logo (PNG, JPG or WebP, 512 × 512 px, up to 512 KB) to the `shop-logos` bucket (created by the migrations, private) inside a folder named after the shop's id, and set `shop.logo_path` to `<shop id>/<file name>`. Without a logo the header shows the app's mark.
 
 ### 8. Verify
 
