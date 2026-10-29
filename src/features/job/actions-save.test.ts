@@ -36,6 +36,7 @@ const JOB = "aa1a2b3c-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 
 const LIST_ROW = {
   id: JOB,
+  number: 123,
   vehicle_id: VEHICLE,
   client_id: null,
   appointment_id: null,

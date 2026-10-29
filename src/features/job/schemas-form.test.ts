@@ -132,6 +132,7 @@ describe("jobFormSchema", () => {
 describe("jobListRowSchema", () => {
   const ROW = {
     id: "j1",
+    number: 123,
     vehicle_id: VEHICLE,
     client_id: CLIENT,
     appointment_id: "a1",
@@ -160,6 +161,7 @@ describe("jobListRowSchema", () => {
   it("groups the vehicle, the client and the appointment, with numeric totals", () => {
     expect(jobListRowSchema.parse(ROW)).toEqual({
       id: "j1",
+      number: 123,
       status: "en_progreso",
       observations: "Ruido",
       kilometers: 120000,

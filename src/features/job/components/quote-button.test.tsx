@@ -1,7 +1,7 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ShopNameProvider } from "@/features/shop/shop-name-context";
+import { ShopProvider } from "@/features/shop/shop-context";
 import { renderWithIntl } from "@/test/render";
 
 import type { JobItem, JobListItem } from "../schemas";
@@ -9,6 +9,7 @@ import { QuoteButton } from "./quote-button";
 
 const JOB: JobListItem = {
   id: "j1",
+  number: 123,
   status: "presupuesto_enviado",
   observations: null,
   kilometers: null,
@@ -37,9 +38,9 @@ const ITEMS: JobItem[] = [
 
 function renderButton(job: JobListItem = JOB, items: JobItem[] | null = ITEMS) {
   return renderWithIntl(
-    <ShopNameProvider shopName="BC Motors">
+    <ShopProvider shop={{ name: "BC Motors", address: null, phone: null, hasLogo: false }}>
       <QuoteButton job={job} items={items} />
-    </ShopNameProvider>,
+    </ShopProvider>,
   );
 }
 

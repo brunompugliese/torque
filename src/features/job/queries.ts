@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { z } from "zod";
 
+import { getShop } from "@/features/shop/queries";
 import { requireSession } from "@/lib/auth/session";
 import { todayIsoDate } from "@/lib/calendar";
 import { argentinaDayStart, argentinaNextDayStart } from "@/lib/format/date";
@@ -28,6 +29,7 @@ import {
   type JobListItem,
   type VehicleJob,
 } from "./schemas";
+import { buildSheet, type JobSheet } from "./sheet";
 
 export type VehicleJobList = { ok: true; rows: VehicleJob[] } | { ok: false };
 export type JobPage = { ok: true; rows: JobListItem[]; matching: number } | { ok: false };
@@ -250,6 +252,17 @@ export async function getJobDetail(id: string): Promise<JobDetail> {
     items: z.array(jobItemRowSchema).parse(items.data ?? []),
     history: z.array(jobHistoryEntrySchema).parse(history.data ?? []),
   };
+}
+
+export type JobSheetResult = { ok: true; sheet: JobSheet } | { ok: false; reason: "notFound" | "error" };
+
+// Everything the printed sheet needs, read under the user's session (spec 013): the job as the list
+// shows it, its services and the shop. The status history that getJobDetail also reads isn't used.
+export async function getJobSheet(id: string): Promise<JobSheetResult> {
+  const [row, detail, shop] = await Promise.all([getJobListRow(id), getJobDetail(id), getShop()]);
+  if (!row.ok) return { ok: false, reason: "notFound" };
+  if (!detail.ok) return { ok: false, reason: "error" };
+  return { ok: true, sheet: buildSheet(row.row, detail.items, shop, new Date()) };
 }
 
 // -----------------------------------------------------------------------------

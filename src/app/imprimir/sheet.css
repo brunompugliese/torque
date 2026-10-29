@@ -1,0 +1,8 @@
+/* The printed job (spec 013): an A4 page drawn by the browser. The page margin is 0 on purpose:
+   browsers print their own header (date, title) and footer (address, page number) inside the
+   margin, and with none they leave them out, so the sheet shows only its own date and never the
+   app's address. The sheet keeps its own margin (see JobSheetView). */
+@page {
+  size: A4;
+  margin: 0;
+}

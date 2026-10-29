@@ -25,6 +25,7 @@ import { useJobModal, type JobFromHost, type JobModalMode } from "./use-job-moda
 
 const JOB: JobListItem = {
   id: "j1",
+  number: 123,
   status: "presupuesto_enviado",
   observations: "Ruido en la rueda\nPidió aceite 5W30.",
   kilometers: 68400,
@@ -105,6 +106,7 @@ describe("job modal header", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog.querySelector('[data-slot="plate"]')).toHaveTextContent("AB 123 CD");
     expect(within(dialog).getByText("Fiat Cronos 2021")).toBeInTheDocument();
+    expect(within(dialog).getByText("N° 000123")).toBeInTheDocument();
     expect(within(dialog).queryByText(/Actualizado/)).toBeNull();
     expect(within(dialog).queryByText("Archivado")).toBeNull();
   });
@@ -418,7 +420,7 @@ describe("job modal Enviar presupuesto", () => {
     renderModal();
     const link = await screen.findByRole("link", { name: "Enviar presupuesto por mensaje a Ana" });
     const heading = screen.getByRole("heading", { name: "Servicios" });
-    expect(link.parentElement).toBe(heading.parentElement);
+    expect(link.parentElement?.parentElement).toBe(heading.parentElement);
   });
 
   it("shows in the read-only view too", async () => {
@@ -437,5 +439,44 @@ describe("job modal Enviar presupuesto", () => {
     renderModal();
     await screen.findAllByRole("button", { name: "Reintentar" });
     expect(screen.queryByText("Enviar presupuesto")).toBeNull();
+  });
+});
+
+describe("job modal Imprimir", () => {
+  it("sits next to Enviar presupuesto and opens the job's sheet in a new tab", async () => {
+    renderModal();
+    const print = await screen.findByRole("link", { name: "Imprimir" });
+    expect(print).toHaveAttribute("href", "/imprimir/j1");
+    expect(print).toHaveAttribute("target", "_blank");
+    expect(print.getAttribute("rel")).toContain("noopener");
+    const quote = screen.getByRole("link", { name: /Enviar presupuesto/ });
+    expect(print.parentElement).toBe(quote.parentElement);
+    expect(print.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("is disabled while the services load", () => {
+    mocks.getJobDetails.mockReturnValue(new Promise(() => {}));
+    renderModal();
+    expect(screen.getByRole("button", { name: "Imprimir" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "Imprimir" })).toBeNull();
+  });
+
+  it("works for a job in any status, archived or closed, and in the read-only view", async () => {
+    renderModal({ ...JOB, status: "entregado", enabled: false }, { readOnly: true });
+    expect(await screen.findByRole("link", { name: "Imprimir" })).toHaveAttribute("href", "/imprimir/j1");
+  });
+
+  it("works without client or kilometers, and calls no action", async () => {
+    renderModal(BARE);
+    expect(await screen.findByRole("link", { name: "Imprimir" })).toBeInTheDocument();
+    expect(mocks.setJobStatus).not.toHaveBeenCalled();
+    expect(mocks.setJobArchived).not.toHaveBeenCalled();
+  });
+
+  it("is not shown when the services fail to load", async () => {
+    mocks.getJobDetails.mockResolvedValue({ ok: false });
+    renderModal();
+    await screen.findAllByRole("button", { name: "Reintentar" });
+    expect(screen.queryByText("Imprimir")).toBeNull();
   });
 });

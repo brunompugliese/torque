@@ -43,7 +43,7 @@ export type VehicleJob = z.output<typeof jobRowSchema>;
 // -----------------------------------------------------------------------------
 
 export const JOB_LIST_COLUMNS =
-  "id, vehicle_id, client_id, appointment_id, status, observations, kilometers, quoted_total, final_total, " +
+  "id, number, vehicle_id, client_id, appointment_id, status, observations, kilometers, quoted_total, final_total, " +
   "enabled, created_at, updated_at, plate, vehicle_year, brand_name, model_name, vehicle_enabled, " +
   "client_name, client_surname, client_phone_number, client_enabled, " +
   "appointment_date, appointment_time, appointment_enabled";
@@ -51,6 +51,7 @@ export const JOB_LIST_COLUMNS =
 export const jobListRowSchema = z
   .object({
     id: z.string(),
+    number: z.number(),
     vehicle_id: z.string(),
     client_id: z.string().nullable(),
     appointment_id: z.string().nullable(),
@@ -77,6 +78,7 @@ export const jobListRowSchema = z
   })
   .transform((row) => ({
     id: row.id,
+    number: row.number,
     status: row.status,
     observations: row.observations,
     kilometers: row.kilometers,

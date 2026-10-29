@@ -5,7 +5,7 @@ import { JOB_DEFAULT_SORT, JOB_SORT_COLUMNS, jobFiltersToParams, parseJobFilters
 describe("job list constants", () => {
   it("sorts by the last update by default, and every default is a real column", () => {
     expect(Object.keys(JOB_SORT_COLUMNS)).toContain(JOB_DEFAULT_SORT);
-    expect(Object.keys(JOB_SORT_COLUMNS)).toHaveLength(7);
+    expect(Object.keys(JOB_SORT_COLUMNS)).toHaveLength(8);
   });
 });
 
