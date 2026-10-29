@@ -99,7 +99,7 @@ Business-rule triggers raise SQLSTATE `23514` with a stable message (`job_closed
 
 ### The printed job
 
-`/imprimir/<job id>` (`src/app/imprimir/[id]/page.tsx`) is a page of its own, outside the `(app)` group so it has no shell. It checks the session, validates the id (not a uuid, or a job RLS doesn't show, is a 404), reads the job, its services and the shop with the user's session (`getJobSheet`: `job_list`, `job_item`, `shop`) and draws the sheet (`JobSheetView`) from the view model `buildSheet` builds. `PrintControls` opens the browser's print dialog once the logo has loaded. No PDF library and nothing stored: the browser prints or saves as PDF, with `@page` and `break-inside` rules. The id is a uuid, and no personal data goes in the URL or the logs.
+`/imprimir/<job id>` (`src/app/imprimir/[id]/page.tsx`) is a page of its own, outside the `(app)` group so it has no shell. It checks the session, validates the id (not a uuid, or a job RLS doesn't show, is a 404), reads the job, its services and the shop with the user's session (`getJobSheet`: `job_list`, `job_item`, `shop` and the VIN from `vehicle_decrypted`) and draws the sheet (`JobSheetView`) from the view model `buildSheet` builds. `PrintControls` opens the browser's print dialog once the logo has loaded. No PDF library and nothing stored: the browser prints or saves as PDF, with `@page` and `break-inside` rules. The id is a uuid, and no personal data goes in the URL or the logs.
 
 ### Functions the app calls
 

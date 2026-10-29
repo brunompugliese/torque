@@ -336,6 +336,7 @@ describe("getJobSheet", () => {
     if (query.table === "job_list") return { data: ROW };
     if (query.table === "job_item") return { data: [ITEM] };
     if (query.table === "shop") return { data: SHOP };
+    if (query.table === "vehicle_decrypted") return { data: { vin: "8AP359A1XMU123456" } };
     return { data: [] };
   }
 
@@ -347,6 +348,7 @@ describe("getJobSheet", () => {
         number: "N° 000123",
         shop: { name: "Taller Ejemplo", address: "Calle Falsa 123", phone: "11 1234-5678", hasLogo: false },
         plate: "AE 482 KD",
+        vin: "8AP359A1XMU123456",
         services: [{ id: "i1", name: "Cambio de aceite", quantity: 2 }],
       },
     });
@@ -360,6 +362,18 @@ describe("getJobSheet", () => {
   it("fails when the services can't be read", async () => {
     setup((query) => (query.table === "job_item" ? { error: { code: "XX000" } } : respond(query)));
     expect(await getJobSheet("j1")).toEqual({ ok: false, reason: "error" });
+  });
+
+  it("reads the VIN of the job's vehicle from the decrypted view", async () => {
+    const queries = setup(respond);
+    await getJobSheet("j1");
+    const vehicle = queries.find((query) => query.table === "vehicle_decrypted")!;
+    expect(filterValue(vehicle, "eq", "id")).toBe("v1");
+  });
+
+  it("still builds the sheet, without the VIN, when it can't be read", async () => {
+    setup((query) => (query.table === "vehicle_decrypted" ? { error: { code: "XX000" } } : respond(query)));
+    expect(await getJobSheet("j1")).toMatchObject({ ok: true, sheet: { vin: null, plate: "AE 482 KD" } });
   });
 
   it("still builds the sheet when the shop can't be read", async () => {

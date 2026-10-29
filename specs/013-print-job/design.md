@@ -44,7 +44,7 @@ Route and files:
 |---|---|
 | `src/app/imprimir/[id]/page.tsx` | Server component. `requireSession()`, validates the id with `jobIdSchema` (invalid → `notFound()`), loads the sheet, renders it. A job that isn't in the user's shop is not found by RLS → `notFound()`. Metadata title "Trabajo N° 000123" so the saved PDF gets a useful name. |
 | `src/features/job/sheet.ts` | `buildSheet(job, items, shop, now)`: pure function from the data to what the sheet shows (formatted number, plate, vehicle, client, phone, kilometers, services, dates, missing-value texts). Tested without React. |
-| `src/features/job/queries.ts` | `getJobSheet(id)`: `getJobListRow` + `getJobDetail` + `getShop`, all existing and cached per request; the history that `getJobDetail` also returns is ignored. |
+| `src/features/job/queries.ts` | `getJobSheet(id)`: `getJobListRow` + `getJobDetail` + `getShop`, all existing and cached per request, plus the vehicle's VIN from `vehicle_decrypted` (`job_list` doesn't carry it; a failed read leaves the VIN out instead of failing the sheet); the history that `getJobDetail` also returns is ignored. |
 | `src/features/job/components/job-sheet.tsx` | The A4 sheet. Server component, no state. |
 | `src/features/job/components/print-controls.tsx` | Client. Calls `window.print()` once the logo and the fonts have loaded (images that fail count as loaded), and renders the "Imprimir" button, hidden when printing (`print:hidden`). |
 | `src/features/job/components/print-job-button.tsx` | The modal's "Imprimir": `<a href="/imprimir/<id>" target="_blank" rel="noopener">` styled like the "Enviar presupuesto" button, with `PrinterIcon`. |

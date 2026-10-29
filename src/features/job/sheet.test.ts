@@ -47,14 +47,16 @@ const ITEMS: JobItem[] = [
 const SHOP: Shop = { name: "Taller Ejemplo", address: "Calle Falsa 123", phone: "1112345678", hasLogo: true };
 
 // 28/10/2026 at 01:30 in Argentina is already the 28th in UTC; 27/10 at 22:00 there is the 28th in UTC.
+const VIN = "8AP359A1XMU123456";
 const NOW = new Date("2026-10-28T01:30:00Z");
 
 describe("buildSheet", () => {
   it("formats the number, the vehicle, the client and the kilometers", () => {
-    expect(buildSheet(JOB, ITEMS, SHOP, NOW)).toMatchObject({
+    expect(buildSheet(JOB, ITEMS, SHOP, VIN, NOW)).toMatchObject({
       number: "N° 000123",
       plate: "AB 123 CD",
       vehicle: "Fiat Cronos 2021",
+      vin: "8AP359A1XMU123456",
       client: "Juan Pérez",
       clientPhone: "11 1234-5678",
       kilometers: "112.500 km",
@@ -62,52 +64,57 @@ describe("buildSheet", () => {
   });
 
   it("writes both dates in Argentina time", () => {
-    const sheet = buildSheet({ ...JOB, createdAt: "2026-10-28T01:30:00+00:00" }, ITEMS, SHOP, NOW);
+    const sheet = buildSheet({ ...JOB, createdAt: "2026-10-28T01:30:00+00:00" }, ITEMS, SHOP, VIN, NOW);
     expect(sheet.createdOn).toBe("27/10/2026");
     expect(sheet.printedOn).toBe("27/10/2026");
   });
 
   it("lists the services in the saved order, with their plain name, even an archived one", () => {
-    expect(buildSheet(JOB, ITEMS, SHOP, NOW).services).toEqual([
+    expect(buildSheet(JOB, ITEMS, SHOP, VIN, NOW).services).toEqual([
       { id: "i1", name: "Cambio de aceite", quantity: 1 },
       { id: "i2", name: "Alineación", quantity: 4 },
     ]);
   });
 
+  it("leaves the VIN empty when the vehicle has none or it is blank", () => {
+    expect(buildSheet(JOB, [], SHOP, null, NOW).vin).toBeNull();
+    expect(buildSheet(JOB, [], SHOP, "  ", NOW).vin).toBeNull();
+  });
+
   it("has no services for a job without them", () => {
-    expect(buildSheet(JOB, [], SHOP, NOW).services).toEqual([]);
+    expect(buildSheet(JOB, [], SHOP, VIN, NOW).services).toEqual([]);
   });
 
   it("carries no price, status or observation of the job", () => {
-    const text = JSON.stringify(buildSheet(JOB, ITEMS, SHOP, NOW));
+    const text = JSON.stringify(buildSheet(JOB, ITEMS, SHOP, VIN, NOW));
     for (const leaked of ["650000", "700000", "60000", "65000", "10000", "en_progreso", "Pidió aceite"]) {
       expect(text).not.toContain(leaked);
     }
   });
 
   it("leaves missing values empty for the sheet to word", () => {
-    const sheet = buildSheet({ ...JOB, client: null, kilometers: null }, [], SHOP, NOW);
+    const sheet = buildSheet({ ...JOB, client: null, kilometers: null }, [], SHOP, VIN, NOW);
     expect(sheet).toMatchObject({ client: null, clientPhone: null, kilometers: null });
-    expect(buildSheet({ ...JOB, client: { ...JOB.client!, phoneNumber: "  " } }, [], SHOP, NOW).clientPhone).toBeNull();
+    expect(buildSheet({ ...JOB, client: { ...JOB.client!, phoneNumber: "  " } }, [], SHOP, VIN, NOW).clientPhone).toBeNull();
   });
 
   it("shows the shop's data, spacing an Argentine phone and keeping any other as typed", () => {
-    expect(buildSheet(JOB, [], SHOP, NOW).shop).toEqual({
+    expect(buildSheet(JOB, [], SHOP, VIN, NOW).shop).toEqual({
       name: "Taller Ejemplo",
       address: "Calle Falsa 123",
       phone: "11 1234-5678",
       hasLogo: true,
     });
-    expect(buildSheet(JOB, [], { ...SHOP, phone: "+54 9 11 5555-0101" }, NOW).shop.phone).toBe("+54 9 11 5555-0101");
+    expect(buildSheet(JOB, [], { ...SHOP, phone: "+54 9 11 5555-0101" }, VIN, NOW).shop.phone).toBe("+54 9 11 5555-0101");
   });
 
   it("leaves out a missing address and phone, and works without a shop", () => {
-    expect(buildSheet(JOB, [], { ...SHOP, address: null, phone: null, hasLogo: false }, NOW).shop).toEqual({
+    expect(buildSheet(JOB, [], { ...SHOP, address: null, phone: null, hasLogo: false }, VIN, NOW).shop).toEqual({
       name: "Taller Ejemplo",
       address: null,
       phone: null,
       hasLogo: false,
     });
-    expect(buildSheet(JOB, [], null, NOW).shop).toEqual({ name: null, address: null, phone: null, hasLogo: false });
+    expect(buildSheet(JOB, [], null, VIN, NOW).shop).toEqual({ name: null, address: null, phone: null, hasLogo: false });
   });
 });
