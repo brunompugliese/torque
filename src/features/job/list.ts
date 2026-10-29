@@ -6,6 +6,7 @@ import { JOB_STATUSES, type JobStatus } from "@/lib/status";
 
 // Column id (as in the URL) → sort key in job_list.
 export const JOB_SORT_COLUMNS = {
+  numero: "number",
   patente: "plate",
   vehiculo: "vehicle_key",
   cliente: "client_name_key",

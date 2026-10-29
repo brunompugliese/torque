@@ -354,6 +354,7 @@
     "summary": "{total, plural, one {# trabajo} other {# trabajos}} en total, {archived, plural, one {# archivado} other {# archivados}}.",
     "add": "Nuevo trabajo",
     "columns": {
+      "number": "N°",
       "plate": "Patente",
       "vehicle": "Vehículo",
       "client": "Cliente",
@@ -362,10 +363,10 @@
       "total": "Total",
       "updatedOn": "Actualizado"
     },
-    "searchPlaceholder": "Buscar por patente, marca, modelo o cliente",
+    "searchPlaceholder": "Buscar por número, patente, marca, modelo o cliente",
     "empty": {
       "noResultsTitle": "No encontramos trabajos",
-      "noResultsHint": "Probá con otra patente, marca, modelo o cliente.",
+      "noResultsHint": "Probá con otro número, patente, marca, modelo o cliente.",
       "noneTitle": "Todavía no hay trabajos",
       "noneHint": "Creá el primero para registrar el trabajo de un vehículo.",
       "onlyArchivedTitle": "No hay trabajos activos",
@@ -419,6 +420,21 @@
         "question": "¿Querés enviar el presupuesto igual?",
         "confirm": "Confirmar"
       }
+    },
+    "print": {
+      "button": "Imprimir",
+      "pageTitle": "Trabajo {number}",
+      "hint": "Vista de impresión. Desde el diálogo del navegador podés imprimir o guardar como PDF.",
+      "phone": "Tel. {phone}",
+      "createdOn": "Creado el {date}",
+      "printedOn": "Impreso el {date}",
+      "clientPhone": "Teléfono",
+      "noServices": "Sin servicios cargados.",
+      "quantity": "x {quantity}",
+      "done": "Hecho",
+      "workDone": "Trabajo realizado",
+      "clientSignature": "Firma del cliente",
+      "clarification": "Aclaración"
     },
     "archiveConfirm": {
       "title": "¿Archivar este trabajo?",

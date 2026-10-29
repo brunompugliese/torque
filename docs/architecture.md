@@ -90,10 +90,16 @@ Each shop's logo is a file in the private `shop-logos` bucket, under a folder na
 | `encrypt_client`, `encrypt_vehicle`, `encrypt_appointment`, `encrypt_job` | Normalize, hash and encrypt sensitive columns on write (see [Sensitive data](#sensitive-data)) |
 | `guard_closed_job`, `guard_closed_job_item` | A job in `entregado` or `cancelado` can only be archived/unarchived; its items can't change |
 | `check_job_kilometers` | A job's km can't be lower than the vehicle's previous non-archived jobs |
+| `set_job_number` | Gives every new job the next number of its shop (`shop.last_job_number` + 1, one UPDATE of the shop row: its row lock serializes jobs created at the same moment in one shop, other shops don't wait). `security definer`; ignores a number sent by the caller; a failed insert leaves no gap and nothing decrements the counter. `job.number` is `unique (shop_id, number)` |
+| `guard_job_number` | A job's number can't change (not even by the admin) |
 | `normalize_service` | Sets `service.name_key` (normalized name: A–Z sort and the app's "name taken" lookup) and `service.search_text` on every write, overwriting client values |
 | `check_appointment_parents_active`, `check_job_parents_active`, `check_job_item_service_active` | No new appointments/jobs on archived vehicles, no archived clients on jobs, no archived services on job items |
 
-Business-rule triggers raise SQLSTATE `23514` with a stable message (`job_closed`, `job_kilometers_below_previous`, `vehicle_archived`, `client_archived`, `service_archived`) that the app maps to UI text.
+Business-rule triggers raise SQLSTATE `23514` with a stable message (`job_closed`, `job_number_immutable`, `job_kilometers_below_previous`, `vehicle_archived`, `client_archived`, `service_archived`) that the app maps to UI text.
+
+### The printed job
+
+`/imprimir/<job id>` (`src/app/imprimir/[id]/page.tsx`) is a page of its own, outside the `(app)` group so it has no shell. It checks the session, validates the id (not a uuid, or a job RLS doesn't show, is a 404), reads the job, its services and the shop with the user's session (`getJobSheet`: `job_list`, `job_item`, `shop`) and draws the sheet (`JobSheetView`) from the view model `buildSheet` builds. `PrintControls` opens the browser's print dialog once the logo has loaded. No PDF library and nothing stored: the browser prints or saves as PDF, with `@page` and `break-inside` rules. The id is a uuid, and no personal data goes in the URL or the logs.
 
 ### Functions the app calls
 
@@ -253,6 +259,8 @@ Folders marked *(planned)* don't exist yet.
 src/
   app/                  # Routes (App Router). Thin: compose features, no business logic
     (app)/              # Routes that show the app shell
+    imprimir/[id]/      # The printable job sheet, no shell
+    logo/               # GET /logo: the shop's logo, served with the user's session
       _components/      # Components used only by this layout (e.g. MainNav)
   i18n/request.ts       # next-intl config (fixed es locale)
   components/
@@ -269,7 +277,7 @@ src/
     actions/            # ActionResult, ok(), fail()
     auth/               # Session store, inactivity rules, redirects, DAL (requireSession)
     data/               # Generic lookups: findByKey (uniqueness), existsWhere
-    format/             # DATE_FORMAT, APP_TIME_ZONE, maxVehicleYear, formatDateTime, argentinaDayStart, formatPlate, formatDni, formatKm, formatMoney, formatPhone, formatVinInput, toWhatsappUrl
+    format/             # DATE_FORMAT, APP_TIME_ZONE, maxVehicleYear, formatDateTime, argentinaDayStart, formatPlate, formatDni, formatKm, formatJobNumber, formatMoney, formatPhone, formatVinInput, toWhatsappUrl
     list/               # List URL params, pagination, applyListQuery, in-memory filter and pager
     calendar.ts         # Calendar date math on "yyyy-mm-dd" days (month grid, week, ranges, arrows)
     search/             # normalizeSearch, the app twin of private.normalize_search

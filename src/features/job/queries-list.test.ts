@@ -17,6 +17,7 @@ import {
   getJobCounts,
   getJobDetail,
   getJobListRow,
+  getJobSheet,
   getJobStatusCounts,
   getKmFloor,
   getVehicleOwner,
@@ -26,6 +27,7 @@ import {
 
 const ROW = {
   id: "j1",
+  number: 123,
   vehicle_id: "v1",
   client_id: "c1",
   appointment_id: null,
@@ -315,5 +317,53 @@ describe("listServiceOptions", () => {
     const queries = setup(() => ({ data: [] }));
     await listServiceOptions(["s1", "s2"]);
     expect(queries[0].calls).toContainEqual(["or", "enabled.eq.true,id.in.(s1,s2)"]);
+  });
+});
+
+describe("getJobSheet", () => {
+  const ITEM = {
+    id: "i1",
+    service_id: "s1",
+    quantity: 2,
+    quoted_unit_price: 100,
+    final_unit_price: null,
+    created_at: "2026-10-13T15:00:00+00:00",
+    service: { name: "Cambio de aceite", enabled: true },
+  };
+  const SHOP = { name: "Taller Ejemplo", address: "Calle Falsa 123", phone: "1112345678", logo_path: null };
+
+  function respond(query: FakeQuery): FakeResult {
+    if (query.table === "job_list") return { data: ROW };
+    if (query.table === "job_item") return { data: [ITEM] };
+    if (query.table === "shop") return { data: SHOP };
+    return { data: [] };
+  }
+
+  it("builds the sheet from the job, its services and the shop", async () => {
+    setup(respond);
+    expect(await getJobSheet("j1")).toMatchObject({
+      ok: true,
+      sheet: {
+        number: "N° 000123",
+        shop: { name: "Taller Ejemplo", address: "Calle Falsa 123", phone: "11 1234-5678", hasLogo: false },
+        plate: "AE 482 KD",
+        services: [{ id: "i1", name: "Cambio de aceite", quantity: 2 }],
+      },
+    });
+  });
+
+  it("is not found when the job is not visible to the user", async () => {
+    setup((query) => (query.table === "job_list" ? { data: null } : respond(query)));
+    expect(await getJobSheet("j1")).toEqual({ ok: false, reason: "notFound" });
+  });
+
+  it("fails when the services can't be read", async () => {
+    setup((query) => (query.table === "job_item" ? { error: { code: "XX000" } } : respond(query)));
+    expect(await getJobSheet("j1")).toEqual({ ok: false, reason: "error" });
+  });
+
+  it("still builds the sheet when the shop can't be read", async () => {
+    setup((query) => (query.table === "shop" ? { error: { code: "XX000" } } : respond(query)));
+    expect(await getJobSheet("j1")).toMatchObject({ ok: true, sheet: { shop: { name: null, hasLogo: false } } });
   });
 });

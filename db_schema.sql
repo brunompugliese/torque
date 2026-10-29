@@ -13,6 +13,7 @@ create table shop (
   address    text, -- optional; set in the dashboard (shops are read-only for users)
   phone      text, -- optional; set in the dashboard, formatted by the app when shown
   logo_path  text, -- path inside the private shop-logos bucket, always "<shop id>/<file>"
+  last_job_number integer not null default 0, -- the shop's job counter: the highest job.number given so far (trg_job_set_number)
   created_at timestamptz not null default now(),
   constraint shop_logo_path_in_own_folder -- a shop can't point at another shop's folder, even by a typo
     check (logo_path is null or logo_path like id::text || '/%')
@@ -124,6 +125,8 @@ create table appointment (
 create table job (
   id             uuid primary key default gen_random_uuid(),
   shop_id        uuid not null references shop(id),
+  number         integer not null check (number > 0), -- sequential within the shop, set by trg_job_set_number (a number sent by the caller is
+                                                      -- ignored), never reused, never changed (trg_job_number_immutable). The app shows it as "N° 000123"
   vehicle_id     uuid not null, -- every job is on a vehicle
   client_id      uuid,          -- who to talk to about THIS job, optional
   assigned_to    uuid,          -- user who is creating the job
@@ -144,6 +147,7 @@ create table job (
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
   unique (id, shop_id), -- lets job_item enforce "same shop as this job" via composite FK
+  unique (shop_id, number), -- one number per job within a shop
   foreign key (vehicle_id, shop_id)     references vehicle (id, shop_id),     -- vehicle must belong to the same shop as the job
   foreign key (client_id, shop_id)      references client (id, shop_id),     -- client must belong to the same shop as the job
   foreign key (assigned_to, shop_id)    references profile (id, shop_id),    -- assignee must belong to the same shop as the job
@@ -268,6 +272,47 @@ end;
 $$;
 
 create or replace trigger trg_job_status_change after insert or update on job for each row execute function log_job_status_change();
+
+-- Gives every new job the next number of its shop (spec 013). One UPDATE of the shop row: its
+-- row lock makes two jobs created at the same moment in one shop wait for each other, so they
+-- never share a number; other shops are not blocked. The counter moves in the insert's
+-- transaction, so a failed insert leaves no gap, and nothing decrements it. security definer:
+-- users can't update shop. Ignores any number the caller sent.
+create or replace function public.set_job_number()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.shop
+  set last_job_number = last_job_number + 1
+  where id = new.shop_id
+  returning last_job_number into new.number;
+  return new;
+end;
+$$;
+
+create or replace trigger trg_job_set_number before insert on public.job
+for each row execute function public.set_job_number();
+
+-- The number never changes. Error 23514 job_number_immutable.
+create or replace function public.guard_job_number()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.number is distinct from old.number then
+    raise exception using errcode = '23514', message = 'job_number_immutable',
+      detail = 'The number of a job cannot change.';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace trigger trg_job_number_immutable before update of number on public.job
+for each row execute function public.guard_job_number();
 
 -- Blocks login for disabled profiles by syncing to auth.users.banned_until,
 -- which Supabase Auth checks on every sign-in/refresh attempt. Fires on
@@ -830,7 +875,8 @@ from public.job j;
 -- The jobs page (spec 007): a job with its vehicle, client and appointment, plus the search text
 -- and sort keys, all computed here and never stored (no personal data in plaintext columns). A
 -- column is only computed when a query selects or sorts by it. job_decrypted stays the light read.
---   search_text      normalize_search of plate, brand + model and client name
+--   search_text      normalize_search of the number (six digits, zero padded), plate, brand + model and client name
+--   number           the job's number: "N°" sort (spec 013)
 --   vehicle_key      brand, model and year: "Vehículo" sort
 --   client_name_key  name and surname: "Cliente" sort; null without a client (sorts last)
 --   status_order     1–7, the status order of docs/design.md
@@ -853,7 +899,7 @@ select
   a.date          as appointment_date,
   a.time          as appointment_time,
   a.enabled       as appointment_enabled,
-  private.normalize_search(concat_ws('|', vd.plate, concat(b.name, m.name), concat(cd.name, cd.surname))) as search_text,
+  private.normalize_search(concat_ws('|', lpad(j.number::text, 6, '0'), vd.plate, concat(b.name, m.name), concat(cd.name, cd.surname))) as search_text,
   private.normalize_search(concat_ws(' ', b.name, m.name, v.year::text))                                   as vehicle_key,
   nullif(private.normalize_search(concat_ws(' ', cd.name, cd.surname)), '')                                as client_name_key,
   case j.status
@@ -865,7 +911,8 @@ select
     when 'entregado'            then 6
     when 'cancelado'            then 7
   end as status_order,
-  coalesce(j.final_total, j.quoted_total) as total_amount
+  coalesce(j.final_total, j.quoted_total) as total_amount,
+  j.number
 from public.job j
 join public.vehicle v on v.id = j.vehicle_id and v.shop_id = j.shop_id
 join public.brand b on b.id = v.brand_id

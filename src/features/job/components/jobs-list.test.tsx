@@ -31,6 +31,7 @@ import { JobsPanel } from "./jobs-panel";
 
 const JOB: JobListItem = {
   id: "j1",
+  number: 123,
   status: "en_progreso",
   observations: null,
   kilometers: 112500,
@@ -90,7 +91,7 @@ beforeEach(() => {
 describe("JobsListView", () => {
   it("shows the toolbar with the search, the two filters and the archived switch, and the first rows", () => {
     renderList();
-    expect(screen.getByPlaceholderText("Buscar por patente, marca, modelo o cliente")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Buscar por número, patente, marca, modelo o cliente")).toBeInTheDocument();
     expect(filterButton("Estado")).toBeInTheDocument();
     expect(filterButton("Fecha")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Mostrar archivados" })).not.toBeChecked();
@@ -103,7 +104,7 @@ describe("JobsListView", () => {
     mocks.searchJobs.mockReturnValue(new Promise<JobPage>((done) => (resolve = done)));
     renderList();
 
-    fireEvent.change(screen.getByPlaceholderText("Buscar por patente, marca, modelo o cliente"), {
+    fireEvent.change(screen.getByPlaceholderText("Buscar por número, patente, marca, modelo o cliente"), {
       target: { value: "ae 482" },
     });
     await waitFor(() => expect(mocks.searchJobs).toHaveBeenCalledWith("buscar=ae+482"));
@@ -119,7 +120,7 @@ describe("JobsListView", () => {
     mocks.nav.search = "estado=entregado&desde=2026-09-01";
     mocks.searchJobs.mockResolvedValue({ ok: true, rows: [OTHER], matching: 1 });
     renderList();
-    fireEvent.change(screen.getByPlaceholderText("Buscar por patente, marca, modelo o cliente"), {
+    fireEvent.change(screen.getByPlaceholderText("Buscar por número, patente, marca, modelo o cliente"), {
       target: { value: "gol" },
     });
     await waitFor(() => expect(mocks.searchJobs).toHaveBeenCalledWith("buscar=gol&desde=2026-09-01&estado=entregado"));
@@ -128,7 +129,7 @@ describe("JobsListView", () => {
   it("offers to retry when the search fails", async () => {
     mocks.searchJobs.mockRejectedValueOnce(new Error("network")).mockResolvedValueOnce({ ok: true, rows: [OTHER], matching: 1 });
     renderList();
-    fireEvent.change(screen.getByPlaceholderText("Buscar por patente, marca, modelo o cliente"), {
+    fireEvent.change(screen.getByPlaceholderText("Buscar por número, patente, marca, modelo o cliente"), {
       target: { value: "gol" },
     });
     // The search waits for its debounce, which takes longer on a busy machine.

@@ -11,6 +11,7 @@ import { PLATE_WIDTH_CLASS, PlateDisplay } from "@/components/shared/plate-displ
 import { TableDate } from "@/components/shared/table-date";
 import { formatClientName } from "@/features/client/format";
 import { useListUrl } from "@/hooks/use-list-url";
+import { formatJobNumber } from "@/lib/format/job-number";
 import { formatKm } from "@/lib/format/km";
 import { formatMoney } from "@/lib/format/money";
 import { LIST_PAGE_SIZE } from "@/lib/list/params";
@@ -47,6 +48,12 @@ export function JobsTable(props: JobsTableProps) {
   }, [pastTheEnd, setPage]);
 
   const columns: DataTableColumn<JobListItem>[] = [
+    {
+      id: "numero",
+      header: t("columns.number"),
+      sortable: true,
+      cell: (job) => <span className="whitespace-nowrap tabular-nums">{formatJobNumber(job.number)}</span>,
+    },
     {
       id: "patente",
       header: t("columns.plate"),
@@ -194,6 +201,7 @@ export function JobsTableSkeleton() {
   return (
     <DataTableSkeleton
       columns={[
+        { header: t("columns.number"), className: "w-28" },
         { header: t("columns.plate"), align: "center", className: PLATE_WIDTH_CLASS },
         { header: t("columns.vehicle"), className: VEHICLE_CELL_CLASS, lines: 2 },
         { header: t("columns.client"), className: CLIENT_CELL_CLASS },
