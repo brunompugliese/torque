@@ -120,7 +120,7 @@ WCAG 2.1 AA on every page. In practice:
 ## Layout and navigation
 
 - **Pages and addresses:** Ingresar (`/login`), Inicio (`/inicio`), Vehículos (`/vehiculos`), Clientes (`/clientes`), Turnos (`/turnos`), Trabajos (`/trabajos`), Servicios (`/servicios`). Each page has its own address; the browser's Back button works.
-- **Header:** the shop's logo + its name on the left (stored in the database for the shop ID in the user's session token; the app's mark and name when the name can't be read); "Cerrar sesión" on the right. The bar is 64px tall. It scrolls away with the page; it is not fixed.
+- **Header:** the shop's logo + its name on the left (stored in the database for the shop ID in the user's session token; the app's mark and name when the name can't be read), with "by Torque" in small secondary text under the shop's name (not shown when the app's own name is the title); "Cerrar sesión" on the right. The bar is 64px tall. It scrolls away with the page; it is not fixed.
 - **Navbar:** floating bar fixed at the bottom center, always visible, with an icon and label per page: Inicio, Vehículos, Clientes, Turnos, Trabajos, Servicios. The current page is highlighted (dark fill). Every page leaves enough bottom space that nothing is hidden behind it.
 - **Content width:** max 1280px, centered, identical on every page. The scrollbar space is always reserved so changing pages never shifts the layout.
 - **Page top:** page title, a one-line summary below it, and the page's main button on the right ("Agregar vehículo", "Nuevo turno", …). On list pages the summary is the total (active + archived) and the archived count, always both: "15 servicios en total, 1 archivado." · "1 servicio en total, 0 archivados."
