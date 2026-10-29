@@ -43,7 +43,7 @@ Job number
 Sheet content (A4, black and white, no prices)
 
 - [ ] Given the sheet, then the header has the shop's logo (the app's logo when it has none), name, address and phone (spec 012), the title "N° 000123" (no word "Trabajo") and "Creado el dd/mm/aaaa". A missing address or phone is left out, not shown empty.
-- [ ] Given the sheet, then the data block has: "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model and year), "Cliente" and "Teléfono", and "Kilometraje" (dot thousands + "km"). The status is not shown. Missing values read "Sin cliente" and "Sin cargar".
+- [ ] Given the sheet, then the data block has: "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model and year), "VIN" (the vehicle's, as saved), "Kilometraje", "Cliente" and "Teléfono" (dot thousands + "km"). The status is not shown. Missing values read "Sin cliente" and "Sin cargar".
 - [ ] Given the services, then each is a numbered block, in saved order, with its name (an archived service by its plain name), "x N" and a "Hecho" checkbox in its header, and below it the label "Trabajo realizado" with blank space to write in (about the height of three lines, no ruled lines).
 - [ ] Given a job with no services, then the section reads "Sin servicios cargados." with no blocks.
 - [ ] Given the sheet, then "Observaciones" is a bordered box after the services and above the signature area, always blank, for the mechanic to write in. The job's own observations are not printed.

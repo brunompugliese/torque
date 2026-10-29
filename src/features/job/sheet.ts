@@ -23,6 +23,7 @@ export type JobSheet = {
   plate: string;
   // "Fiat Cronos 2021"
   vehicle: string;
+  vin: string | null;
   client: string | null;
   clientPhone: string | null;
   kilometers: string | null;
@@ -42,7 +43,13 @@ function dayOf(value: string | Date): string {
   return formatDateTime(value).slice(0, 10);
 }
 
-export function buildSheet(job: JobListItem, items: readonly JobItem[], shop: Shop | null, now: Date): JobSheet {
+export function buildSheet(
+  job: JobListItem,
+  items: readonly JobItem[],
+  shop: Shop | null,
+  vin: string | null,
+  now: Date,
+): JobSheet {
   const phone = job.client?.phoneNumber.trim();
   return {
     number: formatJobNumber(job.number),
@@ -56,6 +63,7 @@ export function buildSheet(job: JobListItem, items: readonly JobItem[], shop: Sh
     printedOn: dayOf(now),
     plate: formatPlate(job.vehicle.plate),
     vehicle: formatJobVehicle(job),
+    vin: vin?.trim() ? vin.trim() : null,
     client: job.client ? formatClientName(job.client) : null,
     clientPhone: phone ? phone : null,
     kilometers: job.kilometers === null ? null : formatKm(job.kilometers),
