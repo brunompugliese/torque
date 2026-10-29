@@ -262,7 +262,20 @@ export async function getJobSheet(id: string): Promise<JobSheetResult> {
   const [row, detail, shop] = await Promise.all([getJobListRow(id), getJobDetail(id), getShop()]);
   if (!row.ok) return { ok: false, reason: "notFound" };
   if (!detail.ok) return { ok: false, reason: "error" };
-  return { ok: true, sheet: buildSheet(row.row, detail.items, shop, new Date()) };
+  const vin = await getVehicleVin(row.row.vehicle.id);
+  return { ok: true, sheet: buildSheet(row.row, detail.items, shop, vin, new Date()) };
+}
+
+// The vehicle's VIN, decrypted (job_list doesn't carry it). A failed read leaves the sheet without it
+// rather than failing the whole sheet.
+async function getVehicleVin(vehicleId: string): Promise<string | null> {
+  const { supabase } = await createServerSupabase();
+  const { data, error } = await supabase.from("vehicle_decrypted").select("vin").eq("id", vehicleId).maybeSingle();
+  if (error) {
+    console.error("[job] vehicle vin failed", { code: error.code });
+    return null;
+  }
+  return typeof data?.vin === "string" ? data.vin : null;
 }
 
 // -----------------------------------------------------------------------------

@@ -11,7 +11,7 @@ const WRITING_SPACE = "h-[66px]";
 
 function Field({ label, value, missing }: { label: string; value: string | null; missing: string }) {
   return (
-    <div className="flex min-h-7 items-baseline gap-2 border-b border-border py-1">
+    <div className="flex items-baseline gap-2 py-0.5">
       <dt className="min-w-24 text-xs font-medium text-muted-foreground">{label}</dt>
       <dd className={value ? "font-medium" : "text-muted-foreground"}>{value ?? missing}</dd>
     </div>
@@ -78,9 +78,10 @@ function SheetBody({ sheet }: { sheet: JobSheet }) {
       <dl className="my-3 grid grid-cols-2 gap-x-6">
         <Field label={tJob("columns.plate")} value={sheet.plate} missing="" />
         <Field label={tJob("columns.vehicle")} value={sheet.vehicle} missing="" />
+        <Field label={t("vin")} value={sheet.vin} missing={tJob("notLoaded")} />
+        <Field label={tJob("details.kilometers")} value={sheet.kilometers} missing={tJob("notLoaded")} />
         <Field label={tJob("details.client")} value={sheet.client} missing={tJob("noClient")} />
         <Field label={t("clientPhone")} value={sheet.clientPhone} missing={tJob("notLoaded")} />
-        <Field label={tJob("details.kilometers")} value={sheet.kilometers} missing={tJob("notLoaded")} />
       </dl>
 
       <section aria-labelledby="sheet-services">

@@ -13,6 +13,7 @@ const SHEET: JobSheet = {
   printedOn: "28/10/2026",
   plate: "AB 123 CD",
   vehicle: "Chevrolet S10 2025",
+  vin: "8AP359A1XMU123456",
   client: "Juan Pérez",
   clientPhone: "11 1234-5678",
   kilometers: "20.257 km",
@@ -61,16 +62,16 @@ describe("JobSheetView data", () => {
     const { container } = renderSheet();
     const data = screen.getByText("Patente").closest("dl") as HTMLElement;
     expect(container.querySelector('[data-slot="plate"]')).toBeNull();
-    for (const text of ["AB 123 CD", "Chevrolet S10 2025", "Juan Pérez", "11 1234-5678", "20.257 km"]) {
+    for (const text of ["AB 123 CD", "Chevrolet S10 2025", "8AP359A1XMU123456", "Juan Pérez", "11 1234-5678", "20.257 km"]) {
       expect(within(data).getByText(text)).toBeInTheDocument();
     }
     expect(screen.queryByText("Estado")).toBeNull();
   });
 
   it("words the missing values", () => {
-    renderSheet({ client: null, clientPhone: null, kilometers: null });
+    renderSheet({ client: null, clientPhone: null, kilometers: null, vin: null });
     expect(screen.getByText("Sin cliente")).toBeInTheDocument();
-    expect(screen.getAllByText("Sin cargar")).toHaveLength(2);
+    expect(screen.getAllByText("Sin cargar")).toHaveLength(3);
   });
 });
 

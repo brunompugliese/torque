@@ -287,7 +287,7 @@ Every job has a number, sequential within its shop: 1, 2, 3… The database assi
 The sheet is A4, black on white, with no price or total, no status and not the job's observations:
 
 - **Header:** the shop's logo (the app's mark without one), name, address and phone (a missing one is left out), and on the right "N° 000123" as the title with "Creado el dd/mm/aaaa".
-- **Data:** "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model, year), "Cliente" and "Teléfono", "Kilometraje"; missing values read "Sin cliente" and "Sin cargar".
+- **Data:** "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model, year), "VIN", "Kilometraje", "Cliente" and "Teléfono"; missing values read "Sin cliente" and "Sin cargar".
 - **Services:** a numbered block per service in saved order (an archived one by its plain name) with its name, "x N" and an empty "Hecho" box, and under it "Trabajo realizado" with blank space to write in (no ruled lines). A block is never split across pages. Without services: "Sin servicios cargados."
 - **End:** a bordered, always blank "Observaciones" box, then "Firma del cliente" and "Aclaración", together on the last page, and a footer with the shop's name and "Impreso el dd/mm/aaaa" (Argentina time). The page margin is set to 0 so the browser prints neither its own date and title at the top nor the app's address at the bottom; the sheet draws its own margins.
 

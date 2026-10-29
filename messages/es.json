@@ -429,6 +429,7 @@
       "phone": "Tel. {phone}",
       "createdOn": "Creado el {date}",
       "printedOn": "Impreso el {date}",
+      "vin": "VIN",
       "clientPhone": "Teléfono",
       "noServices": "Sin servicios cargados.",
       "quantity": "x {quantity}",
