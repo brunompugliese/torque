@@ -96,6 +96,7 @@ Numbers (money, km, times, DNI) use tabular figures so columns align.
 | DNI | up to 8 digits, dot thousands | 28.456.123 |
 | Phone | 10 digits, area code first, formatted as typed | 11 1234-5678 · 221 123-4567 |
 | Plate | uppercase, spaced | AB 123 CD, ABC 123 |
+| Job number | "N°" + six digits, zero padded (longer numbers grow); never with the word "Trabajo". The database stores only the integer; one formatter (`formatJobNumber`) draws it everywhere | N° 000123 |
 
 **Stored values.** Plates are stored uppercase without spaces; DNI as digits only. The database normalizes both on write. Phones are stored already formatted ("11 1234-5678"): the app formats them as they are typed and on save.
 
@@ -274,6 +275,21 @@ Services carry no price; prices are set per job item.
 - **Archived job, client or vehicle:** clicking asks first ("Hay registros archivados", one line per archived record, "Cancelar" / "Confirmar"); only "Confirmar" opens the chat.
 - **Message** (Spanish, voseo; real line breaks; built from the saved job): "Hola {first name}, te paso el presupuesto para tu {brand} {model} ({plate}):", one bullet per service in saved order ("• {service}: {line total}", with "(xN)" only when N > 1; archived services by their plain name), "Total: {quoted total}", "Cualquier duda avisanos. ¡Gracias!" and "— {shop name}" (the name in the top bar; left out if missing). Quoted prices only, never the final ones, in the app's money format.
 - Look: the shared WhatsApp button's (token colors, 28 px high) with a paper-plane icon; disabled it is muted at 70% opacity.
+
+### Job number
+
+Every job has a number, sequential within its shop: 1, 2, 3… The database assigns it on creation (two jobs created at the same moment never share one), it never changes, it is never reused and archived jobs keep theirs; two shops count independently. It shows as "N° 000123" in the Trabajos list (first column "N°", sortable, numeric, so the first click lists the oldest first), in the job modal's header before the plate (and in the edit form's subtitle), and on the printed sheet. The list's search finds it by "123" or "000123" (a substring search, so "123" also finds plates containing it).
+
+### Printing a job
+
+"Imprimir" sits next to "Enviar presupuesto" on the "Servicios" heading row of the job modal's view (editable or read only, so also on Inicio), for a job in any status, archived or not; it is not in the edit form. It is a link that opens `/imprimir/<job id>` in a new tab: a page with only the sheet, which opens the browser's print dialog by itself once the logo has loaded and keeps an "Imprimir" button to print again (the user prints or saves as PDF from the dialog). It never changes the job: no status change, no history entry. While the services load it is disabled; if they fail to load it is not shown.
+
+The sheet is A4, black on white, with no price or total, no status and not the job's observations:
+
+- **Header:** the shop's logo (the app's mark without one), name, address and phone (a missing one is left out), and on the right "N° 000123" as the title with "Creado el dd/mm/aaaa".
+- **Data:** "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model, year), "Cliente" and "Teléfono", "Kilometraje"; missing values read "Sin cliente" and "Sin cargar".
+- **Services:** a numbered block per service in saved order (an archived one by its plain name) with its name, "x N" and an empty "Hecho" box, and under it "Trabajo realizado" with blank space to write in (no ruled lines). A block is never split across pages. Without services: "Sin servicios cargados."
+- **End:** a bordered, always blank "Observaciones" box, then "Firma del cliente" and "Aclaración", together on the last page, and a footer with the shop's name and "Impreso el dd/mm/aaaa" (Argentina time). The page margin is set to 0 so the browser prints neither its own date and title at the top nor the app's address at the bottom; the sheet draws its own margins.
 
 ### Kilometers
 

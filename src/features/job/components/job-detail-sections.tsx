@@ -11,6 +11,7 @@ import { useLoadedData } from "@/hooks/use-loaded-data";
 import { getJobDetails } from "../actions";
 import type { JobListItem } from "../schemas";
 import { JobServices } from "./job-services";
+import { PrintJobButton } from "./print-job-button";
 import { QuoteButton } from "./quote-button";
 import { JobStatusHistory } from "./job-status-history";
 
@@ -96,7 +97,12 @@ export function JobDetailSections({ job }: { job: JobListItem }) {
       <Section
         id="job-services-title"
         title={tServices("title")}
-        action={<QuoteButton job={job} items={loaded ? loaded.items : null} />}
+        action={
+          <div className="flex items-center gap-1">
+            <PrintJobButton jobId={jobId} loading={!loaded} />
+            <QuoteButton job={job} items={loaded ? loaded.items : null} />
+          </div>
+        }
       >
         {loaded ? <JobServices items={loaded.items} status={status} /> : <ServicesSkeleton />}
       </Section>

@@ -103,6 +103,7 @@ const HISTORY_JOB = {
 };
 const JOB: JobListItem = {
   id: JOB_ID,
+  number: 123,
   status: "completado",
   observations: null,
   kilometers: 90000,

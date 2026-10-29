@@ -5,6 +5,7 @@ import { jobFormSchema, type JobItem, type JobListItem } from "./schemas";
 
 const JOB: JobListItem = {
   id: "j1",
+  number: 123,
   status: "en_progreso",
   observations: "Ruido en la rueda",
   kilometers: 68400,

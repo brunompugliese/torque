@@ -1,6 +1,6 @@
 # 013 — Imprimir trabajo: Requirements
 
-**Status:** Draft
+**Status:** Approved (by the owner in conversation, 2026-10-28)
 
 Depends on [012 — Shop branding](../012-shop-branding/requirements.md) (the shop's logo, address and phone).
 
@@ -44,11 +44,11 @@ Sheet content (A4, black and white, no prices)
 
 - [ ] Given the sheet, then the header has the shop's logo (the app's logo when it has none), name, address and phone (spec 012), the title "N° 000123" (no word "Trabajo") and "Creado el dd/mm/aaaa". A missing address or phone is left out, not shown empty.
 - [ ] Given the sheet, then the data block has: "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model and year), "Cliente" and "Teléfono", and "Kilometraje" (dot thousands + "km"). The status is not shown. Missing values read "Sin cliente" and "Sin cargar".
-- [ ] Given the services, then each is a numbered block, in saved order, with its name (an archived service by its plain name), "x N" and a "Hecho" checkbox in its header, and below it the label "Trabajo realizado" with three ruled writing lines.
+- [ ] Given the services, then each is a numbered block, in saved order, with its name (an archived service by its plain name), "x N" and a "Hecho" checkbox in its header, and below it the label "Trabajo realizado" with blank space to write in (about the height of three lines, no ruled lines).
 - [ ] Given a job with no services, then the section reads "Sin servicios cargados." with no blocks.
 - [ ] Given the sheet, then "Observaciones" is a bordered box after the services and above the signature area, always blank, for the mechanic to write in. The job's own observations are not printed.
 - [ ] Given any amount of services, then a block is never split across pages, and the observations box and the signature area ("Firma del cliente" and "Aclaración") sit together at the end of the last page.
-- [ ] Given the sheet, then no price, total or final value appears anywhere on it, and the footer shows the shop's name and "Impreso el dd/mm/aaaa" (Argentina time).
+- [ ] Given the sheet, then no price, total or final value appears anywhere on it, and the footer shows the shop's name and "Impreso el dd/mm/aaaa" (Argentina time). The browser's own header and footer (its date, the page title, the app's address, page numbers) are not printed: the sheet's date is the only one, and the client never sees the app's address.
 
 Accessibility and quality
 
@@ -73,7 +73,7 @@ Isolation
 ## Decisions taken with the owner (2026-10-28)
 
 - Format: the browser's print view with print CSS (no PDF library); from its dialog the user prints or saves as PDF.
-- Three writing lines per service.
+- Blank writing space per service (first three ruled lines, then the owner asked to take the lines out, 2026-10-28).
 - Patente as plain text; no status on the sheet; observations in a box above the signature, always blank.
 - The number shows as "N° 000123" on the sheet, in the Trabajos list (new first column), in the job modal's header and in the search; the database stores only the integer.
 - Header with the shop's logo, address and phone, and a sequential job number; the logo and branding data are their own spec (012), also used by the app's header.

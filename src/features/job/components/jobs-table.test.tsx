@@ -33,6 +33,7 @@ beforeAll(async () => {
 
 const ACTIVE: JobListItem = {
   id: "j1",
+  number: 123,
   status: "en_progreso",
   observations: null,
   kilometers: 112500,
@@ -75,11 +76,12 @@ beforeEach(() => {
 });
 
 describe("JobsTable", () => {
-  it("lists the seven columns with no header marked as sorted", () => {
+  it("lists the eight columns with no header marked as sorted", () => {
     renderTable({ ok: true, rows: [ACTIVE], matching: 1, total: 1 });
     const table = screen.getByRole("table", { name: "Trabajos" });
     const headers = within(table).getAllByRole("columnheader");
     expect(headers.map((header) => header.textContent)).toEqual([
+      "N°",
       "Patente",
       "Vehículo",
       "Cliente",
@@ -92,6 +94,17 @@ describe("JobsTable", () => {
       expect(header).not.toHaveAttribute("aria-sort");
       expect(within(header).getByRole("button")).toBeInTheDocument();
     }
+  });
+
+  it("shows the number as N° 000123, without wrapping", () => {
+    renderTable({ ok: true, rows: [ACTIVE], matching: 1, total: 1 });
+    expect(screen.getByText("N° 000123")).toHaveClass("whitespace-nowrap", "tabular-nums");
+  });
+
+  it("sorts by number, ascending on the first click", () => {
+    renderTable({ ok: true, rows: [ACTIVE], matching: 1, total: 1 });
+    fireEvent.click(screen.getByRole("button", { name: /N°/ }));
+    expect(nav.replace).toHaveBeenLastCalledWith(null, "", "/trabajos?orden=numero");
   });
 
   it("shows the plate drawn, the vehicle with its year below, client, status, km, total and date", () => {
@@ -137,11 +150,11 @@ describe("JobsTable", () => {
     expect(row).toHaveAttribute("data-muted", "true");
     expect(within(row).getByText("Archivado")).toBeInTheDocument();
     const cells = within(row).getAllByRole("cell");
-    expect(cells[2]).toHaveTextContent("Sin cliente");
-    expect(cells[4]).toHaveTextContent("—");
-    expect(within(noTotalRow).getAllByRole("cell")[5]).toHaveTextContent("—");
+    expect(cells[3]).toHaveTextContent("Sin cliente");
+    expect(cells[5]).toHaveTextContent("—");
+    expect(within(noTotalRow).getAllByRole("cell")[6]).toHaveTextContent("—");
     // No year, no second line.
-    expect(within(row.querySelectorAll("td")[1] as HTMLElement).queryByText(/^\d{4}$/)).toBeNull();
+    expect(within(row.querySelectorAll("td")[2] as HTMLElement).queryByText(/^\d{4}$/)).toBeNull();
   });
 
   it("marks an archived client in the Cliente column", () => {
@@ -209,6 +222,7 @@ describe("JobsTable", () => {
       renderWithIntl(<JobsTableSkeleton />);
       // The skeleton region is busy, so it is hidden from the accessibility tree.
       expect(screen.getAllByRole("columnheader", { hidden: true }).map((header) => header.textContent)).toEqual([
+        "N°",
         "Patente",
         "Vehículo",
         "Cliente",
@@ -233,7 +247,7 @@ describe("JobsTable", () => {
       nav.search = "estado=entregado&desde=2026-09-01&archivados=1&orden=km";
       renderTable({ ok: true, rows: [], matching: 0, total: 5 });
       expect(screen.getByText("No encontramos trabajos")).toBeInTheDocument();
-      expect(screen.getByText("Probá con otra patente, marca, modelo o cliente.")).toBeInTheDocument();
+      expect(screen.getByText("Probá con otro número, patente, marca, modelo o cliente.")).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: "Limpiar búsqueda y filtros" }));
       expect(nav.replace).toHaveBeenLastCalledWith(null, "", "/trabajos?archivados=1&orden=km");
     });

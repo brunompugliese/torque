@@ -16,6 +16,7 @@ import { useArchiveFlow } from "@/hooks/use-archive-flow";
 import { useLoadedData } from "@/hooks/use-loaded-data";
 import { fail } from "@/lib/actions/result";
 import { DATE_FORMAT } from "@/lib/format/date";
+import { formatJobNumber } from "@/lib/format/job-number";
 import { formatKm } from "@/lib/format/km";
 import { formatPlate } from "@/lib/format/plate";
 import { isClosedStatus } from "@/lib/status";
@@ -162,7 +163,7 @@ export function useJobModal({
         subtitle: (
           <>
             <span className="block font-medium text-foreground">
-              {formatPlate(job.vehicle.plate)} · {formatJobVehicle(job)}
+              {formatJobNumber(job.number)} · {formatPlate(job.vehicle.plate)} · {formatJobVehicle(job)}
             </span>
             {tCommon("requiredFields")}
           </>
@@ -183,6 +184,10 @@ export function useJobModal({
       wide: true,
       title: (
         <span className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-muted-foreground tabular-nums">
+            <span className="sr-only">{t("modalTitle")} </span>
+            {formatJobNumber(job.number)}
+          </span>
           <PlateDisplay plate={job.vehicle.plate} />
           <span>{formatJobVehicle(job)}</span>
         </span>

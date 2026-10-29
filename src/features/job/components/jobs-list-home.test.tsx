@@ -40,6 +40,7 @@ beforeAll(async () => {
 
 const JOB: JobListItem = {
   id: "j1",
+  number: 123,
   status: "en_progreso",
   observations: null,
   kilometers: 112500,
@@ -94,7 +95,7 @@ beforeEach(() => {
 describe("JobsListView on Inicio", () => {
   it("has the search and the Estado filter, but no Fecha filter and no archived switch", () => {
     renderHome();
-    expect(screen.getByPlaceholderText("Buscar por patente, marca, modelo o cliente")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Buscar por número, patente, marca, modelo o cliente")).toBeInTheDocument();
     expect(filterButton("Estado")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Fecha/ })).toBeNull();
     expect(screen.queryByRole("switch", { name: "Mostrar archivados" })).toBeNull();
@@ -103,7 +104,7 @@ describe("JobsListView on Inicio", () => {
 
   it("searches through the home action, never the Trabajos one", async () => {
     renderHome();
-    fireEvent.change(screen.getByPlaceholderText("Buscar por patente, marca, modelo o cliente"), {
+    fireEvent.change(screen.getByPlaceholderText("Buscar por número, patente, marca, modelo o cliente"), {
       target: { value: "gol" },
     });
     await waitFor(() => expect(mocks.searchHomeJobs).toHaveBeenCalledWith("buscar=gol"));

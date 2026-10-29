@@ -6,6 +6,7 @@ import type { JobItem, JobListItem } from "./schemas";
 
 const JOB: JobListItem = {
   id: "j1",
+  number: 123,
   status: "presupuesto_enviado",
   observations: null,
   kilometers: null,

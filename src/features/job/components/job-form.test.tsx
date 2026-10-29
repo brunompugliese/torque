@@ -50,6 +50,7 @@ const VEHICLE_ROWS = [
 
 const JOB: JobListItem = {
   id: JOB_ID,
+  number: 123,
   status: "presupuesto_enviado",
   observations: "Ruido en la rueda",
   kilometers: 68400,
@@ -699,7 +700,7 @@ describe("edit job form", () => {
     await renderEdit();
     const dialog = screen.getByRole("dialog");
     expect(within(dialog).getByText("Editar trabajo")).toBeInTheDocument();
-    expect(within(dialog).getByText("AE 482 KD · Fiat Cronos 2021")).toBeInTheDocument();
+    expect(within(dialog).getByText("N° 000123 · AE 482 KD · Fiat Cronos 2021")).toBeInTheDocument();
     expect(within(dialog).getByText("Los campos con * son obligatorios.")).toBeInTheDocument();
     expect(button("Cancelar")).toBeInTheDocument();
     expect(button("Guardar cambios")).toBeInTheDocument();

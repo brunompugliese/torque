@@ -69,6 +69,7 @@ const VEHICLE: VehicleListItem = {
 };
 const JOB: JobListItem = {
   id: JOB_ID,
+  number: 123,
   status: "en_progreso",
   observations: "Ruido",
   kilometers: 90000,
