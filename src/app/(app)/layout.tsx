@@ -19,6 +19,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     <ShopProvider shop={shop ?? undefined}>
       <TopBar
         appName={t("name")}
+        byline={t("byline", { name: t("name") })}
         shopName={shop?.name}
         logoSrc={shop?.hasLogo ? SHOP_LOGO_PATH : undefined}
         actions={<SignOutButton />}

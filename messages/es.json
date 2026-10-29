@@ -1,6 +1,7 @@
 {
   "app": {
     "name": "Torque",
+    "byline": "by {name}",
     "description": "Gestión de talleres mecánicos"
   },
   "nav": {

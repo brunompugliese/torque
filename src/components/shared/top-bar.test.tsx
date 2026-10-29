@@ -18,6 +18,20 @@ describe("TopBar", () => {
     expect(screen.getByRole("banner")).toHaveTextContent(/^Taller Ejemplo$/);
   });
 
+  it("credits the app under the shop's name", () => {
+    render(<TopBar appName="Torque" byline="by Torque" shopName="Taller Ejemplo" />);
+
+    const byline = screen.getByText("by Torque");
+    expect(byline).toHaveClass("text-xs", "text-muted-foreground");
+    expect(byline.previousElementSibling).toHaveTextContent("Taller Ejemplo");
+  });
+
+  it("shows no byline without a shop, where the app's name is already the title", () => {
+    render(<TopBar appName="Torque" byline="by Torque" />);
+
+    expect(screen.queryByText("by Torque")).toBeNull();
+  });
+
   it("draws the shop's logo when it has one", () => {
     const { container } = render(<TopBar appName="Torque" shopName="Taller Ejemplo" logoSrc="/logo" />);
 
