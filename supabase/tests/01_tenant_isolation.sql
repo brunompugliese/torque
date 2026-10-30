@@ -108,9 +108,9 @@ select throws_ok($$ select 1 from public.vehicle_decrypted $$,     '42501', null
 select throws_ok($$ select 1 from public.appointment_decrypted $$, '42501', null, 'anon: appointment_decrypted denied');
 select throws_ok($$ select 1 from public.job_decrypted $$,         '42501', null, 'anon: job_decrypted denied');
 
--- Global catalog: readable by anyone, writable only by logged-in users.
-select isnt_empty($$ select 1 from public.brand $$, 'anon: brand readable');
-select isnt_empty($$ select 1 from public.model $$, 'anon: model readable');
+-- Global catalog: nothing for anon.
+select throws_ok($$ select 1 from public.brand $$, '42501', null, 'anon: brand denied');
+select throws_ok($$ select 1 from public.model $$, '42501', null, 'anon: model denied');
 select throws_ok($$ insert into public.brand (name) values ('Marca anon') $$, '42501', null, 'anon: brand not writable');
 select throws_ok($$ insert into public.model (brand_id, name) values (tests.id('brand_fiat'), 'Modelo anon') $$,
                  '42501', null, 'anon: model not writable');
@@ -131,6 +131,15 @@ select throws_ok($$ insert into public.job_status_history (job_id, new_status) v
                  '42501', null, 'job_status_history: insert denied');
 select throws_ok($$ update public.job_status_history set new_status = 'entregado' $$,           '42501', null, 'job_status_history: update denied');
 select throws_ok($$ delete from public.job_status_history $$,                                    '42501', null, 'job_status_history: delete denied');
+
+-- Global catalog: logged-in users read and add, but cannot change or delete what every shop uses.
+select isnt_empty($$ select 1 from public.brand $$, 'brand: readable by a logged-in user');
+select isnt_empty($$ select 1 from public.model $$, 'model: readable by a logged-in user');
+select lives_ok($$ insert into public.brand (name) values ('Marca nueva') $$, 'brand: insert allowed');
+select throws_ok($$ update public.brand set name = 'Otra' where id = tests.id('brand_fiat') $$, '42501', null, 'brand: update denied');
+select throws_ok($$ delete from public.brand where id = tests.id('brand_fiat') $$,              '42501', null, 'brand: delete denied');
+select throws_ok($$ update public.model set name = 'Otro' where id = tests.id('model_cronos') $$, '42501', null, 'model: update denied');
+select throws_ok($$ delete from public.model where id = tests.id('model_cronos') $$,              '42501', null, 'model: delete denied');
 
 select * from finish();
 rollback;
