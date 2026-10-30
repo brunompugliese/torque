@@ -1,8 +1,7 @@
 # 013 — Imprimir trabajo: Design
 
 **Status:** Approved (by the owner in conversation, 2026-10-28)
-**Requirements:** [requirements.md](requirements.md) · **Mockup:** [mockup.html](mockup.html)
-
+**Requirements:** [requirements.md](requirements.md)
 ## Summary
 
 Each job gets a per-shop sequential number, assigned by the database. The number is shown as "N° 000123" in the Trabajos list (new first column, sortable, searchable), in the job modal's header and on the printed sheet.
@@ -51,7 +50,7 @@ Route and files:
 | `src/app/imprimir/sheet.css` | `@page { size: A4; margin: 0 }`. The margin is 0 on purpose: browsers print their own header (date, title) and footer (the page's address, page number) inside the page margin and leave them out when there is none, so the sheet shows only its own date and never the app's address. The sheet keeps its margin itself: 14 mm at the sides and a 12 mm header and footer row in a layout table, which the browser repeats on every page. Imported by the page. |
 
 - Access: the same session rules as every page. A signed-out user is redirected to the login; the job id in the URL is a uuid, not personal data, and no personal data is logged.
-- Content follows [requirements.md](requirements.md) and the mockup: header (logo through `ShopLogo`, name, address and phone, "N° 000123", "Creado el"), data block, numbered service blocks with "x N", "Hecho" box and a blank writing space, blank "Observaciones" box, signature and "Aclaración", footer with the shop's name and "Impreso el" (Argentina time, from the server). Phone through the existing phone formatter.
+- Content follows [requirements.md](requirements.md): header (logo through `ShopLogo`, name, address and phone, "N° 000123", "Creado el"), data block, numbered service blocks with "x N", "Hecho" box and a blank writing space, blank "Observaciones" box, signature and "Aclaración", footer with the shop's name and "Impreso el" (Argentina time, from the server). Phone through the existing phone formatter.
 - Print rules: each service block and the observations + signature group use `break-inside: avoid`; the observations box and the signature stay together at the end of the last page. Colors are black on white and borders instead of fills, so it reads in black and white. The app is light-only, so its tokens already give black on white.
 - Semantics: the title is the page's `h1`; services are an ordered list; the empty "Hecho" box and the writing lines are decorative (`aria-hidden`), the word "Hecho" is real text.
 - Messages: `jobs.print.*` (button, texts of the sheet) in `messages/es.json`.
