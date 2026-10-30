@@ -8,7 +8,6 @@ Depends on [012 — Shop branding](../012-shop-branding/requirements.md) (the sh
 
 The mechanic has no sheet to work from. The shop prints a work order from another system, with a line per customer request where the mechanic writes by hand. Torque should print an equivalent sheet for any job, in the app's own terms, simpler than the original, with room to write on every service and a signature from the client.
 
-Visual reference: [mockup.html](mockup.html) (A4, fake data, not final).
 
 ## Users
 
@@ -44,7 +43,7 @@ Sheet content (A4, black and white, no prices)
 
 - [ ] Given the sheet, then the header has the shop's logo (the app's logo when it has none), name, address and phone (spec 012), the title "N° 000123" (no word "Trabajo") and "Creado el dd/mm/aaaa". A missing address or phone is left out, not shown empty.
 - [ ] Given the sheet, then the data block has: "Patente" (plain spaced text, not the plate drawing), "Vehículo" (brand, model and year), "VIN" (the vehicle's, as saved), "Kilometraje", "Cliente" and "Teléfono" (dot thousands + "km"). The status is not shown. Missing values read "Sin cliente" and "Sin cargar".
-- [ ] Given the services, then each is a numbered block, in saved order, with its name (an archived service by its plain name), "x N" and a "Hecho" checkbox in its header, and below it the label "Trabajo realizado" with blank space to write in (about the height of three lines, no ruled lines).
+- [ ] Given the services, then each is a numbered block, in saved order, with its name (an archived service by its plain name), "x N" and a "Hecho" checkbox in its header, and below it blank space to write in (about the height of three lines, no label, no ruled lines).
 - [ ] Given a job with no services, then the section reads "Sin servicios cargados." with no blocks.
 - [ ] Given the sheet, then "Observaciones" is a bordered box after the services and above the signature area, always blank, for the mechanic to write in. The job's own observations are not printed.
 - [ ] Given any amount of services, then a block is never split across pages, and the observations box and the signature area ("Firma del cliente" and "Aclaración") sit together at the end of the last page.

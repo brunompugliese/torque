@@ -86,7 +86,7 @@ describe("JobSheetView services", () => {
     expect(within(items[1]).getByText("x 2")).toBeInTheDocument();
     for (const item of items) {
       expect(within(item).getByText("Hecho")).toBeInTheDocument();
-      expect(within(item).getByText("Trabajo realizado")).toBeInTheDocument();
+      expect(within(item).queryByText("Trabajo realizado")).not.toBeInTheDocument();
     }
   });
 

@@ -434,7 +434,6 @@
       "noServices": "Sin servicios cargados.",
       "quantity": "x {quantity}",
       "done": "Hecho",
-      "workDone": "Trabajo realizado",
       "clientSignature": "Firma del cliente",
       "clarification": "Aclaración"
     },

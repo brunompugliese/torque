@@ -103,10 +103,7 @@ function SheetBody({ sheet }: { sheet: JobSheet }) {
                     {t("done")}
                   </span>
                 </div>
-                <div className="px-2.5 pt-1 pb-1">
-                  <p className="text-xs text-muted-foreground">{t("workDone")}</p>
-                  <div aria-hidden="true" className={WRITING_SPACE} />
-                </div>
+                <div aria-hidden="true" className={WRITING_SPACE} />
               </li>
             ))}
           </ol>
@@ -118,7 +115,7 @@ function SheetBody({ sheet }: { sheet: JobSheet }) {
         <section className="min-h-[90px] rounded-md border border-foreground px-2.5 py-1.5">
           <h2 className="text-xs font-medium text-muted-foreground">{tJob("details.observations")}</h2>
         </section>
-        <div className="mt-4 grid grid-cols-2 gap-8 pt-8">
+        <div className="mt-4 grid grid-cols-2 gap-8 pt-16">
           <Signature>{t("clientSignature")}</Signature>
           <Signature>{t("clarification")}</Signature>
         </div>

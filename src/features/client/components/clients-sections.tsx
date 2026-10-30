@@ -11,12 +11,15 @@ export async function ClientsSummary() {
   return <p>{t("summary", { total: counts.total, archived: counts.archived })}</p>;
 }
 
+// The search never reaches the server in the URL (docs/architecture.md, "Never
+// in URLs"): the first render has none and the first search runs on the client.
 export async function ClientsList({ params }: { params: ListParams }) {
-  const [page, counts] = await Promise.all([listClients(params), getClientCounts()]);
+  const listParams = { ...params, search: "" };
+  const [page, counts] = await Promise.all([listClients(listParams), getClientCounts()]);
   return (
     <ClientsListView
       initial={counts.ok ? page : { ok: false }}
-      initialKey={toListSearch(params)}
+      initialKey={toListSearch(listParams)}
       total={counts.ok ? counts.total : 0}
     />
   );
