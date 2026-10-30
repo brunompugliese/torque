@@ -5,7 +5,7 @@
 
 ## Summary
 
-`/clientes` is the second list page and follows the shape of `/servicios` ([spec 004](../004-services/design.md)): a Server Component with the list state in the URL (`?buscar=&archivados=1&orden=&sentido=&pagina=`), server-side search, sort and paging, fetch-only updates through a Server Action, the client modal opened from the row already loaded, and writes as Server Actions that call `revalidatePath`. It reuses the whole list-page kit and adds what is specific to clients:
+`/clientes` is the second list page and follows the shape of `/servicios` ([spec 004](../004-services/design.md)): a Server Component with the list state in the URL (`?archivados=1&orden=&sentido=&pagina=`; the search lives in `ListSearchProvider` and never in the URL, as in Vehículos), server-side search, sort and paging, fetch-only updates through a Server Action, the client modal opened from the row already loaded, and writes as Server Actions that call `revalidatePath`. It reuses the whole list-page kit and adds what is specific to clients:
 
 - Personal data is encrypted, so rows are **read through `client_decrypted`** and **written to `client`** (the triggers encrypt on write).
 - The client modal has a **vehicles section** that loads its own data, and an **add-vehicle flow** (choose → assign several existing vehicles) inside the same modal.
@@ -96,7 +96,7 @@ All unassigned vehicles come in one fetch. Everything after is client state:
 
 ### URL state and fetching
 
-Same as services: `useListUrl`, `useListResults` with `searchClients(key)` as the fetcher, `LIST_PAGE_SIZE`, debounced search. Column ids: `cliente`, `dni`, `telefono`, `email`, `creado`. Personal data never goes into the URL beyond the search text the user types, which is not stored or logged.
+Same as services: `useListUrl`, `useListResults` with `searchClients(key)` as the fetcher, `LIST_PAGE_SIZE`, debounced search. Column ids: `cliente`, `dni`, `telefono`, `email`, `creado`. Personal data never goes into the URL, search text included: it travels in the Server Action body (the page wraps itself in `ListSearchProvider` and `ClientsList` ignores `buscar` on the server).
 
 ### Loaders for the modal
 

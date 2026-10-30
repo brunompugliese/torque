@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 export type TimelineEntry = {
   id: string;
   // The headline: what happened (a status pill).
   title: ReactNode;
   // Who and when ("Usuario A · 22/10/2026 21:47").
   meta?: ReactNode;
+  // Background class for the node; defaults to the foreground color.
+  dotClassName?: string;
 };
 
 // A vertical timeline, in the order given (newest first for a history). It is a
@@ -16,7 +20,10 @@ export function StatusTimeline({ entries, ariaLabel }: { entries: readonly Timel
     <ol aria-label={ariaLabel} className="flex flex-col">
       {entries.map((entry, index) => (
         <li key={entry.id} className="relative pb-4 pl-5 last:pb-0">
-          <span aria-hidden="true" className="absolute top-2 left-0 z-10 size-2 rounded-full bg-foreground" />
+          <span
+            aria-hidden="true"
+            className={cn("absolute top-2 left-0 z-10 size-2 rounded-full", entry.dotClassName ?? "bg-foreground")}
+          />
           {index < entries.length - 1 ? (
             <span aria-hidden="true" className="absolute top-3 -bottom-3 left-1 w-px bg-border" />
           ) : null}

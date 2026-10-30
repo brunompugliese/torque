@@ -45,6 +45,15 @@ describe("TopBar", () => {
     expect(container.querySelector('[data-slot="logo-mark"]')).toBeInTheDocument();
   });
 
+  it("makes the logo and the name one link to Inicio", () => {
+    const { container } = render(<TopBar appName="Torque" byline="by Torque" shopName="Taller Ejemplo" />);
+
+    const link = screen.getByRole("link", { name: /Taller Ejemplo/ });
+    expect(link).toHaveAttribute("href", "/inicio");
+    expect(link).toContainElement(container.querySelector('[data-slot="logo-mark"]'));
+    expect(link).toContainElement(screen.getByText("by Torque"));
+  });
+
   it("renders actions on the right", () => {
     render(<TopBar appName="Torque" actions={<button type="button">Cerrar sesión</button>} />);
     expect(screen.getByRole("button", { name: "Cerrar sesión" })).toBeInTheDocument();

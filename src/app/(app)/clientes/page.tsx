@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
+import { ListSearchProvider } from "@/components/shared/list-search-provider";
 import { ListToolbarSkeleton } from "@/components/shared/list-toolbar";
 import { PageHeader } from "@/components/shared/page-header";
 import { TextSkeleton } from "@/components/shared/text-skeleton";
@@ -22,26 +23,28 @@ export default async function ClientsPage({ searchParams }: PageProps<"/clientes
   const [t, params] = await Promise.all([getTranslations("clients"), searchParams.then(parseListParams)]);
 
   return (
-    <ClientsPanel>
-      <PageHeader
-        title={t("title")}
-        description={
-          <Suspense fallback={<TextSkeleton className="w-56" />}>
-            <ClientsSummary />
-          </Suspense>
-        }
-        actions={<AddClientButton />}
-      />
-      <Suspense
-        fallback={
-          <>
-            <ListToolbarSkeleton />
-            <ClientsTableSkeleton />
-          </>
-        }
-      >
-        <ClientsList params={params} />
-      </Suspense>
-    </ClientsPanel>
+    <ListSearchProvider>
+      <ClientsPanel>
+        <PageHeader
+          title={t("title")}
+          description={
+            <Suspense fallback={<TextSkeleton className="w-56" />}>
+              <ClientsSummary />
+            </Suspense>
+          }
+          actions={<AddClientButton />}
+        />
+        <Suspense
+          fallback={
+            <>
+              <ListToolbarSkeleton />
+              <ClientsTableSkeleton />
+            </>
+          }
+        >
+          <ClientsList params={params} />
+        </Suspense>
+      </ClientsPanel>
+    </ListSearchProvider>
   );
 }

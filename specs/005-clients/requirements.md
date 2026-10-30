@@ -124,7 +124,7 @@ Isolation and database
 - [ ] Given two shops, when a user of one lists, searches, reads, edits or assigns vehicles to clients, then they never see or change the other shop's data (existing RLS, covered again for any new view column).
 - [ ] Given the client list, when sorted by name, then the database provides the sort key (`name_key` on `client_decrypted`, `normalize_search` of name and surname), so sorting never depends on how the encrypted values look.
 - [ ] Given vehicle rows, when read, then the database provides the brand and model names on `vehicle_decrypted`, so the app doesn't join the catalogs by hand.
-- [ ] Given personal data, when handled, then it is never logged and never put in the URL (conventions.md); the URL holds only the search text, sort and page, like Servicios.
+- [ ] Given personal data, when handled, then it is never logged and never put in the URL (conventions.md); the URL holds only the archived switch, sort and page, never the search text, like Vehículos.
 
 ## Out of scope
 
