@@ -101,12 +101,18 @@ beforeEach(() => {
 });
 
 describe("job modal header", () => {
+  it("shows the number in the body above Kilometraje, not in the header", async () => {
+    renderModal();
+    const dialog = await screen.findByRole("dialog");
+    const item = within(dialog).getByText("N° 000123").closest("dd")!.parentElement!;
+    expect(item).toHaveTextContent("Número de orden");
+    expect(item.nextElementSibling).toHaveTextContent("Kilometraje");
+  });
   it("shows the plate drawn with brand, model and year, and no update time", async () => {
     renderModal();
     const dialog = await screen.findByRole("dialog");
     expect(dialog.querySelector('[data-slot="plate"]')).toHaveTextContent("AB 123 CD");
     expect(within(dialog).getByText("Fiat Cronos 2021")).toBeInTheDocument();
-    expect(within(dialog).getByText("N° 000123")).toBeInTheDocument();
     expect(within(dialog).queryByText(/Actualizado/)).toBeNull();
     expect(within(dialog).queryByText("Archivado")).toBeNull();
   });
