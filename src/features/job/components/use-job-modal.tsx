@@ -184,10 +184,7 @@ export function useJobModal({
       wide: true,
       title: (
         <span className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-muted-foreground tabular-nums">
-            <span className="sr-only">{t("modalTitle")} </span>
-            {formatJobNumber(job.number)}
-          </span>
+          <span className="sr-only">{t("modalTitle")}</span>
           <PlateDisplay plate={job.vehicle.plate} />
           <span>{formatJobVehicle(job)}</span>
         </span>
@@ -214,7 +211,9 @@ export function useJobModal({
               {
                 label: t("details.client"),
                 value: <ClientSummary client={client} noClient={t("noClient")} />,
+                tall: true,
               },
+              { label: t("details.number"), value: <span className="tabular-nums">{formatJobNumber(job.number)}</span> },
               { label: t("details.kilometers"), value: job.kilometers === null ? notLoaded : formatKm(job.kilometers) },
               {
                 label: t("details.observations"),

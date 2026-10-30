@@ -12,6 +12,8 @@ Four independent fixes, no database changes (RLS impact: none).
 - **Backdrop:** Base UI skips the backdrop of a dialog nested in another one. `DialogOverlay` and `AlertDialogOverlay` pass `forceRender`, so every confirmation blurs the page.
 - **Status history:** `STATUS_DOT_CLASS` (in `status-badge.tsx`) maps each status family to its `--status-*-dot` token; `StatusTimeline` entries take an optional `dotClassName`; `JobStatusHistory` renders the status as plain text.
 - **Clientes search:** the page is wrapped in `ListSearchProvider` and `ClientsList` renders its first page with no search, like `VehiclesList`. The rule is in [architecture.md](../../docs/architecture.md#sensitive-data) ("Never in URLs").
+- **Job number:** removed from the job modal header (kept as a screen-reader-only "Trabajo"); `DetailList` items take `tall` (`sm:row-span-2`) so Cliente spans the rows of "Número de orden" and Kilometraje.
+- **Search delay:** `SEARCH_DEBOUNCE_MS` (lists) and `REMOTE_SEARCH_DEBOUNCE_MS` (dropdowns) are 300 ms.
 - **Header link:** `TopBar` wraps the logo, name and byline in one `Link` to `HOME_PATH`, stretched to the bar's height.
 
 ## Components and code

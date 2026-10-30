@@ -7,6 +7,8 @@ export type DetailItem = {
   value: ReactNode;
   // In a two-column list, takes the whole row (a long text).
   wide?: boolean;
+  // In a two-column list, spans two rows (a tall value next to two short ones).
+  tall?: boolean;
 };
 
 type DetailListProps = {
@@ -18,8 +20,8 @@ type DetailListProps = {
 export function DetailList({ items, twoColumns = false }: DetailListProps) {
   return (
     <dl className={cn("flex flex-col gap-4", twoColumns && "sm:grid sm:grid-cols-2 sm:gap-x-6")}>
-      {items.map(({ label, value, wide }) => (
-        <div key={label} className={cn("flex min-w-0 flex-col gap-1", wide && "sm:col-span-2")}>
+      {items.map(({ label, value, wide, tall }) => (
+        <div key={label} className={cn("flex min-w-0 flex-col gap-1", wide && "sm:col-span-2", tall && "sm:row-span-2")}>
           <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
           <dd className="text-sm break-words whitespace-pre-line">{value}</dd>
         </div>
