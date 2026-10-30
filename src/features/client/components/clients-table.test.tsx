@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ListSearchProvider } from "@/components/shared/list-search-provider";
 import { renderWithIntl } from "@/test/render";
 
 import type { Client } from "../schemas";
@@ -59,10 +60,12 @@ const ARCHIVED: Client = {
 
 function renderTable(props: Parameters<typeof ClientsTable>[0]) {
   return renderWithIntl(
-    <ClientsPanel>
-      <AddClientButton />
-      <ClientsTable {...props} />
-    </ClientsPanel>,
+    <ListSearchProvider>
+      <ClientsPanel>
+        <AddClientButton />
+        <ClientsTable {...props} />
+      </ClientsPanel>
+    </ListSearchProvider>,
   );
 }
 
@@ -167,15 +170,6 @@ describe("ClientsTable", () => {
     expect(await screen.findByRole("dialog", { name: "Ana Gómez" })).toBeInTheDocument();
   });
 
-  it("shows no results for a search with a way to clear it", () => {
-    nav.search = "buscar=xyz";
-    renderTable({ ok: true, rows: [], matching: 0, total: 4 });
-    expect(screen.getByText("No encontramos clientes")).toBeInTheDocument();
-    expect(screen.getByText("Probá con otro nombre, DNI, teléfono o email.")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Borrar búsqueda" }));
-    expect(nav.replace).toHaveBeenCalledWith(null, "", "/clientes");
-  });
-
   it("invites to add the first client when there are none", () => {
     renderTable({ ok: true, rows: [], matching: 0, total: 0 });
     expect(screen.getByText("Todavía no hay clientes")).toBeInTheDocument();
@@ -224,46 +218,62 @@ describe("ClientsTableSkeleton", () => {
 
 function renderListView() {
   return renderWithIntl(
-    <ClientsPanel>
-      <ClientsListView initial={{ ok: true, rows: [ACTIVE], matching: 1 }} initialKey="" total={1} />
-    </ClientsPanel>,
+    <ListSearchProvider>
+      <ClientsPanel>
+        <ClientsListView initial={{ ok: true, rows: [ACTIVE], matching: 1 }} initialKey="" total={1} />
+      </ClientsPanel>
+    </ListSearchProvider>,
   );
 }
 
 describe("ClientsListView while a search, sort or page loads", () => {
-  it("shows placeholder rows instead of the old ones, keeping the toolbar and the header, then the new results", async () => {
-    const { searchClients } = await import("../actions");
-    let resolve: (page: Awaited<ReturnType<typeof searchClients>>) => void = () => {};
-    vi.mocked(searchClients).mockReturnValue(new Promise((done) => (resolve = done)));
-    nav.search = "buscar=zoe";
-    renderListView();
+  it("shows placeholder rows instead of the old ones while a search loads, keeping the toolbar and the header, then the new results", async () => {
+    vi.useFakeTimers();
+    try {
+      const { searchClients } = await import("../actions");
+      let resolve: (page: Awaited<ReturnType<typeof searchClients>>) => void = () => {};
+      vi.mocked(searchClients).mockReturnValue(new Promise((done) => (resolve = done)));
+      renderListView();
+      expect(screen.getByText("Ana Gómez")).toBeInTheDocument();
+      expect(screen.queryByTestId("skeleton-block")).toBeNull();
 
-    expect(searchClients).toHaveBeenCalledWith("buscar=zoe");
-    expect(screen.queryByText("Ana Gómez")).toBeNull();
-    expect(screen.getAllByTestId("skeleton-block").length).toBeGreaterThan(0);
-    expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
-    expect(screen.getByRole("searchbox")).toHaveValue("zoe");
-    expect(screen.getAllByRole("columnheader")).toHaveLength(5);
-    expect(screen.queryByText(/Mostrando/)).toBeNull();
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zoe" } });
+      await act(async () => vi.advanceTimersByTime(300));
 
-    await act(async () => resolve({ ok: true, rows: [ARCHIVED], matching: 1 }));
-    expect(screen.getByText("Zoe")).toBeInTheDocument();
-    expect(screen.queryByTestId("skeleton-block")).toBeNull();
-    expect(screen.queryByRole("status")).toBeNull();
+      expect(searchClients).toHaveBeenCalledWith("buscar=zoe");
+      expect(screen.queryByText("Ana Gómez")).toBeNull();
+      expect(screen.getAllByTestId("skeleton-block").length).toBeGreaterThan(0);
+      expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
+      expect(screen.getByRole("searchbox")).toHaveValue("zoe");
+      expect(screen.getAllByRole("columnheader")).toHaveLength(5);
+      expect(screen.queryByText(/Mostrando/)).toBeNull();
+
+      await act(async () => resolve({ ok: true, rows: [ARCHIVED], matching: 1 }));
+      expect(screen.getByText("Zoe")).toBeInTheDocument();
+      expect(screen.queryByTestId("skeleton-block")).toBeNull();
+      expect(screen.queryByRole("status")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
 describe("ClientsListView toolbar", () => {
-  it("has the clients placeholder and drives the URL", async () => {
+  it("has the clients placeholder, searches without touching the URL, and drives the archived switch there", async () => {
     vi.useFakeTimers();
     try {
+      const { searchClients } = await import("../actions");
+      vi.mocked(searchClients).mockResolvedValue({ ok: true, rows: [ACTIVE], matching: 1 });
       renderListView();
       const search = screen.getByRole("searchbox", { name: "Buscar" });
       expect(search).toHaveAttribute("placeholder", "Buscar por nombre, apellido, DNI, teléfono o email");
 
       fireEvent.change(search, { target: { value: "35.123" } });
       await act(async () => vi.advanceTimersByTime(300));
-      expect(nav.replace).toHaveBeenCalledWith(null, "", "/clientes?buscar=35.123");
+      // The search never reaches the address bar, but it does reach the action.
+      expect(nav.replace).toHaveBeenCalledWith(null, "", "/clientes");
+      for (const [, , url] of nav.replace.mock.calls) expect(String(url)).not.toContain("35");
+      expect(searchClients).toHaveBeenCalledWith("buscar=35.123");
 
       fireEvent.click(screen.getByRole("switch", { name: "Mostrar archivados" }));
       expect(nav.replace).toHaveBeenLastCalledWith(null, "", "/clientes?archivados=1");
@@ -277,5 +287,26 @@ describe("ClientsListView toolbar", () => {
     expect(screen.getAllByRole("searchbox")).toHaveLength(1);
     expect(screen.getAllByRole("switch")).toHaveLength(1);
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+  });
+
+  it("clears a search from the empty state without leaving anything in the URL", async () => {
+    vi.useFakeTimers();
+    try {
+      const { searchClients } = await import("../actions");
+      vi.mocked(searchClients).mockResolvedValue({ ok: true, rows: [], matching: 0 });
+      renderListView();
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "xyz" } });
+      await act(async () => vi.advanceTimersByTime(300));
+      await act(async () => {});
+      expect(screen.getByText("No encontramos clientes")).toBeInTheDocument();
+      expect(screen.getByText("Probá con otro nombre, DNI, teléfono o email.")).toBeInTheDocument();
+
+      nav.replace.mockClear();
+      fireEvent.click(screen.getByRole("button", { name: "Borrar búsqueda" }));
+      expect(screen.getByRole("searchbox")).toHaveValue("");
+      expect(nav.replace).toHaveBeenCalledWith(null, "", "/clientes");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

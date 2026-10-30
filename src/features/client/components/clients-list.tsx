@@ -24,6 +24,7 @@ function fetchPage(key: string): Promise<ClientPage> {
 export function ClientsListView({ initial, initialKey, total }: ClientsListProps) {
   const t = useTranslations("clients");
   const { params } = useListUrl();
+  // The key carries the search to the Server Action's body; the URL never holds it.
   const { result, pending, retry } = useListResults(initial, initialKey, toListSearch(params), fetchPage);
 
   return (

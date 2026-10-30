@@ -44,6 +44,6 @@ Each task is small, leaves the project working, and says how it is verified. Che
 - [x] **12. Rules for every screen**
   - Do: the owner's four rules (2026-10-21), written in `docs/design.md` (Modals, Forms, Loading, Plates) and `docs/conventions.md`, and applied everywhere: every action closes the modal (Servicios, Clientes, assigning, Vehículos and the chain); forms in two columns with `FormRow` and `FIELD_WIDTH`; one fixed plate size; `DataTable` `loading` on every search, sort and page in the three lists. Notes in specs 004 and 005.
   - Verify: component tests for each rule, the existing ones updated; `npm test`, `npm run lint`, `npm run build`.
-- [ ] **13. Follow-up: Clientes search out of the URL** (separate change, remind the owner when task 11 is done)
+- [x] **13. Follow-up: Clientes search out of the URL**
   - Do: wrap the Clientes page in `ListSearchProvider`, ignore `buscar` on the server, update spec 005 and architecture.md.
   - Verify: Clientes tests updated; the URL never holds the search.

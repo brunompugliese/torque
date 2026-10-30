@@ -24,6 +24,17 @@ const FAMILY_CLASS: Record<StatusFamily, string> = {
   cancelled: "border-status-cancelled-foreground/20 bg-status-cancelled text-status-cancelled-foreground",
 };
 
+// The solid dot of each family, for lists that show the status as plain text (the status history).
+export const STATUS_DOT_CLASS: Record<StatusFamily, string> = {
+  pending: "bg-status-pending-dot",
+  "quote-sent": "bg-status-quote-sent-dot",
+  "quote-accepted": "bg-status-quote-accepted-dot",
+  "in-progress": "bg-status-in-progress-dot",
+  done: "bg-status-done-dot",
+  delivered: "bg-status-delivered-dot",
+  cancelled: "bg-status-cancelled-dot",
+};
+
 // The text is always visible: status is never conveyed by color alone. `trailing` is an icon
 // inside the pill after the text (the dropdown arrow, the lock of a closed job), in the pill's color.
 export function StatusBadge({
