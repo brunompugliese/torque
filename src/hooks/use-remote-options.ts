@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export const REMOTE_SEARCH_DEBOUNCE_MS = 200;
+export const REMOTE_SEARCH_DEBOUNCE_MS = 300;
 
 type Answer<Row> = { term: string; rows: Row[] };
 

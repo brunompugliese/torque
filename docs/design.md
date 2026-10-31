@@ -280,7 +280,7 @@ Services carry no price; prices are set per job item.
 
 ### Job number
 
-Every job has a number, sequential within its shop: 1, 2, 3… The database assigns it on creation (two jobs created at the same moment never share one), it never changes, it is never reused and archived jobs keep theirs; two shops count independently. It shows as "N° 000123" in the Trabajos list (first column "N°", sortable, numeric, so the first click lists the oldest first), in the job modal's header before the plate (and in the edit form's subtitle), and on the printed sheet. The list's search finds it by "123" or "000123" (a substring search, so "123" also finds plates containing it).
+Every job has a number, sequential within its shop: 1, 2, 3… The database assigns it on creation (two jobs created at the same moment never share one), it never changes, it is never reused and archived jobs keep theirs; two shops count independently. It shows as "N° 000123" in the Trabajos list (first column "N°", sortable, numeric, so the first click lists the oldest first), in the job modal's body as "Número de orden", above Kilometraje with the client spanning both rows (not in its header; also in the edit form's subtitle), and on the printed sheet. The list's search finds it by "123" or "000123" (a substring search, so "123" also finds plates containing it).
 
 ### Printing a job
 

@@ -89,7 +89,7 @@ Rows come from `vehicle_decrypted` with `VEHICLE_LIST_COLUMNS` (the light `VEHIC
 
 ### Search outside the URL
 
-- `ListSearchProvider` (`components/shared/list-search-provider.tsx`) holds the typed value and the committed search (debounced 200 ms, then back to page 1).
+- `ListSearchProvider` (`components/shared/list-search-provider.tsx`) holds the typed value and the committed search (debounced 300 ms, then back to page 1).
 - `useListUrl` reads its search from the provider when there is one; the URL it writes never contains `buscar`. Without a provider it behaves as today. Sort, page and the archived switch stay in the URL.
 - `useListResults` keys on `toListSearch(params)` including the search and passes it to `searchVehicles(key)`: it travels in the Server Action's body, never in a URL.
 - Clientes' follow-up is then: wrap its page in the provider (and ignore `buscar` on the server). Tracked as the last task.
@@ -135,7 +135,7 @@ Four rules that this page follows and every screen after it ([design.md](../../d
 - **Year:** numeric keyboard, text input; the schema turns it into a number.
 - **VIN:** `onChange` strips hyphens and spaces, uppercases and caps at 17.
 - **Brand / model:** `SearchableSelect` fed by read actions `getBrandOptions(currentId?)` and `getModelOptions(brandId, currentId?)` (`brand` / `model` are global tables, read directly; enabled rows plus the vehicle's current one). Models load when the brand changes (`useLoadedData` keyed by brand); the model field is disabled with "Primero elegí la marca" until then and cleared when the brand changes. Typed text with no selection is a form-level check (the server only receives ids): `brandInvalid` / `modelInvalid`.
-- **Client:** `SearchableSelect` in remote mode. Typing (debounced 200 ms) calls `searchClientOptions(term)`: up to 10 matches from `client_decrypted.search_text` ordered by `name_key`, archived included. Options show the name and the phone in grey, archived ones with "(Archivado)". The last option "+ Crear cliente nuevo" hides the dropdown and opens `NewClientSection` with an X. Carry-over: digits go to Teléfono, otherwise the text splits into Nombre and Apellido at the first space (`splitTypedClient`, in `features/vehicle/`).
+- **Client:** `SearchableSelect` in remote mode. Typing (debounced 300 ms) calls `searchClientOptions(term)`: up to 10 matches from `client_decrypted.search_text` ordered by `name_key`, archived included. Options show the name and the phone in grey, archived ones with "(Archivado)". The last option "+ Crear cliente nuevo" hides the dropdown and opens `NewClientSection` with an X. Carry-over: digits go to Teléfono, otherwise the text splits into Nombre and Apellido at the first space (`splitTypedClient`, in `features/vehicle/`).
 - **`NewClientSection`:** Nombre, Apellido, Teléfono, DNI with the same input rules as `ClientForm`; it validates with `clientFormSchema.pick(...)` (one schema for both forms). Choosing a client from the list or discarding the section clears the other.
 - **Submit:** unchanged edits (after normalization) go back without a request. Otherwise `createVehicle` / `updateVehicle`.
 

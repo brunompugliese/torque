@@ -50,7 +50,7 @@ create table client (
 );
 
 -- Global catalog, shared across all shops on purpose (not tenant-scoped).
--- No RLS: readable by anyone, writable only by logged-in users (see grants below).
+-- No RLS: readable by logged-in users, insert-only for them, nothing for anon (see grants below).
 create table brand (
   id      uuid primary key default gen_random_uuid(),
   name    text not null,
@@ -1336,17 +1336,17 @@ alter table model disable row level security;
 -- TRUNCATE bypasses RLS, so it's revoked everywhere.
 -- =============================================================================
 
--- brand: anyone (even anon) can read; only logged-in users can manage entries.
-grant select on public.brand to anon, authenticated;
-grant insert, update, delete on public.brand to authenticated;
-revoke insert, update, delete, truncate, references, trigger, maintain on public.brand from anon;
-revoke truncate, references, trigger, maintain on public.brand from authenticated;
+-- brand: logged-in users read and add entries; nobody else touches them. Update and
+-- delete are revoked because the catalog is shared by every shop (changed by
+-- 20261030000000_dcl-brand-model-restricted.sql); anon has nothing.
+grant select, insert on public.brand to authenticated;
+revoke all on public.brand from anon;
+revoke update, delete, truncate, references, trigger, maintain on public.brand from authenticated;
 
 -- model: same access as brand.
-grant select on public.model to anon, authenticated;
-grant insert, update, delete on public.model to authenticated;
-revoke insert, update, delete, truncate, references, trigger, maintain on public.model from anon;
-revoke truncate, references, trigger, maintain on public.model from authenticated;
+grant select, insert on public.model to authenticated;
+revoke all on public.model from anon;
+revoke update, delete, truncate, references, trigger, maintain on public.model from authenticated;
 
 -- shop, profile and job_status_history are read-only for clients: SELECT is
 -- granted and writes are revoked explicitly, because the Supabase default

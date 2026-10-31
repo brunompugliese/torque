@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useListSearch } from "@/components/shared/list-search-provider";
 import { parseListParams, toListSearch, type ListParams } from "@/lib/list/params";
 
-export const SEARCH_DEBOUNCE_MS = 200;
+export const SEARCH_DEBOUNCE_MS = 300;
 
 const NO_FILTERS: readonly string[] = [];
 

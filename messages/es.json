@@ -385,6 +385,7 @@
     "details": {
       "status": "Estado",
       "client": "Cliente",
+      "number": "Número de orden",
       "kilometers": "Kilometraje",
       "observations": "Observaciones",
       "closed": "Cerrado, no se puede editar"
