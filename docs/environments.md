@@ -5,7 +5,7 @@
 | Environment | Supabase project | Used by | Status |
 |---|---|---|---|
 | Development | `torque-dev` | Local development, Vercel Preview deployments | Exists |
-| Production | To be created | Vercel Production | Planned |
+| Production | `torque-prod` | Vercel Production | Exists |
 
 The Supabase CLI applies migrations to whichever project is **linked**. Day-to-day work stays linked to `torque-dev`.
 
@@ -44,9 +44,12 @@ See [specs/002-login/design.md](../specs/002-login/design.md#supabase-dashboard-
 
 - [ ] Authentication → Sign In / Providers → **Allow new users to sign up**: off. Accounts are created only in the dashboard.
 - [ ] Email provider → **Confirm email**: on.
-- [ ] Password → **Minimum length**: 12. **Requirements**: none. **Leaked password protection**: off.
+- [ ] Authentication → Attack Protection → **Minimum length**: 12. **Requirements**: none. **Leaked password protection**: off.
 - [ ] Sessions → time-box and inactivity timeout: off (the app enforces its own 24-hour inactivity limit).
-- [ ] Rate limits → sign-ins: keep the default or lower.
+- [ ] Authentication → Rate Limits (set per project; fields that don't apply, like SMS, anonymous users and Web3, are greyed out):
+  - **Sign-ups and sign-ins**: 10 requests per 5 minutes (default 30). This is the brute-force limit, counted per IP, so a shop's staff behind one router share it.
+  - **Token verifications**: 5 requests per 5 minutes (default 30). The app uses no OTP or magic links.
+  - **Token refreshes**: keep 150 (default). Lowering it can sign out staff sharing an IP.
 - [ ] JWT signing keys: asymmetric (e.g. ES256), recommended so the app can verify tokens without a network call.
 
 ### 5. Auth URLs (required)
